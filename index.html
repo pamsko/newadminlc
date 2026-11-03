@@ -215,17 +215,17 @@ const menuGroups=[
 {title:'Início',items:[{name:'Visão geral',icon:'▣',route:'Área de trabalho'}]},
 {title:'Operação',items:[
 {name:'Pedidos',icon:'▤',children:[['Todos os pedidos','Pedidos'],['Edição de pedidos','Edição de pedidos'],['Expedição e entregas','Logística'],['Carrinhos','Carrinhos'],['Workflows','Fluxos (workflows)']]},
-{name:'Catálogo',icon:'◇',children:[['Produtos e SKUs','Produtos e SKUs'],['Categorias','Categorias'],['Preços','Preços'],['Estoque','Estoque'],['Filtros e atributos','Filtros e atributos'],['Flags, tags e metadados','Flags e tags'],['Listas e kits','Listas de produtos'],['Importadores','Importadores'],['Tarefas agendadas','Tarefas agendadas'],['Indexação de produtos','Indexação de produtos']]},
+{name:'Catálogo',icon:'◇',children:[['Produtos e SKUs','Produtos e SKUs'],['Marcas','Marcas'],['Definições de produto','Definições de produto'],['Categorias','Categorias'],['Preços','Preços'],['Estoque','Estoque'],['Filtros e atributos','Filtros e atributos'],['Flags, tags e metadados','Flags e tags'],['Listas e kits','Listas de produtos'],['Importadores','Importadores'],['Tarefas agendadas','Tarefas agendadas'],['Indexação de produtos','Indexação de produtos']]},
 {name:'Clientes e B2B',icon:'♙',children:[['Clientes','Clientes'],['Grupos econômicos','Grupos econômicos'],['Compradores e aprovadores','Compradores e aprovadores'],['Cotações e compras','Cotações e compras'],['Contratos e regras comerciais','Contratos'],['Fidelidade','Fidelidade']]},
 {name:'Canais',icon:'▧',children:[['Visão geral dos canais','Visão de canais'],['Lojas e canais','Lojas e canais'],['Marketplaces','Marketplaces'],['Omnicanalidade','Omnicanalidade']]}]},
 {title:'Crescimento e experiência',items:[
-{name:'Marketing',icon:'◈',children:[['Promoções e cupons','Promoções'],['Marketing','Marketing'],['CRM e campanhas','CRM e campanhas'],['Recorrência','Recorrência'],['Live Commerce','Live Commerce']]},
+{name:'Marketing',icon:'◈',children:[['Promoções e cupons','Promoções'],['Cupons','Cupons'],['Vales','Vales'],['Marketing','Marketing'],['CRM e campanhas','CRM e campanhas'],['Recorrência','Recorrência'],['Live Commerce','Live Commerce']]},
 {name:'Experiência da loja',icon:'▥',children:[['Aparência','Aparência'],['Commerce Studio','Commerce Studio'],['Conteúdo e CMS','Conteúdo e CMS'],['Smart Finder','Smart Finder'],['Configurações básicas da busca','Smart Finder — Básicas'],['Configurações avançadas da busca','Smart Finder — Avançadas'],['Configurações por grupo','Smart Finder — Grupos'],['Sinônimos','Smart Finder — Sinônimos'],['Checkout','Checkout'],['Avaliações','Avaliações'],['Listas de desejo','Listas de desejo'],['Conversacional','Conversacional']]}]},
 {title:'Gestão',items:[
 {name:'Financeiro',icon:'◉',children:[['Pagamentos','Pagamentos'],['Transações','Transações'],['Conciliação','Conciliação'],['Meios de pagamento','Meios de pagamento']]},
 {name:'Relatórios',icon:'▦',children:[['Relatórios de vendas','Relatórios de vendas'],['Analíticos','Analíticos'],['Manu Analítica','Manu Analítica']]}]},
 {title:'Plataforma',items:[
-{name:'Integrações',icon:'⇄',children:[['Integrações','Integrações'],['APIs e webhooks','APIs e webhooks'],['ERPs e middleware','ERPs e middleware'],['Hub Integration','Hub Integration'],['Loja de aplicativos','Loja de aplicativos']]},
+{name:'Integrações',icon:'⇄',children:[['Integrações','Integrações'],['Monitoramento de logs','Monitoramento de logs'],['APIs e webhooks','APIs e webhooks'],['ERPs e middleware','ERPs e middleware'],['Hub Integration','Hub Integration'],['Loja de aplicativos','Loja de aplicativos']]},
 {name:'Configurações',icon:'⚙',children:[['Configurações gerais','Configurações'],['Usuários e permissões','Usuários e permissões'],['Segurança e privacidade','Segurança e privacidade'],['Auditoria e logs','Auditoria e logs'],['Suporte','Suporte']]}]}
 ];
 const nav=document.getElementById('nav');
@@ -469,6 +469,46 @@ function renderReports(){let arr=[['Loja virtual',51],['Mercado Livre',22],['Sho
 function renderFinance(){let rows=[['#105842','Pix','Autorizado',359.90],['#105841','Cartão','Capturado',899],['#105839','Boleto','Pendente',179.50],['#105837','Cartão','Cancelado',449.90]].map(x=>'<tr><td>'+x[0]+'</td><td>'+x[1]+'</td><td>'+pill(x[2])+'</td><td>'+fmtMoney(x[3])+'</td></tr>');return moduleShell('Visão Financeira','Pagamentos e conciliação (demonstração).',cards([['Pagamentos aprovados','142','Período atual'],['Transações pendentes','9','Acompanhar'],['Receita aprovada',fmtMoney(13370.2),'Montante ilustrativo'],['Cancelamentos','5','Revisar ocorrências']])+'<section class="panel module-panel"><h2>Últimas transações</h2>'+table(['Pedido','Meio de pagamento','Situação','Valor'],rows)+'</section>')}
 function renderChannelsPage(){return moduleShell('Canais de Venda','Performance de vendas e operação multicanal.',cards([['Canais monitorados','5','Canais demonstrativos'],['Receita multicanal',fmtMoney(14820.5),'Somatório'],['Maior participação','51%','Loja virtual'],['Pedidos','156','Consolidado']])+'<section class="panel module-panel"><h2>Comparativo por canal</h2>'+table(['Canal','Participação','Faturamento','Pedidos'],channels.map(c=>'<tr><td><b>'+esc(c.name)+'</b></td><td>'+Math.round(c.revenue*100)+'%</td><td>'+fmtMoney(14820.5*c.revenue)+'</td><td>'+Math.round(156*c.orders)+'</td></tr>'))+'</section>')}
 
+
+const SMART_STORAGE_PREFIX='totvs-demo-smartfinder-v1:';
+let smartPending={};
+function smartStore(page){
+ const base={fields:{}};
+ try{const v=JSON.parse(localStorage.getItem(SMART_STORAGE_PREFIX+page));return v&&v.draft&&v.published?v:{draft:base,published:base,logs:[],previewed:false}}catch(e){return {draft:base,published:base,logs:[],previewed:false}}
+}
+function saveSmartStore(page,v){try{localStorage.setItem(SMART_STORAGE_PREFIX+page,JSON.stringify(v));return true}catch(e){modal('Erro no armazenamento','Não foi possível salvar os dados simulados.');return false}}
+function smartFormValues(root){return [...root.querySelectorAll('.smart-setting select')].map(x=>x.value)}
+function bindSmartDemo(target,page){
+ if(!page.startsWith('Smart Finder — '))return;
+ const stage=page==='Smart Finder — Básicas'||page==='Smart Finder — Avançadas';
+ const current=smartStore(page);
+ target.querySelectorAll('.smart-setting select').forEach((el,i)=>{const v=smartPending[page]||current.draft.fields;el.value=v[i]||el.value;el.addEventListener('change',()=>{smartPending[page]=smartFormValues(target);const status=target.querySelector('.smart-actions .status');if(status)status.textContent='Alterações ainda não salvas neste navegador.'})});
+ target.querySelectorAll('[data-smartaction]').forEach(btn=>btn.addEventListener('click',()=>{
+ const action=btn.dataset.smartaction;
+ if(action==='Salvar rascunho'){
+  const state=smartStore(page);state.draft={fields:smartFormValues(target)};state.previewed=false;
+  if(!stage)state.published={fields:[...state.draft.fields]};
+  state.logs=(state.logs||[]).concat([{action:stage?'Rascunho salvo':'Aplicação imediata simulada',date:new Date().toLocaleString('pt-BR')}]).slice(-30);
+  if(saveSmartStore(page,state)){delete smartPending[page];renderActiveModule(page);toast(stage?'Rascunho fictício salvo.':'Alteração local aplicada imediatamente (simulação).')}return;
+ }
+ if(!stage)return;
+ const state=smartStore(page);
+ if(action==='Visualizar preview'){
+  if(!state.draft.fields.length){toast('Salve as alterações antes da prévia.');return}
+  state.previewed=true;state.logs=(state.logs||[]).concat([{action:'Prévia demonstrativa',date:new Date().toLocaleString('pt-BR')}]).slice(-30);
+  saveSmartStore(page,state);
+  modal('Prévia da busca — demonstração','Configurações salvas: '+state.draft.fields.map(esc).join(' · ')+'. Esta tela não abre a loja e não consulta Elasticsearch.');return;
+ }
+ if(action==='Publicar'){
+  if(!state.draft.fields.length){toast('Salve antes de publicar.');return}
+  if(!state.previewed){toast('Visualize a prévia do rascunho antes da publicação.');return}
+  if(!window.confirm('Simular a publicação? Nenhum ambiente real será alterado.'))return;
+  state.published={fields:[...state.draft.fields]};state.previewed=false;state.logs=(state.logs||[]).concat([{action:'Publicação simulada',date:new Date().toLocaleString('pt-BR')}]).slice(-30);
+  if(saveSmartStore(page,state)){renderActiveModule(page);toast('Publicação local simulada com sucesso.')}
+ }
+ }));
+}
+
 function renderSmartFinder(page){
  const entries=[
  ['Configurações básicas','Campos pesquisáveis, relevância, ordenação, imagens, sugestões e autocomplete.','Smart Finder — Básicas','▣'],
@@ -488,8 +528,9 @@ function renderSmartFinder(page){
  if(page==='Smart Finder')return header+'<section class="panel module-panel"><h2>Administração da busca</h2><p class="hint">Escolha uma das quatro áreas de configuração. As telas são demonstrativas e não alteram a busca da loja.</p><div class="smart-process"><span>Configurar</span><span>Salvar</span><span>Visualizar preview</span><span>Publicar</span></div><p class="hint" style="margin-top:15px">O fluxo com preview e publicação aplica-se às configurações básicas e avançadas. Grupos e sinônimos possuem aplicação imediata após salvar.</p></section>';
  const title=entries.find(x=>x[2]===page)?.[0]||'Smart Finder';
  const fields=detail[page]||[];
+ const smartExisting=smartStore(page);
  const controls='<div class="smart-options">'+fields.map((v,i)=>'<label class="smart-setting"><span><strong>'+esc(v)+'</strong><small>Parâmetro demonstrativo — sem vínculo com a loja</small></span><select aria-label="'+esc(v)+'"><option>'+(['Padrão','Habilitado','Configuração principal','Sim','Padrão'][i%5])+'</option><option>Personalizado</option><option>Desabilitado</option></select></label>').join('')+'</div>';
- return header+'<section class="panel module-panel"><div class="panel-title"><div><h2>'+title+'</h2><p>Exemplo de organização da interface, sem alterar configurações reais.</p></div><a href="https://share.linx.com.br/display/commerce/Smart%2BFinder" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#007b97">Documentação ↗</a></div>'+controls+'<div class="smart-actions"><span class="status">'+(flow?'Fluxo: editar → salvar → preview → publicar':groupImmediate?'Atenção: em produção, salvar aplica alterações imediatamente.':'')+'</span><button class="ghost" type="button" data-smartaction="Salvar rascunho">Salvar (simulação)</button>'+(flow?'<button class="ghost" type="button" data-smartaction="Visualizar preview">Visualizar preview</button><button class="primary" type="button" data-smartaction="Publicar">Publicar (simulação)</button>':'')+'</div></section>';
+ return header+'<section class="panel module-panel"><div class="domain-info">Registro local: '+(smartExisting.logs||[]).length+' ações · '+(smartExisting.previewed?'Prévia consultada':'Prévia pendente ou não necessária')+'. Todos os dados são fictícios.</div><div class="panel-title"><div><h2>'+title+'</h2><p>Exemplo de organização da interface, sem alterar configurações reais.</p></div><a href="https://share.linx.com.br/display/commerce/Smart%2BFinder" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#007b97">Documentação ↗</a></div>'+controls+'<div class="smart-actions"><span class="status">'+(flow?'Fluxo: editar → salvar → preview → publicar':groupImmediate?'Atenção: em produção, salvar aplica alterações imediatamente.':'')+'</span><button class="ghost" type="button" data-smartaction="Salvar rascunho">Salvar (simulação)</button>'+(flow?'<button class="ghost" type="button" data-smartaction="Visualizar preview">Visualizar preview</button><button class="primary" type="button" data-smartaction="Publicar">Publicar (simulação)</button>':'')+'</div></section>';
 }
 
 
@@ -635,7 +676,7 @@ target.querySelector('#moduleQuery')?.addEventListener('input',e=>{moduleFilters
 target.querySelector('#ordersBack')?.addEventListener('click',()=>{selectedOrderId=null;renderActiveModule('Pedidos')});
 target.querySelectorAll('[data-orderdetailtab]').forEach(b=>b.addEventListener('click',()=>{selectedOrderTab=b.dataset.orderdetailtab;renderActiveModule('Pedidos')}));
 target.querySelectorAll('[data-detailaction]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.detailaction,'Demonstração somente leitura. As permissões, estados e integrações do ambiente real ainda não foram conectados.')));
-target.querySelectorAll('[data-product]').forEach(b=>b.addEventListener('click',()=>showDetail('product',b.dataset.product)));target.querySelectorAll('[data-customer]').forEach(b=>b.addEventListener('click',()=>showDetail('customer',b.dataset.customer)));target.querySelectorAll('[data-report]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.report,'Análise demonstrativa. Os dados reais dependerão de APIs e eventos de pedido.')));target.querySelectorAll('[data-feature]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.feature,'Funcionalidade em exploração UX/UI.')));target.querySelectorAll('[data-smart]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.smart)));target.querySelectorAll('[data-smartaction]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.smartaction,'Ação simulada. Nenhuma configuração foi salva, visualizada ou publicada na loja.')));target.querySelector('#moduleNew')?.addEventListener('click',()=>registerModels[page]?openRegister(page,null):modal('Nova ação — '+page,'Esta operação ainda não possui cadastro demonstrativo.'));target.querySelector('#moduleExplore')?.addEventListener('click',()=>modal('Explorar '+page,'Próximo passo: definir a jornada e as regras de negócio deste módulo.'))}
+target.querySelectorAll('[data-product]').forEach(b=>b.addEventListener('click',()=>showDetail('product',b.dataset.product)));target.querySelectorAll('[data-customer]').forEach(b=>b.addEventListener('click',()=>showDetail('customer',b.dataset.customer)));target.querySelectorAll('[data-report]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.report,'Análise demonstrativa. Os dados reais dependerão de APIs e eventos de pedido.')));target.querySelectorAll('[data-feature]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.feature,'Funcionalidade em exploração UX/UI.')));target.querySelectorAll('[data-smart]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.smart)));bindSmartDemo(target,page);target.querySelector('#moduleNew')?.addEventListener('click',()=>registerModels[page]?openRegister(page,null):modal('Nova ação — '+page,'Esta operação ainda não possui cadastro demonstrativo.'));target.querySelector('#moduleExplore')?.addEventListener('click',()=>modal('Explorar '+page,'Próximo passo: definir a jornada e as regras de negócio deste módulo.'))}
 function navigate(page){selectedOrderId=null;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===page));const current=document.querySelector('[data-page].active');if(current?.classList.contains('nav-child')){const folder=current.closest('.nav-folder');document.querySelectorAll('[data-folder]').forEach(b=>{const isCurrent=b===folder?.querySelector('[data-folder]');b.setAttribute('aria-expanded',String(isCurrent));b.nextElementSibling.hidden=!isCurrent;});}moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);window.scrollTo({top:0,behavior:'instant'})}
 
 loadRegisters();
