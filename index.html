@@ -131,6 +131,34 @@
 .detail-actions button:hover{background:#ecf9fd}
 .detail-actions button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:1100px){.detail-info{grid-template-columns:repeat(2,1fr)}.detail-layout{grid-template-columns:1fr}}@media(max-width:600px){.detail-info{grid-template-columns:1fr}.key-values{grid-template-columns:1fr}}
+
+/* Cadastros demonstrativos locais */
+.demo-register-note{font-size:12px;color:#496d7b;background:#effafd;border:1px solid #c6eaf1;padding:11px 14px;border-radius:10px;margin:12px 0}
+.demo-register-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:12px 0}
+.demo-register-toolbar .primary{font-size:12px}
+.demo-register-toolbar .ghost{padding:9px 12px;font-size:12px;border-radius:8px;border:1px solid #d6e7eb;background:#fff}
+.demo-register-table{overflow-x:auto}
+.demo-register-table table{width:100%;border-collapse:collapse;min-width:590px}
+.demo-register-table th,.demo-register-table td{padding:12px 11px;border-bottom:1px solid #e5eff2;text-align:left;font-size:12px}
+.demo-register-table th{background:#f3f9fb;color:#536f7c}
+.demo-register-actions{display:flex;gap:6px}
+.demo-register-actions button{padding:6px 8px;background:#f1f9fb;color:#006e86;border:1px solid #cce8ee;border-radius:6px;font-weight:700;font-size:11px}
+.demo-register-actions button.delete{color:#a23c42;background:#fff4f4;border-color:#f2d2d4}
+.demo-register-overlay{position:fixed;inset:0;background:#001e31aa;z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px}
+.demo-register-dialog{background:white;color:#143849;width:min(690px,100%);max-height:calc(100vh - 40px);overflow:auto;border-radius:15px;box-shadow:0 20px 80px #001f3088;padding:24px}
+.demo-register-head{display:flex;justify-content:space-between;gap:15px;align-items:start;margin-bottom:10px}
+.demo-register-head h2{margin:0 0 5px;font-size:22px}.demo-register-head p{font-size:12px;color:#597786;margin:0}
+.demo-register-x{border:0;background:#eef7fa;border-radius:8px;padding:7px 12px;font-size:18px}
+.demo-register-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.demo-register-fields label{display:grid;gap:5px;font-size:12px;font-weight:700;color:#294c5a}
+.demo-register-fields input,.demo-register-fields select,.demo-register-fields textarea{width:100%;border:1px solid #cbdfe5;border-radius:8px;padding:10px 11px;font:inherit;background:white;color:#123849;min-height:42px}
+.demo-register-fields input:focus,.demo-register-fields select:focus{outline:2px solid #00c8e7;outline-offset:1px}
+.demo-register-fields label.full{grid-column:1/-1}
+.demo-register-footer{display:flex;justify-content:flex-end;gap:9px;border-top:1px solid #e5eff2;padding-top:16px}
+.demo-register-footer button{padding:10px 17px;border-radius:8px;font-weight:750;border:1px solid #d6e7eb;background:white}
+.demo-register-footer button[type=submit]{background:#002233;color:white;border-color:#002233}
+.demo-register-error{font-size:12px;color:#9c3030;margin:3px 0}
+@media(max-width:600px){.demo-register-fields{grid-template-columns:1fr}.demo-register-dialog{padding:17px}.demo-register-fields label.full{grid-column:auto}}
 </style>
 </head>
 <body>
@@ -284,6 +312,102 @@ const fakeCustomers=[
 {id:'CLI-2838',name:'Juliana Almeida',email:'juliana.exemplo@email.com',type:'Pessoa física',orders:1,spent:249.90,status:'Ativo'},
 {id:'CLI-2837',name:'Fernanda Souza',email:'fernanda.exemplo@email.com',type:'Pessoa física',orders:0,spent:0,status:'Inativo'}
 ];
+
+/* Cadastros locais: persistem somente neste navegador; nunca chamam APIs */
+const REGISTER_PREFIX='totvs-admin-demo-v1:';
+const registerModels={
+'Produtos e SKUs':{label:'Produto',id:'sku',fields:[
+['sku','SKU','text',true],['name','Nome do produto','text',true],['category','Categoria','text',true],
+['stock','Estoque','number',true],['price','Preço (R$)','money',true],['status','Situação','select',true,['Ativo','Inativo','Estoque baixo','Esgotado']]]},
+'Clientes':{label:'Cliente',id:'id',fields:[
+['id','Código do cliente','text',true],['name','Nome / Razão social','text',true],['email','E-mail','email',true],
+['type','Tipo de pessoa','select',true,['Pessoa física','Pessoa jurídica']],['status','Situação','select',true,['Ativo','Inativo']]]},
+'Categorias':{label:'Categoria',id:'code',fields:[['code','Código','text',true],['name','Nome da categoria','text',true],['parent','Categoria pai','text',false],['status','Situação','select',true,['Ativa','Inativa']]]},
+'Contratos':{label:'Contrato B2B',id:'code',fields:[['code','Código do contrato','text',true],['name','Nome do contrato','text',true],['scope','Tipo de vínculo','select',true,['Canal B2B','Grupo econômico']],['origin','Origem da regra','text',true],['status','Situação','select',true,['Ativo','Inativo']]]},
+'Grupos econômicos':{label:'Grupo econômico',id:'code',fields:[['code','Código','text',true],['name','Nome do grupo','text',true],['company','Empresa matriz','text',true],['status','Situação','select',true,['Ativo','Inativo']]]},
+'Promoções':{label:'Promoção',id:'code',fields:[['code','Código','text',true],['name','Nome da promoção','text',true],['kind','Tipo','select',true,['Promoção automática','Cupom','Vale']],['start','Início da vigência','date',true],['end','Fim da vigência','date',true],['status','Situação','select',true,['Rascunho','Ativo','Inativo']]]},
+'Cotações e compras':{label:'Cotação B2B',id:'code',fields:[['code','Código da cotação','text',true],['company','Empresa compradora','text',true],['buyer','Comprador','text',true],['total','Valor estimado (R$)','money',true],['status','Situação','select',true,['Aguardando aprovação','Aprovada','Reprovada','Expirada']]]}
+};
+const registerExtras={};
+function safeRead(key,fallback){try{const v=JSON.parse(localStorage.getItem(REGISTER_PREFIX+key));return Array.isArray(v)?v:fallback}catch(e){return fallback}}
+function safeSave(key,rows){try{localStorage.setItem(REGISTER_PREFIX+key,JSON.stringify(rows));return true}catch(e){modal('Armazenamento indisponível','Não foi possível salvar no navegador. Verifique o modo privado ou o armazenamento local.');return false}}
+function loadRegisters(){
+ const products=safeRead('products',null),customers=safeRead('customers',null);
+ if(products)fakeProducts.splice(0,fakeProducts.length,...products);
+ if(customers)fakeCustomers.splice(0,fakeCustomers.length,...customers);
+ for(const k of Object.keys(registerModels)){if(k!=='Produtos e SKUs'&&k!=='Clientes')registerExtras[k]=safeRead(k,[])}
+}
+function registerRows(page){return page==='Produtos e SKUs'?fakeProducts:page==='Clientes'?fakeCustomers:registerExtras[page]||[]}
+function persistRegisters(page){return safeSave(page==='Produtos e SKUs'?'products':page==='Clientes'?'customers':page,registerRows(page))}
+function registerTools(page){return '<div class="demo-register-toolbar"><span class="demo-chip">Cadastros de demonstração · armazenados neste navegador</span><button class="ghost" data-register-reset="'+esc(page)+'">Restaurar exemplos / limpar cadastros locais</button></div>'}
+function renderRegisterList(page){
+ const model=registerModels[page],data=registerRows(page);
+ const term=moduleFilters.query.trim().toLocaleLowerCase('pt-BR');
+ const filtered=data.filter(x=>Object.values(x).some(v=>String(v).toLocaleLowerCase('pt-BR').includes(term)));
+ const headers=model.fields.filter(x=>x[0]!==model.id).slice(0,4);
+ return '<section class="panel module-panel"><div class="panel-title"><div><h2>'+esc(model.label)+'s cadastrados</h2><p>Preencha, consulte, edite e exclua registros fictícios neste navegador.</p></div><button class="primary" data-register-create="'+esc(page)+'">+ Cadastrar '+esc(model.label.toLowerCase())+'</button></div>'+
+ '<div class="demo-register-note">Nenhum dado é enviado à Linx Commerce ou às APIs. Exemplos fictícios e registros criados podem ser restaurados nesta página.</div>'+
+ '<div class="module-filters"><input aria-label="Buscar cadastros" type="search" id="moduleQuery" value="'+esc(moduleFilters.query)+'" placeholder="Buscar por código, nome ou situação..."><button class="icon-button" id="moduleClear">Limpar busca</button></div>'+
+ (filtered.length?'<div class="demo-register-table"><table><thead><tr><th>'+esc(model.fields[0][1])+'</th>'+headers.map(x=>'<th>'+esc(x[1])+'</th>').join('')+'<th>Ações</th></tr></thead><tbody>'+filtered.map(x=>'<tr><td><b>'+esc(x[model.id])+'</b></td>'+headers.map(f=>'<td>'+esc(f[2]==='money'?fmtMoney(Number(x[f[0]])||0):x[f[0]]??'—')+'</td>').join('')+'<td><div class="demo-register-actions"><button data-register-edit="'+esc(x[model.id])+'">Editar</button><button class="delete" data-register-delete="'+esc(x[model.id])+'">Excluir</button></div></td></tr>').join('')+'</tbody></table></div>':'<div class="module-empty">Nenhum registro encontrado. Use “Cadastrar” para criar um exemplo.</div>')+
+ registerTools(page)+'</section>';
+}
+function openRegister(page,key){
+ const model=registerModels[page];if(!model)return;
+ const data=registerRows(page),existing=key==null?null:data.find(x=>String(x[model.id])===String(key));
+ const backdrop=document.createElement('div');backdrop.className='demo-register-overlay';backdrop.setAttribute('role','presentation');
+ const fields=model.fields.map(([name,label,type,required,options])=>{
+ const val=existing?.[name]??'';
+ const common='name="'+esc(name)+'" id="register-'+esc(name)+'" '+(required?'required ':'')+(name===model.id&&existing?'readonly ':'');
+ const control=type==='select'?'<select '+common+'>'+options.map(x=>'<option value="'+esc(x)+'" '+(val===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>':
+ '<input '+common+' type="'+(type==='money'||type==='number'?'number':type)+'" '+(type==='money'?'step="0.01" min="0"':type==='number'?'step="1" min="0"':'maxlength="160"')+' value="'+esc(val)+'">';
+ return '<label for="register-'+esc(name)+'">'+esc(label)+(required?' *':'')+control+'</label>';
+ }).join('');
+ backdrop.innerHTML='<div class="demo-register-dialog" role="dialog" aria-modal="true" aria-labelledby="demoRegisterTitle"><div class="demo-register-head"><div><h2 id="demoRegisterTitle">'+(existing?'Editar ':'Cadastrar ')+esc(model.label.toLowerCase())+'</h2><p>Simulação local. Nenhum dado será enviado aos serviços da plataforma.</p></div><button type="button" class="demo-register-x" aria-label="Fechar cadastro" data-close-register>×</button></div><form id="demoRegisterForm"><div class="demo-register-fields">'+fields+'</div><div id="demoRegisterError" class="demo-register-error" role="alert"></div><div class="demo-register-footer"><button type="button" data-close-register>Cancelar</button><button type="submit">Salvar cadastro</button></div></form></div>';
+ document.body.appendChild(backdrop);
+ const first=backdrop.querySelector('[name]');first?.focus();
+ const oldScroll=document.body.style.overflow;document.body.style.overflow='hidden';
+ const close=()=>{backdrop.remove();document.body.style.overflow=oldScroll;document.removeEventListener('keydown',keys)};
+ const keys=e=>{if(e.key==='Escape'){e.preventDefault();close()}if(e.key==='Tab'){const nodes=[...backdrop.querySelectorAll('button,input,select')].filter(x=>!x.disabled);if(!nodes.length)return;const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};
+ document.addEventListener('keydown',keys);
+ backdrop.querySelectorAll('[data-close-register]').forEach(x=>x.addEventListener('click',close));
+ backdrop.addEventListener('click',e=>{if(e.target===backdrop)close()});
+ backdrop.querySelector('form').addEventListener('submit',e=>{
+  e.preventDefault();const form=e.currentTarget;if(!form.reportValidity())return;
+  const values=Object.fromEntries(new FormData(form).entries());
+  for(const field of model.fields)if(field[2]==='money'||field[2]==='number')values[field[0]]=Number(values[field[0]]);
+  for(const field of model.fields)if(field[2]==='text'||field[2]==='email')values[field[0]]=String(values[field[0]]||'').trim();
+  const id=String(values[model.id]||'').trim();
+  const error=backdrop.querySelector('#demoRegisterError');
+  if(!id){error.textContent='Informe um código válido.';return}
+  if(!existing&&data.some(x=>String(x[model.id]).toLocaleLowerCase('pt-BR')===id.toLocaleLowerCase('pt-BR'))){error.textContent='Já existe um cadastro com este código.';return}
+  if(page==='Promoções'&&values.end<values.start){error.textContent='O fim da vigência não pode ser anterior ao início.';return}
+  if(page==='Produtos e SKUs'&&!existing){values.status=values.stock===0?'Esgotado':values.status}
+  if(page==='Clientes'){values.orders=existing?.orders??0;values.spent=existing?.spent??0}
+  const before=existing?{...existing}:null;
+  if(existing)Object.assign(existing,values);else data.unshift(values);
+  if(!persistRegisters(page)){if(existing)Object.assign(existing,before);else data.shift();return}
+  close();moduleFilters.query='';renderActiveModule(page);toast((existing?'Cadastro atualizado':'Cadastro criado')+' apenas neste navegador.');
+ });
+}
+function confirmRegisterDelete(page,key){
+ const model=registerModels[page],data=registerRows(page);const idx=data.findIndex(x=>String(x[model.id])===String(key));if(idx<0)return;
+ if(!window.confirm('Excluir o registro fictício '+key+' deste navegador? Esta ação não afeta a plataforma.'))return;
+ const [removed]=data.splice(idx,1);if(!persistRegisters(page)){data.splice(idx,0,removed);return}
+ renderActiveModule(page);toast('Registro demonstrativo excluído.');
+}
+function resetRegister(page){
+ if(!window.confirm('Restaurar os exemplos e apagar os cadastros locais deste módulo?'))return;
+ const rows=registerRows(page);
+ const key=page==='Produtos e SKUs'?'products':page==='Clientes'?'customers':page;
+ try{localStorage.removeItem(REGISTER_PREFIX+key)}catch(e){}
+ if(page==='Produtos e SKUs')rows.splice(0,rows.length,...initialProducts.map(x=>({...x})));
+ else if(page==='Clientes')rows.splice(0,rows.length,...initialCustomers.map(x=>({...x})));
+ else rows.splice(0,rows.length);
+ moduleFilters={query:'',status:'Todos',channel:'Todos'};renderActiveModule(page);toast('Exemplos restaurados.');
+}
+
+const initialProducts=fakeProducts.map(x=>({...x}));
+const initialCustomers=fakeCustomers.map(x=>({...x}));
 const moduleMeta={
 'Backoffice':['Gestão de Pedidos','Acompanhe o processamento e o status dos pedidos em todos os canais.','Operação / Pedidos'],
 'Catálogo':['Gestão de Produtos','Administre produtos, SKUs, preços e disponibilidade.','Operação / Catálogo'],
@@ -435,7 +559,11 @@ function orderDetailBody(o){
 function openOrderDetail(key){selectedOrderId=key;selectedOrderTab='overview';renderActiveModule('Pedidos');window.scrollTo({top:0,behavior:'instant'})}
 
 function showDetail(type,key){let item=type==='order'?fakeOrders.find(x=>x.id===key):type==='product'?fakeProducts.find(x=>x.sku===key):fakeCustomers.find(x=>x.id===key);if(!item)return;const label=type==='order'?'Pedido #'+key:type==='product'?'Produto '+key:'Cliente '+key;const content=Object.entries(item).map(([k,v])=>'<div><small>'+esc(({id:'Código',client:'Cliente',total:'Valor',date:'Data',status:'Status',stock:'Estoque',sku:'SKU',price:'Preço',spent:'Valor comprado',orders:'Pedidos'}[k]||k))+'</small><b>'+esc(['total','price','spent'].includes(k)?fmtMoney(v):v)+'</b></div>').join('');document.getElementById('modalTitle').textContent=label;document.getElementById('modalText').innerHTML='<div class="module-detail-grid">'+content+'</div><p style="margin-top:14px">Dados fictícios — nenhuma operação foi executada.</p>';document.getElementById('modalLayer').classList.add('open')}
-function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent=titles?titles[1]:'Visualização conceitual e interativa do módulo '+page.toLowerCase()+'.';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.querySelectorAll('[data-domain-action]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.domainAction,'Ação demonstrativa: nenhum dado real foi consultado ou alterado.')));
+function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent=titles?titles[1]:'Visualização conceitual e interativa do módulo '+page.toLowerCase()+'.';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.querySelectorAll('[data-register-create]').forEach(b=>b.addEventListener('click',()=>openRegister(b.dataset.registerCreate)));
+target.querySelectorAll('[data-register-edit]').forEach(b=>b.addEventListener('click',()=>openRegister(page,b.dataset.registerEdit)));
+target.querySelectorAll('[data-register-delete]').forEach(b=>b.addEventListener('click',()=>confirmRegisterDelete(page,b.dataset.registerDelete)));
+target.querySelectorAll('[data-register-reset]').forEach(b=>b.addEventListener('click',()=>resetRegister(b.dataset.registerReset)));
+target.querySelectorAll('[data-domain-action]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.domainAction,'Ação demonstrativa: nenhum dado real foi consultado ou alterado.')));
 target.querySelectorAll('[data-catalogtab]').forEach(b=>b.addEventListener('click',()=>{catalogTab=b.dataset.catalogtab;renderActiveModule(page)}));
 target.querySelectorAll('[data-ordertab]').forEach(b=>b.addEventListener('click',()=>{orderView=b.dataset.ordertab;moduleFilters.status='Todos';renderActiveModule(page)}));
 target.querySelectorAll('[data-orderpreset]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.orderpreset;orderView='Todos';moduleFilters={query:'',status:p==='paid'?'Pago':'Todos',channel:p==='market'?'Mercado Livre':'Todos'};renderActiveModule(page)}));
@@ -447,6 +575,7 @@ target.querySelectorAll('[data-detailaction]').forEach(b=>b.addEventListener('cl
 target.querySelectorAll('[data-product]').forEach(b=>b.addEventListener('click',()=>showDetail('product',b.dataset.product)));target.querySelectorAll('[data-customer]').forEach(b=>b.addEventListener('click',()=>showDetail('customer',b.dataset.customer)));target.querySelectorAll('[data-report]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.report,'Análise demonstrativa. Os dados reais dependerão de APIs e eventos de pedido.')));target.querySelectorAll('[data-feature]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.feature,'Funcionalidade em exploração UX/UI.')));target.querySelectorAll('[data-smart]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.smart)));target.querySelectorAll('[data-smartaction]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.smartaction,'Ação simulada. Nenhuma configuração foi salva, visualizada ou publicada na loja.')));target.querySelector('#moduleNew')?.addEventListener('click',()=>modal('Nova ação — '+page,'Este comando é demonstrativo. Nenhum registro será criado nem alterado.'));target.querySelector('#moduleExplore')?.addEventListener('click',()=>modal('Explorar '+page,'Próximo passo: definir a jornada e as regras de negócio deste módulo.'))}
 function navigate(page){selectedOrderId=null;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===page));const current=document.querySelector('[data-page].active');if(current?.classList.contains('nav-child')){const folder=current.closest('.nav-folder');document.querySelectorAll('[data-folder]').forEach(b=>{const isCurrent=b===folder?.querySelector('[data-folder]');b.setAttribute('aria-expanded',String(isCurrent));b.nextElementSibling.hidden=!isCurrent;});}moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);window.scrollTo({top:0,behavior:'instant'})}
 
+loadRegisters();
 sync();
 })();
 </script>
