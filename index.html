@@ -79,11 +79,30 @@
 .saved-view-row button{border:1px solid #d9e8ef;border-radius:20px;background:#fff;padding:6px 10px;font-size:11px;color:#23657a;cursor:pointer}
 .saved-view-row button:hover{background:#e8faff}.saved-view-row #ordersExport{margin-left:auto;border-radius:8px;font-weight:750}
 .order-check{accent-color:#008ca7}@media(max-width:1150px){.attention-grid{grid-template-columns:1fr}}@media(max-width:650px){.attention-grid{grid-template-columns:1fr}.saved-view-row #ordersExport{margin-left:0}}
+
+/* Menu lateral retrátil — desktop */
+.shell{transition:grid-template-columns .22s ease}
+.sidebar{transition:width .22s ease}
+.sidebar-toggle{display:flex;align-items:center;gap:12px;width:100%;border:1px solid #ffffff23;border-radius:9px;background:#ffffff0b;color:#d6e9ef;padding:10px 12px;margin:0 0 10px;cursor:pointer;font-size:12px;font-weight:700;text-align:left;min-height:40px}
+.sidebar-toggle:hover{background:#ffffff1d}.sidebar-toggle:focus-visible{outline:2px solid #00dbff;outline-offset:2px}
+.sidebar-toggle span:first-child{font-size:19px;width:18px;text-align:center}
+.shell.sidebar-collapsed{grid-template-columns:70px minmax(0,1fr)}
+.sidebar-collapsed .sidebar{width:70px;padding-left:8px;padding-right:8px}
+.sidebar-collapsed .brand{justify-content:center;padding:0 0 16px}
+.sidebar-collapsed .brand-type,.sidebar-collapsed .nav-label,.sidebar-collapsed .nav-text,.sidebar-collapsed .nav-caret,.sidebar-collapsed .nav-children,.sidebar-collapsed .sandbox-note,.sidebar-collapsed .toggle-label{display:none!important}
+.sidebar-collapsed .sidebar-toggle{justify-content:center;padding:9px 0}
+.sidebar-collapsed .nav-item{justify-content:center;padding:11px 0;min-height:43px}
+.sidebar-collapsed .nav-item .ico{width:auto;margin:0;font-size:18px}
+.sidebar-collapsed .nav-folder:has(.nav-child.active)>.nav-parent{background:#14556b;color:#fff}
+.sidebar-collapsed .nav-group{padding:3px 0;border:0}
+.sidebar-collapsed .nav-bottom{padding-top:10px}
+@media(max-width:820px){.shell.sidebar-collapsed,.shell{grid-template-columns:66px minmax(0,1fr)}.sidebar-collapsed .sidebar,.sidebar{width:66px}.sidebar-toggle{justify-content:center;padding:9px 0}.sidebar-toggle .toggle-label{display:none}.nav-children{display:none!important}}
+@media(prefers-reduced-motion:reduce){.shell,.sidebar{transition:none}}
 </style>
 </head>
 <body>
-<div class="shell">
-<aside class="sidebar" aria-label="Navegação principal"><div class="brand"><div class="brand-mark" aria-hidden="true">T</div><div class="brand-type"><b>TOTVS</b><small>COMMERCE</small></div></div><div class="nav-label">Plataforma</div>
+<div class="shell" id="appShell">
+<aside class="sidebar" aria-label="Navegação principal"><div class="brand"><div class="brand-mark" aria-hidden="true">T</div><div class="brand-type"><b>TOTVS</b><small>COMMERCE</small></div></div><button id="sidebarToggle" class="sidebar-toggle" type="button" aria-controls="nav" aria-expanded="true" aria-label="Recolher menu lateral" title="Recolher menu lateral"><span aria-hidden="true">☰</span><span class="toggle-label">Recolher menu</span></button>
 <div id="nav"></div><div class="nav-bottom"><button class="nav-item" data-page="Ajuda"><span class="ico">ⓘ</span><span class="nav-text">Central de ajuda</span></button><div class="sandbox-note">Conceito UX/UI · dados simulados</div></div></aside>
 <div class="workspace"><header class="topbar"><div class="top-left"><div class="breadcrumb">TOTVS Commerce <span style="margin:0 7px">/</span> <b id="crumb">Área de trabalho</b></div></div><div class="top-search"><span>⌕</span><input id="globalSearch" aria-label="Buscar na plataforma" placeholder="Pesquisar na plataforma..."><span style="color:#94a8b1;font-size:11px">Ctrl K</span></div><div class="top-right"><span class="version"><i></i> Protótipo Admin vNext</span><button class="icon-button" id="notifications" title="Notificações">♧</button><div class="avatar" title="Usuário demonstração">PA</div></div></header>
 <main class="content"><div class="heading"><div><div class="eyebrow">Visão geral da operação</div><h1 id="pageTitle">Área de trabalho</h1><div class="sub" id="pageSub">Acompanhe os resultados e identifique onde seu e-commerce mais vende.</div></div><span class="demo-chip">● Ambiente demonstrativo</span></div>
@@ -130,13 +149,28 @@ function navMarkup(){
 return menuGroups.map(group=>'<div class="nav-group"><div class="nav-label">'+group.title+'</div>'+
 group.items.map(item=>{
 const children=item.children||[];
-if(!children.length)return '<button class="nav-item active" data-page="'+item.route+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span></button>';
-return '<div class="nav-folder"><button class="nav-item nav-parent" type="button" aria-expanded="false" data-folder="'+item.name+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span><span class="nav-caret">⌄</span></button><div class="nav-children" hidden>'+
+if(!children.length)return '<button class="nav-item active" title="'+item.name+'" data-page="'+item.route+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span></button>';
+return '<div class="nav-folder"><button class="nav-item nav-parent" type="button" title="'+item.name+'" aria-expanded="false" data-folder="'+item.name+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span><span class="nav-caret">⌄</span></button><div class="nav-children" hidden>'+
 children.map(([name,route])=>'<button class="nav-child" type="button" data-page="'+route+'">'+name+'</button>').join('')+
 '</div></div>';
 }).join('')+'</div>').join('');
 }
 nav.innerHTML=navMarkup();
+const shell=document.getElementById('appShell');
+const toggle=document.getElementById('sidebarToggle');
+function setSidebarCollapsed(collapsed){
+ shell.classList.toggle('sidebar-collapsed',collapsed);
+ toggle.setAttribute('aria-expanded',String(!collapsed));
+ toggle.setAttribute('aria-label',collapsed?'Expandir menu lateral':'Recolher menu lateral');
+ toggle.title=collapsed?'Expandir menu lateral':'Recolher menu lateral';
+ toggle.querySelector('.toggle-label').textContent=collapsed?'Expandir menu':'Recolher menu';
+ try{localStorage.setItem('totvs-commerce-sidebar-collapsed',collapsed?'1':'0')}catch(e){}
+}
+let initialCollapsed=false;
+try{initialCollapsed=localStorage.getItem('totvs-commerce-sidebar-collapsed')==='1'}catch(e){}
+setSidebarCollapsed(initialCollapsed);
+toggle.addEventListener('click',()=>setSidebarCollapsed(!shell.classList.contains('sidebar-collapsed')));
+
 
 const state={mode:'captados',period:'today',channel:'all',geo:'state',channelMetric:'revenue'};
 const data=[{"uf":"SP","state":"São Paulo","city":"São Paulo","x":290.01,"y":285.95,"val":6420.8},{"uf":"RJ","state":"Rio de Janeiro","city":"Rio de Janeiro","x":322.6,"y":280.1,"val":2310.4},{"uf":"MG","state":"Minas Gerais","city":"Belo Horizonte","x":315.57,"y":253.28,"val":1640.9},{"uf":"PR","state":"Paraná","city":"Curitiba","x":264.93,"y":302.87,"val":1220.5},{"uf":"SC","state":"Santa Catarina","city":"Florianópolis","x":271.78,"y":322.31,"val":980.3},{"uf":"RS","state":"Rio Grande do Sul","city":"Porto Alegre","x":246.32,"y":344.27,"val":860.2},{"uf":"BA","state":"Bahia","city":"Salvador","x":367.25,"y":190.73,"val":550.9},{"uf":"GO","state":"Goiás","city":"Goiânia","x":265.12,"y":224.12,"val":420.7},{"uf":"PE","state":"Pernambuco","city":"Recife","x":401.64,"y":146.45,"val":250.3},{"uf":"CE","state":"Ceará","city":"Fortaleza","x":366.87,"y":107.48,"val":165.5},{"uf":"AM","state":"Amazonas","city":"Manaus","x":162.81,"y":101.9,"val":140},{"uf":"PA","state":"Pará","city":"Belém","x":272.34,"y":87.14,"val":190},{"uf":"MA","state":"Maranhão","city":"São Luís","x":312.15,"y":96.77,"val":125},{"uf":"MT","state":"Mato Grosso","city":"Cuiabá","x":200.05,"y":214.4,"val":100},{"uf":"MS","state":"Mato Grosso do Sul","city":"Campo Grande","x":214.11,"y":258.14,"val":98},{"uf":"ES","state":"Espírito Santo","city":"Vitória","x":349.77,"y":256.88,"val":145},{"uf":"PB","state":"Paraíba","city":"João Pessoa","x":401.83,"y":138.08,"val":62},{"uf":"RN","state":"Rio Grande do Norte","city":"Natal","x":398.5,"y":126.11,"val":61},{"uf":"PI","state":"Piauí","city":"Teresina","x":326.4,"y":119.81,"val":50},{"uf":"AL","state":"Alagoas","city":"Maceió","x":393.47,"y":160.85,"val":53},{"uf":"SE","state":"Sergipe","city":"Aracaju","x":380.83,"y":172.19,"val":44},{"uf":"TO","state":"Tocantins","city":"Palmas","x":273.87,"y":165.62,"val":35},{"uf":"RO","state":"Rondônia","city":"Porto Velho","x":125.95,"y":152.84,"val":48},{"uf":"AC","state":"Acre","city":"Rio Branco","x":88.8,"y":163.73,"val":27},{"uf":"AP","state":"Amapá","city":"Macapá","x":247.93,"y":73.64,"val":30},{"uf":"RR","state":"Roraima","city":"Boa Vista","x":156.63,"y":48.62,"val":28},{"uf":"DF","state":"Distrito Federal","city":"Brasília","x":278.14,"y":216.11,"val":180}];
@@ -186,6 +220,7 @@ document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',(
 document.querySelectorAll('[data-quick]').forEach(b=>b.addEventListener('click',()=>{const route=b.dataset.quick;if(route==='Pedidos'){orderView='Todos';moduleFilters={query:'',status:b.dataset.quickstatus||'Todos',channel:'Todos'};}navigate(route);if(route==='Pedidos'&&b.dataset.quickstatus){moduleFilters.status=b.dataset.quickstatus;renderActiveModule(route)}}));
 
 document.querySelectorAll('[data-folder]').forEach(b=>b.addEventListener('click',()=>{
+if(document.getElementById('appShell').classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);
 const open=b.getAttribute('aria-expanded')==='true';
 document.querySelectorAll('[data-folder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true;});
 b.setAttribute('aria-expanded',String(!open));b.nextElementSibling.hidden=open;
