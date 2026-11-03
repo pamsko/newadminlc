@@ -35,13 +35,13 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <div class="layout">
 <aside aria-label="Índice da documentação"><div class="logo">TOTVS<small>COMMERCE · ADMIN</small></div><div class="kicker">Documentação</div>
 <nav id="toc">
-<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#referencias">Referências</a>
+<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#referencias">Referências</a>
 </nav><a class="return" href="./index.html">← Voltar ao Admin</a>
 </aside>
 <main>
 <div class="topbar"><div class="crumb">TOTVS Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
 <div class="body">
-<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.0</span><span>Dados fictícios</span></div></header>
+<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.1</span><span>Dados fictícios</span></div></header>
 <div class="notice"><b>Natureza desta documentação:</b> registra a versão demonstrativa do projeto <code>newadminlc</code> e apresenta sua direção de produto. Não é documentação oficial da TOTVS, não substitui a documentação funcional da Linx Commerce e não comprova que todas as funcionalidades do Admin legado já foram implementadas.</div>
 <section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o TOTVS Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
 <div class="grid"><article class="card"><div class="metric">01</div><h3>Encontrar</h3><p>Reduzir esforço de navegação com grupos orientados a tarefas, nomes claros e menu retrátil.</p></article><article class="card"><div class="metric">02</div><h3>Entender</h3><p>Apresentar indicadores e estados com hierarquia visual, contexto e linguagem consistente.</p></article><article class="card"><div class="metric">03</div><h3>Agir</h3><p>Conectar alertas e consultas às jornadas operacionais, com filtros, detalhes e atalhos.</p></article></div>
@@ -109,12 +109,33 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <h3>Recursos técnicos presentes</h3><ul><li>Menu e telas construídos dinamicamente via JavaScript; interação sem recarregamento para os módulos internos.</li><li>Gráficos em SVG e distribuição por canal com CSS; mapa do Brasil em SVG, com contorno e pontos de UFs.</li><li>Persistência local da preferência de menu via <code>localStorage</code>.</li><li>Exportação demonstrativa de pedidos em CSV no navegador.</li><li>CSS responsivo e alguns recursos de teclado, foco e descrições acessíveis.</li></ul>
 <h3>O que não existe nesta versão</h3><p>Não existem banco de dados conectado, servidor de aplicação, serviços de autenticação, APIs da Linx Commerce/TOTVS, operações transacionais, envio de dados para ERP, telemetria de produção ou sistema de design oficial integrado. O mapa não é um coroplético por limites das 27 UFs; mostra pontos nas capitais com valores simulados.</p>
 <h3>Arquitetura futura sugerida — não implementada</h3><div class="diagram"><span>Frontend modular (React + TypeScript)</span><i>→</i><span>Camada BFF/API</span><i>→</i><span>APIs existentes do Commerce</span></div><p>Uma futura migração para frontend componentizado pode facilitar testes, versionamento, observabilidade e manutenção, mas precisa ser decidida conforme a arquitetura real do produto, governança e contratos de APIs. Não presumir troca de backend.</p></section>
-<section id="dados"><h2>08. Dados, integrações e segurança</h2><p><b>Os números, clientes, produtos, pedidos, canais e status são fictícios.</b> Os filtros do dashboard operam sobre dados simulados e os formulários de módulos conceituais não alteram ambientes reais. Mesmo quando há botões como “Salvar” ou “Publicar”, a interação é demonstrativa.</p>
+
+<section id="apis"><h2>08. APIs do Admin e webhooks</h2>
+<p>As referências abaixo foram fornecidas para orientar a evolução do novo Admin e devem ser tratadas como fontes de consulta para contratos existentes. <b>Os conteúdos não puderam ser inspecionados externamente nesta revisão</b>; portanto, métodos, rotas, esquemas de autenticação e payloads específicos não foram validados.</p>
+<div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+<article class="card"><h3>Portal de APIs do Commerce</h3><p>Referência para identificar operações e contratos disponíveis que poderão apoiar consultas e ações dos módulos administrativos.</p><p><a href="https://projetos.layer.core.dcg.com.br/portal/" rel="noopener noreferrer" target="_blank">Acessar portal de APIs ↗</a></p><div class="tags"><span class="tag warn">Acesso/contratos a validar</span></div></article>
+<article class="card"><h3>Documentação de webhooks</h3><p>Referência para eventos e integrações assíncronas. Verificar eventos disponíveis, inscrição, segurança, entregas e reprocessamento na especificação vigente.</p><p><a href="https://projetos.layer.core.dcg.com.br/api/v3/webhooks/docs" rel="noopener noreferrer" target="_blank">Acessar documentação de webhooks ↗</a></p><div class="tags"><span class="tag warn">Eventos/payloads a validar</span></div></article>
+</div>
+<h3>Diretriz de integração com o novo Admin</h3>
+<div class="diagram"><span>Frontend do Admin</span><i>→</i><span>Camada de integração autorizada (a avaliar)</span><i>→</i><span>APIs existentes</span></div>
+<p>Uma camada intermediária pode concentrar autenticação, autorização, adaptação de contratos, tratamento de erros, telemetria e políticas de acesso, se compatível com a arquitetura da plataforma. <b>Esta é uma recomendação arquitetural, não uma descrição confirmada do sistema atual.</b></p>
+<table><thead><tr><th>Dimensão</th><th>O que validar com Engenharia e documentação</th></tr></thead><tbody>
+<tr><td>Contrato</td><td>Versões de API, rotas, métodos, esquemas, paginação, filtros e retrocompatibilidade.</td></tr>
+<tr><td>Autenticação e autorização</td><td>Modelo de credenciais, escopos, permissões, contexto de tenant/canal e expiração.</td></tr>
+<tr><td>Resiliência</td><td>Timeout, rate limit, retry com backoff, idempotência e contingência por operação.</td></tr>
+<tr><td>Webhooks</td><td>Eventos, assinatura/autenticidade, deduplicação, ordenação, reentrega, falhas e observabilidade.</td></tr>
+<tr><td>Experiência</td><td>Estados de carregamento, sucesso, erro, atualização de dados e consistência eventual.</td></tr>
+<tr><td>Segurança</td><td>Segredos exclusivamente no servidor, proteção de dados e auditoria de ações sensíveis.</td></tr>
+<tr><td>Homologação</td><td>Ambiente de testes, massa sintética, permissões, testes contratuais e monitoramento pós-rollout.</td></tr>
+</tbody></table>
+<div class="callout"><b>Limite do protótipo:</b> hoje não há integração direta com esses serviços. Não colocar tokens, chaves privadas nem credenciais no HTML publicado no Netlify. Webhooks normalmente exigem um endpoint receptor de backend, não apenas páginas estáticas.</div>
+</section>
+<section id="dados"><h2>09. Dados, integrações e segurança</h2><p><b>Os números, clientes, produtos, pedidos, canais e status são fictícios.</b> Os filtros do dashboard operam sobre dados simulados e os formulários de módulos conceituais não alteram ambientes reais. Mesmo quando há botões como “Salvar” ou “Publicar”, a interação é demonstrativa.</p>
 <h3>Cuidados antes de produção</h3><ul><li>Autenticação e autorização por perfil/permissão em cada módulo e ação.</li><li>Integrações com APIs conforme contratos existentes, tratamento de erros, idempotência e rastreabilidade.</li><li>Separação por tenant, canal e unidade de negócio, sem exposição cruzada de informações.</li><li>Auditoria de eventos, logs, métricas, alertas e controle de ações sensíveis.</li><li>Tratamento de dados pessoais, LGPD, mascaramento e políticas de sessão.</li><li>Rollout por etapas, feature flags, retrocompatibilidade e validação com usuários.</li></ul></section>
-<section id="qualidade"><h2>09. Qualidade, acessibilidade e responsividade</h2>
+<section id="qualidade"><h2>10. Qualidade, acessibilidade e responsividade</h2>
 <p>O projeto considera hierarquia de títulos, legibilidade, foco visível, rótulos e comportamento responsivo em vários componentes. Isso <b>não equivale a uma auditoria de acessibilidade aprovada</b> e não garante atendimento completo a WCAG.</p>
 <p>Antes de homologar, devem ser realizados testes de teclado (inclusive menus recolhidos), leitor de tela, contraste, zoom em 200%, navegação mobile, tabelas extensas, estados vazios, erros de rede, performance e fluxos por perfil. Em especial, a navegação compacta mobile e o uso de ícones merecem validação com usuários.</p></section>
-<section id="roteiro"><h2>10. Roteiro sugerido para apresentação</h2><p>Uma demonstração para Produto, UX, Engenharia ou liderança pode seguir os passos abaixo, sem confundir protótipo com versão pronta para produção.</p>
+<section id="roteiro"><h2>11. Roteiro sugerido para apresentação</h2><p>Uma demonstração para Produto, UX, Engenharia ou liderança pode seguir os passos abaixo, sem confundir protótipo com versão pronta para produção.</p>
 <div class="demo-step"><div class="number">1</div><div><h3>Contexto e oportunidade</h3><p>Preservar riqueza funcional do Admin existente, melhorando a experiência e reduzindo fricções de navegação.</p></div></div>
 <div class="demo-step"><div class="number">2</div><div><h3>Nova arquitetura de informação</h3><p>Mostrar os grupos do menu, o modo retrátil e como os submenus organizam funcionalidades sem removê-las.</p></div></div>
 <div class="demo-step"><div class="number">3</div><div><h3>Área de Trabalho orientada à ação</h3><p>Demonstrar indicadores de atenção, KPIs, gráfico, mapa do Brasil, distribuição por canal e banners contextuais.</p></div></div>
@@ -122,7 +143,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <div class="demo-step"><div class="number">5</div><div><h3>Especialização: Smart Finder</h3><p>Explicar a separação entre busca administrativa e busca de produtos, com subáreas configuráveis.</p></div></div>
 <div class="demo-step"><div class="number">6</div><div><h3>Viabilidade e próximos passos</h3><p>Separar código demonstrativo de integração real, apresentar riscos, prioridades e plano de validação.</p></div></div>
 <a class="action" href="./index.html">Abrir Admin para demonstração</a></section>
-<section id="evolucao"><h2>11. Roadmap proposto e métricas</h2>
+<section id="evolucao"><h2>12. Roadmap proposto e métricas</h2>
 <table><thead><tr><th>Etapa</th><th>Entrega desejada</th><th>Critério de validação</th></tr></thead><tbody>
 <tr><td>P0</td><td>Inventário/matriz de equivalência funcional do Admin legado</td><td>100% dos módulos e ações rastreados, sem remoções não aprovadas</td></tr>
 <tr><td>P0</td><td>Testes de navegação e arquitetura de informação</td><td>Menor tempo para localizar tarefas frequentes</td></tr>
@@ -132,10 +153,12 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <tr><td>P2</td><td>Preferências, visões salvas, personalização e IA assistiva</td><td>Adoção, satisfação e ganho operacional medidos</td></tr>
 </tbody></table>
 <h3>Indicadores sugeridos</h3><p>Tempo para localizar funcionalidades; tempo para concluir tarefas; taxa de conclusão sem erro; uso de busca e atalhos; número de passos/clicks por jornada; satisfação por tarefa; incidentes de suporte associados à navegação; adoção dos módulos renovados. São propostas de medição, sem baseline coletada nesta versão.</p></section>
-<section id="referencias"><h2>12. Referências e governança</h2><ul>
+<section id="referencias"><h2>13. Referências e governança</h2><ul>
 <li><a target="_blank" rel="noopener noreferrer" href="https://marca.totvs.com/identidade-visual/">Identidade visual TOTVS</a> — orientação de marca.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=486619812">Documentação Linx Commerce</a> — referência funcional do produto existente.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/Smart+Finder">Smart Finder</a> — referência de busca e descoberta de produtos.</li>
+<li><a target="_blank" rel="noopener noreferrer" href="https://projetos.layer.core.dcg.com.br/portal/">Portal de APIs do Commerce</a> — referência técnica fornecida; conteúdo pendente de validação.</li>
+<li><a target="_blank" rel="noopener noreferrer" href="https://projetos.layer.core.dcg.com.br/api/v3/webhooks/docs">Documentação de webhooks</a> — referência técnica fornecida; conteúdo pendente de validação.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://github.com/pamsko/newadminlc">Repositório newadminlc</a> — histórico das alterações do protótipo.</li>
 </ul><div class="callout"><b>Atualização documental:</b> esta página deve acompanhar mudanças de arquitetura, navegação, design system e escopo. Recomenda-se manter data, versão e decisões de produto revisadas a cada marco relevante.</div></section>
 <div class="footer">TOTVS Commerce Admin · Documentação do protótipo conceitual · Conteúdo demonstrativo e não oficial · 03/11/2026</div>
