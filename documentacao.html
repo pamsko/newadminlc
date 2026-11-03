@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Documentação de produto, UX/UI, arquitetura e apresentação do protótipo TOTVS Commerce Admin.">
+<title>Documentação do Admin | TOTVS Commerce</title>
+<style>
+:root{--navy:#002233;--navy2:#06384a;--cyan:#00dbff;--cyanSoft:#e4faff;--orange:#ff8900;--purple:#a44dff;--green:#00896d;--bg:#f4f8fa;--line:#dce9ee;--text:#123041;--muted:#5e7481;--shadow:0 7px 24px #0022330a}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:80px}body{margin:0;background:var(--bg);font:14px/1.65 Inter,"Segoe UI",Arial,sans-serif;color:var(--text)}a{color:#007796}a:focus-visible,button:focus-visible{outline:3px solid #00bded;outline-offset:3px}button{font:inherit;cursor:pointer}.layout{display:grid;grid-template-columns:255px minmax(0,1fr);min-height:100vh}
+aside{background:#002233;color:#d5e9ee;padding:25px 17px;position:sticky;top:0;height:100vh;overflow:auto}aside .logo{font-size:21px;letter-spacing:.065em;color:white;font-weight:900;line-height:1.08}aside .logo small{display:block;color:var(--cyan);font-size:11px;letter-spacing:.13em;margin-top:5px}aside .kicker{margin:29px 10px 10px;color:#8eb4bf;font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
+aside nav a{display:block;color:#d6e8ed;text-decoration:none;padding:9px 11px;border-radius:9px;font-size:12px}aside nav a:hover,aside nav a.active{background:#164d60;color:white}aside .return{display:block;color:var(--cyan);text-decoration:none;padding:11px;border:1px solid #376676;border-radius:10px;margin-top:18px;font-size:12px;font-weight:700}
+main{min-width:0}.topbar{display:flex;gap:12px;justify-content:space-between;align-items:center;background:white;border-bottom:1px solid var(--line);padding:15px min(5vw,54px);position:sticky;top:0;z-index:2}.topbar .crumb{font-size:12px;color:var(--muted)}.topbar a{text-decoration:none;font-weight:750;font-size:12px}.body{max-width:1240px;padding:34px min(5vw,54px) 65px;margin:auto}
+.hero{border-radius:19px;padding:36px;background:linear-gradient(125deg,#002233,#054c64);color:white;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-70px;top:-120px;width:360px;height:360px;border:45px solid #00dbff1c;transform:rotate(30deg);border-radius:80px;pointer-events:none}
+.eyebrow{font-size:11px;color:#27daf7;font-weight:850;letter-spacing:.11em;text-transform:uppercase}
+.hero h1{font-size:clamp(27px,3vw,43px);letter-spacing:-.04em;line-height:1.17;margin:13px 0}.hero p{color:#d0e9f1;max-width:700px;font-size:14px;margin-bottom:0}
+.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:23px}.meta span{padding:5px 10px;border:1px solid #ffffff45;border-radius:30px;color:#e7f9fd;font-size:11px}
+.notice{background:#edfbfd;border:1px solid #b9eaf4;border-radius:12px;padding:16px 18px;margin:20px 0;font-size:12px}
+section{margin-top:32px;scroll-margin-top:95px}section h2{font-size:22px;line-height:1.25;letter-spacing:-.025em;margin:0 0 10px}section h3{font-size:15px;margin:19px 0 8px}section p{margin:8px 0 12px;color:#49616f}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.card{border:1px solid var(--line);background:#fff;border-radius:13px;padding:18px;box-shadow:var(--shadow)}.card h3{margin:4px 0 8px}.card p{font-size:12px;margin:0}.metric{font-size:27px;color:#007e9d;font-weight:850}
+.tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.tag{font-size:11px;background:#ecf8fa;color:#006d87;padding:4px 8px;border-radius:20px;font-weight:700}.tag.warn{background:#fff3df;color:#875500}.tag.gray{background:#edf1f3;color:#526a79}
+table{width:100%;border-collapse:collapse;font-size:12px;background:white;border:1px solid var(--line);border-radius:12px;overflow:hidden}th{text-align:left;color:#527182;font-size:11px;background:#ebf5f8}td,th{padding:11px 13px;border-bottom:1px solid #e8f0f3;vertical-align:top}tr:last-child td{border-bottom:0}ul,ol{padding-left:23px}li{margin:6px 0}
+.palette{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.swatch{border:1px solid #e2e9ee;border-radius:12px;overflow:hidden;background:white}.swatch .color{height:79px}.swatch .label{padding:10px;font-size:11px}.swatch strong{display:block}.swatch code{color:#55717c}
+.diagram{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:16px 0}.diagram span{padding:13px 15px;border:1px solid #badde8;background:#f6fcfe;border-radius:9px;font-size:12px;font-weight:800}.diagram i{font-style:normal;color:#498598}
+.callout{padding:15px 18px;background:#fff;border-left:4px solid #00adcb;border-radius:0 9px 9px 0;font-size:12px}
+.demo-step{display:grid;grid-template-columns:36px 1fr;gap:13px;padding:13px 0;border-bottom:1px solid var(--line)}.demo-step .number{height:31px;width:31px;border-radius:10px;background:#e3f8fd;color:#006e89;display:grid;place-items:center;font-weight:850}.demo-step h3{margin:0 0 3px}.demo-step p{font-size:12px;margin:0}
+.footer{font-size:11px;color:#718894;padding:20px 0;border-top:1px solid var(--line);margin-top:40px}.action{display:inline-block;text-decoration:none;background:var(--navy);color:#fff;border-radius:9px;padding:10px 16px;font-weight:800;font-size:12px;margin-top:8px}.action:hover{background:#105269}
+@media(max-width:1000px){.grid{grid-template-columns:1fr 1fr}.palette{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.layout{grid-template-columns:1fr}aside{position:relative;height:auto;padding:16px}aside nav{display:flex;overflow:auto;gap:3px}aside .kicker{display:none}aside nav a{white-space:nowrap}aside .return{margin:9px 0 0}.topbar{padding:13px 18px}.body{padding:20px 16px 45px}.hero{padding:26px 22px}.grid{grid-template-columns:1fr}.palette{grid-template-columns:repeat(2,1fr)}}
+@media print{.layout{display:block}aside,.topbar,.action{display:none!important}.body{max-width:none;padding:0}.hero{print-color-adjust:exact;-webkit-print-color-adjust:exact}section{break-inside:avoid}a{color:#00485f}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside aria-label="Índice da documentação"><div class="logo">TOTVS<small>COMMERCE · ADMIN</small></div><div class="kicker">Documentação</div>
+<nav id="toc">
+<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#referencias">Referências</a>
+</nav><a class="return" href="./index.html">← Voltar ao Admin</a>
+</aside>
+<main>
+<div class="topbar"><div class="crumb">TOTVS Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
+<div class="body">
+<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.0</span><span>Dados fictícios</span></div></header>
+<div class="notice"><b>Natureza desta documentação:</b> registra a versão demonstrativa do projeto <code>newadminlc</code> e apresenta sua direção de produto. Não é documentação oficial da TOTVS, não substitui a documentação funcional da Linx Commerce e não comprova que todas as funcionalidades do Admin legado já foram implementadas.</div>
+<section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o TOTVS Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
+<div class="grid"><article class="card"><div class="metric">01</div><h3>Encontrar</h3><p>Reduzir esforço de navegação com grupos orientados a tarefas, nomes claros e menu retrátil.</p></article><article class="card"><div class="metric">02</div><h3>Entender</h3><p>Apresentar indicadores e estados com hierarquia visual, contexto e linguagem consistente.</p></article><article class="card"><div class="metric">03</div><h3>Agir</h3><p>Conectar alertas e consultas às jornadas operacionais, com filtros, detalhes e atalhos.</p></article></div>
+<h3>Objetivos de experiência</h3><p>Menos etapas para localizar uma função; maior consistência entre listagens; redução de dúvidas sobre pedidos e operações; melhor aproveitamento da área útil; e evolução segura com equivalência funcional e retrocompatibilidade.</p></section>
+<section id="escopo"><h2>02. Escopo e cobertura funcional</h2><p>Os itens abaixo distinguem telas efetivamente demonstradas, navegação conceitual e integrações ainda não disponíveis.</p>
+<table><thead><tr><th>Domínio</th><th>O que está no protótipo</th><th>Situação</th></tr></thead><tbody>
+<tr><td>Área de Trabalho</td><td>KPIs, evolução de pedidos, mapa do Brasil com pontos por UF, ranking e distribuição por canal; banners apenas na Home</td><td>Interativo com dados simulados</td></tr>
+<tr><td>Pedidos</td><td>Listagem, busca, filtros, abas por status, visões rápidas, CSV e detalhe demonstrativo</td><td>Interativo com dados simulados</td></tr>
+<tr><td>Catálogo</td><td>Lista de produtos/SKUs, estoque, preços, filtros e consulta demonstrativa</td><td>Interativo com dados simulados</td></tr>
+<tr><td>Clientes</td><td>Lista de clientes PF/PJ, buscas e detalhes fictícios</td><td>Interativo com dados simulados</td></tr>
+<tr><td>Relatórios / Financeiro / Canais</td><td>Indicadores e painéis resumidos demonstrativos</td><td>Protótipo parcial</td></tr>
+<tr><td>Smart Finder</td><td>Acesso às configurações básicas, avançadas, por grupo e sinônimos</td><td>Telas conceituais; operações simuladas</td></tr>
+<tr><td>Demais submenus</td><td>Entradas preservadas na arquitetura de navegação para detalhamento futuro</td><td>Navegação conceitual</td></tr>
+<tr><td>APIs, autenticação, permissões e dados reais</td><td>Não integrados</td><td>Fora do escopo atual</td></tr>
+</tbody></table>
+<div class="callout"><b>Regra de preservação funcional:</b> antes de migrar um módulo real, construir uma matriz de equivalência com caminho antigo, novo caminho, ações, consultas, perfis de acesso, integrações, estados, exceções e critérios de validação. Uma entrada de menu no protótipo não representa uma funcionalidade de produção concluída.</div></section>
+<section id="navegacao"><h2>03. Arquitetura de informação e navegação</h2>
+<p>O menu organiza funções em áreas mais fáceis de reconhecer: <b>Início, Operação, Crescimento e Experiência, Gestão e Plataforma</b>. Esse agrupamento é uma proposta de UX, não uma remoção dos módulos antigos.</p>
+<table><thead><tr><th>Área</th><th>Menus principais</th><th>Motivo</th></tr></thead><tbody>
+<tr><td>Início</td><td>Visão geral</td><td>Panorama e prioridades da operação</td></tr>
+<tr><td>Operação</td><td>Pedidos, Catálogo, Clientes e B2B, Canais</td><td>Jornadas recorrentes do lojista</td></tr>
+<tr><td>Crescimento e experiência</td><td>Marketing, Experiência da Loja</td><td>Conversão, descoberta e apresentação da loja</td></tr>
+<tr><td>Gestão</td><td>Financeiro, Relatórios</td><td>Acompanhamento e controle</td></tr>
+<tr><td>Plataforma</td><td>Integrações, Configurações</td><td>Administração técnica e extensibilidade</td></tr>
+</tbody></table>
+<h3>Menu lateral retrátil</h3><p>Expandido, mostra nomes, áreas e submenus. Recolhido em desktop, mostra ícones e rótulos por dica de interface; a opção fica guardada localmente no navegador. Quando um grupo é acionado, ele abre para apresentar os itens internos. Em telas menores, o menu usa uma versão compacta; acessibilidade mobile deve evoluir nas próximas etapas.</p>
+<h3>Smart Finder não é a busca global</h3><p><b>Smart Finder</b> é a solução de busca e descoberta de produtos na loja, com telas conceituais para Básicas, Avançadas, Configurações por Grupo e Sinônimos. A busca do topo do Admin é uma busca administrativa demonstrativa. São experiências diferentes.</p></section>
+<section id="ux"><h2>04. Princípios de UX/UI aplicados</h2>
+<div class="grid"><div class="card"><h3>Arquitetura orientada a tarefas</h3><p>Preferência por termos reconhecíveis, como Pedidos, em vez de agrupamentos excessivamente genéricos.</p><div class="tags"><span class="tag">Implementado</span></div></div>
+<div class="card"><h3>Divulgação progressiva</h3><p>Submenus expansíveis evitam exposição simultânea de dezenas de funcionalidades.</p><div class="tags"><span class="tag">Implementado</span></div></div>
+<div class="card"><h3>Hierarquia visual</h3><p>Títulos, filtros, KPIs, status, listagens e ações usam padrões distintos de apresentação.</p><div class="tags"><span class="tag">Implementado parcialmente</span></div></div>
+<div class="card"><h3>Conteúdo contextual</h3><p>Banners institucionais ficam exclusivamente na Área de Trabalho; módulos operacionais ocupam a área total.</p><div class="tags"><span class="tag">Implementado</span></div></div>
+<div class="card"><h3>Reconhecimento em vez de memorização</h3><p>Abas por status, filtros explícitos e visões rápidas reduzem a necessidade de lembrar caminhos.</p><div class="tags"><span class="tag">Implementado em Pedidos</span></div></div>
+<div class="card"><h3>Prevenção de erros</h3><p>Ações com impacto real permanecem simuladas, sem execução silenciosa sobre operações de clientes.</p><div class="tags"><span class="tag">Implementado no protótipo</span></div></div>
+</div>
+<h3>Evoluções de UX ainda recomendadas</h3><p>Favoritos, recentes, filtros salvos persistentes, personalização de colunas, ações em lote completas, timeline de pedido, navegação contextual por perfil, feedback assíncrono robusto, atalhos acessíveis, e ajuda integrada à tela atual. São propostas, não recursos já entregues.</p></section>
+<section id="componentes"><h2>05. Padrões de telas e componentes</h2>
+<table><thead><tr><th>Componente</th><th>Regra de uso recomendada</th></tr></thead><tbody>
+<tr><td>Barra superior</td><td>Contexto atual, busca administrativa, notificações e usuário</td></tr>
+<tr><td>Cabeçalho de página</td><td>Nome objetivo, descrição curta e ação primária no mesmo contexto</td></tr>
+<tr><td>Indicadores (KPIs)</td><td>Número, unidade, período, significado e possibilidade de aprofundamento</td></tr>
+<tr><td>Tabelas</td><td>Colunas relevantes, status legíveis, seleção e ações contextuais</td></tr>
+<tr><td>Filtros e abas</td><td>Opções claras, restauração e feedback do estado aplicado</td></tr>
+<tr><td>Detalhes</td><td>Consulta focada, com perspectiva futura de abas por pagamento, entrega, itens, histórico e integrações</td></tr>
+<tr><td>Mapas e gráficos</td><td>Exibir período, métrica e origem dos dados; permitir explorar detalhes</td></tr>
+<tr><td>Mensagens de estado</td><td>Distinguir vazio, carregando, sucesso, erro, permissão insuficiente e indisponibilidade — em evolução</td></tr>
+</tbody></table></section>
+<section id="identidade"><h2>06. Identidade visual e design tokens</h2><p>A linguagem visual é <b>inspirada nas diretrizes de marca da TOTVS</b>. Para prototipação, aplica azul-escuro, ciano, branco e neutros, além de cores de apoio. O logotipo foi aproximado em HTML/CSS e <b>não é o arquivo institucional oficial</b>.</p>
+<div class="palette">
+<div class="swatch"><div class="color" style="background:#002233"></div><div class="label"><strong>Azul base</strong><code>#002233</code><div>Sidebar, títulos e ações</div></div></div>
+<div class="swatch"><div class="color" style="background:#00dbff"></div><div class="label"><strong>Ciano</strong><code>#00DBFF</code><div>Destaques e foco</div></div></div>
+<div class="swatch"><div class="color" style="background:#06384a"></div><div class="label"><strong>Azul secundário</strong><code>#06384A</code><div>Contraste e estados</div></div></div>
+<div class="swatch"><div class="color" style="background:#f4f8fa"></div><div class="label"><strong>Fundo</strong><code>#F4F8FA</code><div>Superfícies gerais</div></div></div>
+<div class="swatch"><div class="color" style="background:#a44dff"></div><div class="label"><strong>Roxo de apoio</strong><code>#A44DFF</code><div>Ilustração e comunicação</div></div></div>
+<div class="swatch"><div class="color" style="background:#ff8900"></div><div class="label"><strong>Laranja de apoio</strong><code>#FF8900</code><div>Acentos pontuais</div></div></div>
+<div class="swatch"><div class="color" style="background:#00896d"></div><div class="label"><strong>Verde semântico</strong><code>#00896D</code><div>Estados positivos</div></div></div>
+<div class="swatch"><div class="color" style="background:#123041"></div><div class="label"><strong>Texto</strong><code>#123041</code><div>Legibilidade</div></div></div>
+</div>
+<h3>Tipografia, espaçamento e iconografia</h3><p>O protótipo utiliza a pilha de fontes <code>Inter, Segoe UI, Arial, sans-serif</code>, com fontes de sistema como fallback. Não utiliza nem distribui fontes proprietárias da TOTVS. Bordas leves, cards arredondados, espaços consistentes e ícones simples sustentam uma interface de operação densa. Esses estilos ainda devem ser formalizados em um design system com tokens semânticos e componentes reutilizáveis.</p>
+<div class="callout"><b>Governança de marca:</b> antes de uma adoção institucional, validar logotipo, tipografia, paleta, padrões de aplicação e permissões de uso com o guia e a equipe responsável pela marca TOTVS.</div></section>
+<section id="tecnologia"><h2>07. Linguagens, tecnologias e arquitetura</h2>
+<div class="grid"><div class="card"><h3>HTML5</h3><p>Estrutura semântica das telas e dos componentes.</p></div><div class="card"><h3>CSS3</h3><p>Layout com Grid e Flexbox, tokens por variáveis CSS, responsividade e transições.</p></div><div class="card"><h3>JavaScript puro</h3><p>Estado local, renderização de listas, filtros, eventos, interações e visualizações.</p></div></div>
+<div class="diagram"><span>ChatGPT · evolução do código</span><i>→</i><span>GitHub · newadminlc</span><i>→</i><span>Netlify · site estático</span></div>
+<p>Na versão atual, o Admin é principalmente um <b>arquivo <code>index.html</code></b> com HTML, CSS e JavaScript incorporados; a documentação reside em <code>documentacao.html</code>. Não há framework React, Next.js ou backend próprio nesta implementação. A publicação é de arquivos estáticos em uma hospedagem web, com repositório versionado.</p>
+<h3>Recursos técnicos presentes</h3><ul><li>Menu e telas construídos dinamicamente via JavaScript; interação sem recarregamento para os módulos internos.</li><li>Gráficos em SVG e distribuição por canal com CSS; mapa do Brasil em SVG, com contorno e pontos de UFs.</li><li>Persistência local da preferência de menu via <code>localStorage</code>.</li><li>Exportação demonstrativa de pedidos em CSV no navegador.</li><li>CSS responsivo e alguns recursos de teclado, foco e descrições acessíveis.</li></ul>
+<h3>O que não existe nesta versão</h3><p>Não existem banco de dados conectado, servidor de aplicação, serviços de autenticação, APIs da Linx Commerce/TOTVS, operações transacionais, envio de dados para ERP, telemetria de produção ou sistema de design oficial integrado. O mapa não é um coroplético por limites das 27 UFs; mostra pontos nas capitais com valores simulados.</p>
+<h3>Arquitetura futura sugerida — não implementada</h3><div class="diagram"><span>Frontend modular (React + TypeScript)</span><i>→</i><span>Camada BFF/API</span><i>→</i><span>APIs existentes do Commerce</span></div><p>Uma futura migração para frontend componentizado pode facilitar testes, versionamento, observabilidade e manutenção, mas precisa ser decidida conforme a arquitetura real do produto, governança e contratos de APIs. Não presumir troca de backend.</p></section>
+<section id="dados"><h2>08. Dados, integrações e segurança</h2><p><b>Os números, clientes, produtos, pedidos, canais e status são fictícios.</b> Os filtros do dashboard operam sobre dados simulados e os formulários de módulos conceituais não alteram ambientes reais. Mesmo quando há botões como “Salvar” ou “Publicar”, a interação é demonstrativa.</p>
+<h3>Cuidados antes de produção</h3><ul><li>Autenticação e autorização por perfil/permissão em cada módulo e ação.</li><li>Integrações com APIs conforme contratos existentes, tratamento de erros, idempotência e rastreabilidade.</li><li>Separação por tenant, canal e unidade de negócio, sem exposição cruzada de informações.</li><li>Auditoria de eventos, logs, métricas, alertas e controle de ações sensíveis.</li><li>Tratamento de dados pessoais, LGPD, mascaramento e políticas de sessão.</li><li>Rollout por etapas, feature flags, retrocompatibilidade e validação com usuários.</li></ul></section>
+<section id="qualidade"><h2>09. Qualidade, acessibilidade e responsividade</h2>
+<p>O projeto considera hierarquia de títulos, legibilidade, foco visível, rótulos e comportamento responsivo em vários componentes. Isso <b>não equivale a uma auditoria de acessibilidade aprovada</b> e não garante atendimento completo a WCAG.</p>
+<p>Antes de homologar, devem ser realizados testes de teclado (inclusive menus recolhidos), leitor de tela, contraste, zoom em 200%, navegação mobile, tabelas extensas, estados vazios, erros de rede, performance e fluxos por perfil. Em especial, a navegação compacta mobile e o uso de ícones merecem validação com usuários.</p></section>
+<section id="roteiro"><h2>10. Roteiro sugerido para apresentação</h2><p>Uma demonstração para Produto, UX, Engenharia ou liderança pode seguir os passos abaixo, sem confundir protótipo com versão pronta para produção.</p>
+<div class="demo-step"><div class="number">1</div><div><h3>Contexto e oportunidade</h3><p>Preservar riqueza funcional do Admin existente, melhorando a experiência e reduzindo fricções de navegação.</p></div></div>
+<div class="demo-step"><div class="number">2</div><div><h3>Nova arquitetura de informação</h3><p>Mostrar os grupos do menu, o modo retrátil e como os submenus organizam funcionalidades sem removê-las.</p></div></div>
+<div class="demo-step"><div class="number">3</div><div><h3>Área de Trabalho orientada à ação</h3><p>Demonstrar indicadores de atenção, KPIs, gráfico, mapa do Brasil, distribuição por canal e banners contextuais.</p></div></div>
+<div class="demo-step"><div class="number">4</div><div><h3>Jornada operacional: Pedidos</h3><p>Exibir abas, busca, filtros, visões rápidas, detalhes e exportação CSV simulada.</p></div></div>
+<div class="demo-step"><div class="number">5</div><div><h3>Especialização: Smart Finder</h3><p>Explicar a separação entre busca administrativa e busca de produtos, com subáreas configuráveis.</p></div></div>
+<div class="demo-step"><div class="number">6</div><div><h3>Viabilidade e próximos passos</h3><p>Separar código demonstrativo de integração real, apresentar riscos, prioridades e plano de validação.</p></div></div>
+<a class="action" href="./index.html">Abrir Admin para demonstração</a></section>
+<section id="evolucao"><h2>11. Roadmap proposto e métricas</h2>
+<table><thead><tr><th>Etapa</th><th>Entrega desejada</th><th>Critério de validação</th></tr></thead><tbody>
+<tr><td>P0</td><td>Inventário/matriz de equivalência funcional do Admin legado</td><td>100% dos módulos e ações rastreados, sem remoções não aprovadas</td></tr>
+<tr><td>P0</td><td>Testes de navegação e arquitetura de informação</td><td>Menor tempo para localizar tarefas frequentes</td></tr>
+<tr><td>P0</td><td>Jornada de Pedidos completa, com timeline e ações por permissão</td><td>Tarefas concluídas corretamente em teste moderado</td></tr>
+<tr><td>P1</td><td>Design system componentizado e acessível</td><td>Consistência e reutilização em novas telas</td></tr>
+<tr><td>P1</td><td>Catálogo, Clientes/B2B e integrações funcionais priorizadas</td><td>Cobertura de fluxos e cenários críticos</td></tr>
+<tr><td>P2</td><td>Preferências, visões salvas, personalização e IA assistiva</td><td>Adoção, satisfação e ganho operacional medidos</td></tr>
+</tbody></table>
+<h3>Indicadores sugeridos</h3><p>Tempo para localizar funcionalidades; tempo para concluir tarefas; taxa de conclusão sem erro; uso de busca e atalhos; número de passos/clicks por jornada; satisfação por tarefa; incidentes de suporte associados à navegação; adoção dos módulos renovados. São propostas de medição, sem baseline coletada nesta versão.</p></section>
+<section id="referencias"><h2>12. Referências e governança</h2><ul>
+<li><a target="_blank" rel="noopener noreferrer" href="https://marca.totvs.com/identidade-visual/">Identidade visual TOTVS</a> — orientação de marca.</li>
+<li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=486619812">Documentação Linx Commerce</a> — referência funcional do produto existente.</li>
+<li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/Smart+Finder">Smart Finder</a> — referência de busca e descoberta de produtos.</li>
+<li><a target="_blank" rel="noopener noreferrer" href="https://github.com/pamsko/newadminlc">Repositório newadminlc</a> — histórico das alterações do protótipo.</li>
+</ul><div class="callout"><b>Atualização documental:</b> esta página deve acompanhar mudanças de arquitetura, navegação, design system e escopo. Recomenda-se manter data, versão e decisões de produto revisadas a cada marco relevante.</div></section>
+<div class="footer">TOTVS Commerce Admin · Documentação do protótipo conceitual · Conteúdo demonstrativo e não oficial · 03/11/2026</div>
+</div></main></div>
+<script>
+const anchors=[...document.querySelectorAll('#toc a')];
+function activeLink(){let current=anchors[0];for(const a of anchors){const el=document.querySelector(a.getAttribute('href'));if(el&&el.getBoundingClientRect().top<130)current=a}anchors.forEach(a=>a.classList.toggle('active',a===current))}
+window.addEventListener('scroll',activeLink,{passive:true});activeLink();
+</script>
+</body></html>
