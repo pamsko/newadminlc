@@ -35,13 +35,13 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <div class="layout">
 <aside aria-label="Índice da documentação"><div class="logo">TOTVS<small>COMMERCE · ADMIN</small></div><div class="kicker">Documentação</div>
 <nav id="toc">
-<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#referencias">Referências</a>
+<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#adequacoes-funcionais">Adequações implementadas</a><a href="#referencias">Referências</a>
 </nav><a class="return" href="./index.html">← Voltar ao Admin</a>
 </aside>
 <main>
 <div class="topbar"><div class="crumb">TOTVS Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
 <div class="body">
-<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.2</span><span>Dados fictícios</span></div></header>
+<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.3</span><span>Dados fictícios</span></div></header>
 <div class="notice"><b>Natureza desta documentação:</b> registra a versão demonstrativa do projeto <code>newadminlc</code> e apresenta sua direção de produto. Não é documentação oficial da TOTVS, não substitui a documentação funcional da Linx Commerce e não comprova que todas as funcionalidades do Admin legado já foram implementadas.</div>
 <section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o TOTVS Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
 <div class="grid"><article class="card"><div class="metric">01</div><h3>Encontrar</h3><p>Reduzir esforço de navegação com grupos orientados a tarefas, nomes claros e menu retrátil.</p></article><article class="card"><div class="metric">02</div><h3>Entender</h3><p>Apresentar indicadores e estados com hierarquia visual, contexto e linguagem consistente.</p></article><article class="card"><div class="metric">03</div><h3>Agir</h3><p>Conectar alertas e consultas às jornadas operacionais, com filtros, detalhes e atalhos.</p></article></div>
@@ -203,7 +203,34 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 </tbody></table>
 <p><b>Resultado do estudo:</b> a documentação fornece uma base importante para arquitetura de informação e especificação funcional. Ela <b>não substitui</b> a observação das telas reais nem uma homologação de equivalência. As recomendações acima não são promessas de funcionalidade existente ou já desenvolvida.</p>
 </section>
-<section id="referencias"><h2>14. Referências e governança</h2><ul>
+
+<section id="adequacoes-funcionais"><h2>14. Adequações do Admin a partir do estudo funcional</h2>
+<p>Esta seção relaciona a documentação Linx Commerce às telas adicionadas ao protótipo em 03/11/2026. Trata-se de <b>adequação de navegação e consulta demonstrativa</b>, não de integração com APIs nem implementação de operações transacionais.</p>
+<table><thead><tr><th>Área</th><th>Alteração aplicada no Admin</th><th>Limite e dependência para produto real</th></tr></thead><tbody>
+<tr><td>Catálogo → Produtos e SKUs</td><td>Organização da visão por Geral, SKUs e variações, Conteúdo e SEO, Preços, Estoque, Associações e Publicação, com conteúdo ilustrativo.</td><td>Campos e regras devem ser inventariados; não há cadastro nem edição de dados reais.</td></tr>
+<tr><td>Catálogo → Indexação de produtos</td><td>Novo acesso contextual na área de Catálogo, indicadores de fila/processamento/falhas e tabela fictícia de eventos por SKU.</td><td>Sem telemetria real; ações destrutivas de índice não são expostas.</td></tr>
+<tr><td>Pedidos → Workflows</td><td>Tela específica para contextualizar fluxos, eventos disparadores, estados e possíveis falhas; separada da operação diária de pedidos.</td><td>Não há criação, execução, ativação nem edição de workflows reais.</td></tr>
+<tr><td>Clientes e B2B → Contratos e regras comerciais</td><td>Visão de contratos fictícios por canal ou grupo econômico, destacando de onde vem a regra aplicada.</td><td>Não há avaliação real de precedência, tabela de preços, limites, crédito ou permissões.</td></tr>
+</tbody></table>
+<h3>Decisões de UX e justificativas</h3>
+<div class="grid">
+<div class="card"><h3>Indexação com Catálogo</h3><p>Favorece a descoberta da função por quem opera produtos e investiga divergências entre cadastro e busca, mantendo relação conceitual com o Smart Finder.</p></div>
+<div class="card"><h3>Workflows separados de Pedidos</h3><p>Evita misturar consultas operacionais frequentes com configuração de fluxos que afetam estados, eventos e integrações.</p></div>
+<div class="card"><h3>Origem de regras B2B visível</h3><p>Reduz a ambiguidade entre contrato do grupo e contrato do canal, desde que a precedência seja validada.</p></div>
+</div>
+<h3>Critérios de aceitação para a próxima implementação</h3>
+<ul>
+<li><b>Equivalência funcional:</b> listar e validar todas as operações atuais por tela, perfil, canal e tenant antes da substituição da interface real.</li>
+<li><b>Indexação:</b> exibir dados de origem verificada, estados de fila, logs rastreáveis e controles seguros de execução de tarefas administrativas.</li>
+<li><b>Workflows:</b> preservar definições, estados, eventos, tarefas, gatilhos, históricos e permissões existentes; mostrar claramente impactos antes de mudanças.</li>
+<li><b>B2B:</b> indicar origem e vigência da regra, escopo da empresa e do canal, sem inferir precedência ou valores indisponíveis.</li>
+<li><b>Catálogo:</b> manter campos, associações, operações específicas e efeitos sobre busca, canais e indexação, mesmo que o layout seja reorganizado.</li>
+<li><b>Qualidade:</b> garantir estados de erro e carregamento, navegação por teclado, validação de formulários, feedback de sucesso/falha e casos de regressão.</li>
+</ul>
+<h3>Critérios de demonstração</h3><p>O apresentador deve mostrar as quatro áreas acessando os menus reais do protótipo. Todos os registros, contadores e status são simulados. As telas que exibem botões operacionais apresentam feedback demonstrativo e não acessam sistemas corporativos.</p>
+<p>Referências: <a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/Produtos+e+SKUs">Produtos e SKUs</a>, <a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=628978212">Indexação 2.0</a>, <a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=412269482">Workflows</a> e <a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/4+-+Contratos+e+regras+comerciais+B2B">Contratos B2B</a>.</p>
+</section>
+<section id="referencias"><h2>15. Referências e governança</h2><ul>
 <li><a target="_blank" rel="noopener noreferrer" href="https://marca.totvs.com/identidade-visual/">Identidade visual TOTVS</a> — orientação de marca.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=486619812">Documentação Linx Commerce</a> — referência funcional do produto existente.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/Smart+Finder">Smart Finder</a> — referência de busca e descoberta de produtos.</li>
