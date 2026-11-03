@@ -35,13 +35,13 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <div class="layout">
 <aside aria-label="Índice da documentação"><div class="logo">TOTVS<small>COMMERCE · ADMIN</small></div><div class="kicker">Documentação</div>
 <nav id="toc">
-<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#adequacoes-funcionais">Adequações implementadas</a><a href="#referencias">Referências</a>
+<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#adequacoes-funcionais">Adequações implementadas</a><a href="#jornadas">Jornadas detalhadas</a><a href="#rastreabilidade">Rastreabilidade e homologação</a><a href="#referencias">Referências</a>
 </nav><a class="return" href="./index.html">← Voltar ao Admin</a>
 </aside>
 <main>
 <div class="topbar"><div class="crumb">TOTVS Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
 <div class="body">
-<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.3</span><span>Dados fictícios</span></div></header>
+<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.4</span><span>Dados fictícios</span></div></header>
 <div class="notice"><b>Natureza desta documentação:</b> registra a versão demonstrativa do projeto <code>newadminlc</code> e apresenta sua direção de produto. Não é documentação oficial da TOTVS, não substitui a documentação funcional da Linx Commerce e não comprova que todas as funcionalidades do Admin legado já foram implementadas.</div>
 <section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o TOTVS Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
 <div class="grid"><article class="card"><div class="metric">01</div><h3>Encontrar</h3><p>Reduzir esforço de navegação com grupos orientados a tarefas, nomes claros e menu retrátil.</p></article><article class="card"><div class="metric">02</div><h3>Entender</h3><p>Apresentar indicadores e estados com hierarquia visual, contexto e linguagem consistente.</p></article><article class="card"><div class="metric">03</div><h3>Agir</h3><p>Conectar alertas e consultas às jornadas operacionais, com filtros, detalhes e atalhos.</p></article></div>
@@ -230,7 +230,72 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <h3>Critérios de demonstração</h3><p>O apresentador deve mostrar as quatro áreas acessando os menus reais do protótipo. Todos os registros, contadores e status são simulados. As telas que exibem botões operacionais apresentam feedback demonstrativo e não acessam sistemas corporativos.</p>
 <p>Referências: <a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/Produtos+e+SKUs">Produtos e SKUs</a>, <a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=628978212">Indexação 2.0</a>, <a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=412269482">Workflows</a> e <a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/4+-+Contratos+e+regras+comerciais+B2B">Contratos B2B</a>.</p>
 </section>
-<section id="referencias"><h2>15. Referências e governança</h2><ul>
+
+<section id="jornadas"><h2>15. Jornadas prioritárias do novo Admin</h2>
+<p>Especificações iniciais de interação derivadas do estudo funcional e das telas demonstrativas. Uma jornada descrita aqui não representa um contrato de API validado. O comportamento final depende do inventário do Admin atual, das regras por canal e das permissões existentes.</p>
+<h3>15.1 Consulta e investigação de pedido</h3>
+<div class="diagram"><span>Encontrar pedido</span><i>→</i><span>Abrir detalhe</span><i>→</i><span>Analisar estado por domínio</span><i>→</i><span>Consultar eventos</span><i>→</i><span>Executar ação permitida</span></div>
+<p>A listagem oferece busca por pedido/cliente, filtros por status e canal, visões rápidas e exportação CSV de amostra. No detalhe, separar as visões de <b>comercial, financeiro e logística</b> evita resumir todo o processo em um status único. As abas propostas são Visão geral, Itens, Pagamento, Entrega, Histórico e Integrações.</p>
+<table><thead><tr><th>Área do detalhe</th><th>Informação necessária em produção</th><th>Exceções a validar</th></tr></thead><tbody>
+<tr><td>Visão geral</td><td>Pedido, loja/canal, comprador, itens, datas e totais</td><td>Pedidos de marketplace, B2B, split e múltiplas entregas</td></tr>
+<tr><td>Pagamento</td><td>Meio, valor, transações e estados de autorização/captura</td><td>Pix pendente, boleto, pré-captura, cancelamento parcial e estornos</td></tr>
+<tr><td>Entrega</td><td>Entrega, separação, expedição, notas fiscais e rastreio</td><td>Mais de uma entrega, retirada, transportadora e falhas operacionais</td></tr>
+<tr><td>Histórico</td><td>Quando, quem, origem do evento, alteração e motivo</td><td>Eventos automáticos, manuais, repetidos e fora de ordem</td></tr>
+<tr><td>Integrações</td><td>ERP, webhook, sincronização, tentativas, status e correlação</td><td>Timeout, retry, idempotência, falha permanente e reprocessamento</td></tr>
+</tbody></table>
+<p><b>Implementado:</b> tela detalhada demonstrativa, com abas e valores sintéticos. <b>Não implementado:</b> ações transacionais, autenticação, histórico real, integração com ERP, dados fiscais e estados oficiais da plataforma.</p>
+<h3>15.2 Produtos, SKUs e indexação</h3>
+<p>O cadastro deve preservar estruturas de produto pai, variações, atributos, mídia, SEO, preço, disponibilidade, associações e estados. O protótipo organiza essas áreas em abas funcionais, mas não inclui formulários completos nem gravação.</p>
+<p><b>Dependência:</b> mudanças de cadastro podem afetar canais, busca e indexação. A tela de Indexação possui indicadores fictícios e exemplos por SKU. Para uma futura solução real, acrescentar fila, duração, tipo de erro, origem do evento, correlação, logs seguros e confirmação de tarefas de alto impacto.</p>
+<h3>15.3 Contratos e gestão B2B</h3>
+<p>Na navegação de Clientes e B2B, a tela de contratos diferencia vínculos por canal ou grupo econômico. Na solução real, o usuário deve poder identificar a regra efetivamente aplicada ao contexto da empresa e do canal, incluindo validade e exceções. O Admin precisa preservar cotações, compradores, aprovadores e demais módulos existentes.</p>
+<p>Não assumir que o usuário pode editar qualquer contrato, ignorar precedência configurada ou visualizar dados de outro grupo/tenant. O protótipo contém somente exemplos e explicações conceituais.</p>
+<h3>15.4 Configurações Smart Finder</h3>
+<p>As telas de Básicas e Avançadas apresentam controles demonstrativos, preview e publicação simulados. As telas de Grupos e Sinônimos indicam o possível efeito imediato após salvar, conforme a documentação consultada. A interface final deve explicitar contexto, escopo, alterações não publicadas, comparação antes/depois e conflitos de replicação.</p>
+<h3>15.5 Gestão de integrações e webhooks</h3>
+<p>Foi acrescentada uma visão demonstrativa de conectores, eventos, situações, última atividade e ocorrências, com referências ao portal de APIs e à documentação de webhooks. Em produção, a consulta precisa ser filtrável por serviço, recurso, status, período, tenant e correlação, com limites de acesso ao conteúdo sensível.</p>
+<div class="callout"><b>Evitar falsa precisão:</b> IDs, nomes de conectores, volumes, status e datas exibidos são fictícios. Os contratos e payloads oficiais das APIs/Webhooks ainda precisam ser validados pela Engenharia. Não armazenar segredos no HTML estático.</div>
+<h3>15.6 Tela de configurações e permissões</h3>
+<p>A organização proposta separa configurações gerais, usuários/permissões, segurança, auditoria e operações de plataforma. Ações destrutivas devem ser claramente diferenciadas de consultas e preferências locais, com confirmação proporcional ao risco, autorização e trilha de auditoria.</p>
+</section>
+<section id="rastreabilidade"><h2>16. Matriz de rastreabilidade e estratégia de homologação</h2>
+<p>Para evitar perda funcional, cada item existente no Admin deve ser rastreado desde a documentação até a interface proposta e seus testes. Sugestão de campos para a matriz de equivalência:</p>
+<table><thead><tr><th>Campo</th><th>Descrição</th><th>Exemplo</th></tr></thead><tbody>
+<tr><td>Domínio / tela legada</td><td>Nome, caminho, URL e contexto de tenant/canal</td><td>Catálogo → Produtos e SKUs</td></tr>
+<tr><td>Operação</td><td>Consulta, criação, edição, exclusão, manutenção ou publicação</td><td>Consultar SKU</td></tr>
+<tr><td>Regra / permissão</td><td>Critérios, exceções e perfis autorizados</td><td>Validar na origem</td></tr>
+<tr><td>Nova navegação</td><td>Rota, componente, filtro e ação correspondente</td><td>Catálogo → Produtos e SKUs</td></tr>
+<tr><td>API / evento</td><td>Contrato, versão, payload, autorização, estado e dependências</td><td>Pendente de mapeamento</td></tr>
+<tr><td>Evidência de teste</td><td>Caso de teste, resultado, evidência e responsável</td><td>Pendente de homologação</td></tr>
+</tbody></table>
+<h3>Estados obrigatórios de UI nas jornadas integradas</h3>
+<div class="grid">
+<article class="card"><h3>Carregando</h3><p>Skeleton ou indicador, evitando múltiplos envios e mantendo contexto da operação.</p></article>
+<article class="card"><h3>Vazio</h3><p>Explicar ausência de registros e oferecer ação ou ajuste de filtro quando aplicável.</p></article>
+<article class="card"><h3>Erro</h3><p>Mensagem acionável sem expor detalhes sensíveis; permitir nova tentativa quando segura.</p></article>
+<article class="card"><h3>Sucesso</h3><p>Confirmar o que mudou e quando, sem prometer conclusão assíncrona prematuramente.</p></article>
+<article class="card"><h3>Sem permissão</h3><p>Informar restrição sem revelar dados protegidos nem permitir contorno no frontend.</p></article>
+<article class="card"><h3>Dados desatualizados</h3><p>Indicar última atualização e eventual consistência, sobretudo em pagamentos e integrações.</p></article>
+</div>
+<h3>Critérios de aceite transversais</h3>
+<ol><li>Toda operação crítica do Admin atual possui caminho equivalente na nova interface, com mesmos pré-requisitos e permissão efetiva.</li>
+<li>Filtros, paginação, ordenação e exportações respeitam tenant, canal, perfis e limitações dos contratos de API.</li>
+<li>Registros e eventos têm histórico audível para investigação, com mascaramento de dados pessoais e técnicos sensíveis.</li>
+<li>Operações de risco possuem confirmação e trilha de auditoria; retries e reprocessamentos seguem política de idempotência.</li>
+<li>Há testes de regressão em workflows, pagamentos, estoque, catálogo, canais, B2B, logística e marketplace.</li>
+<li>UX validada com usuários por tarefas reais, medindo encontrabilidade, tempo de execução, erros e satisfação.</li>
+<li>Rollout gradual com feature flag quando aplicável, fallback, observabilidade, suporte e comunicação aos usuários.</li></ol>
+<h3>Plano de validação</h3>
+<table><thead><tr><th>Fase</th><th>Atividade</th><th>Saída esperada</th></tr></thead><tbody>
+<tr><td>Descoberta</td><td>Inventário do legado, entrevistas e top tarefas</td><td>Matriz de equivalência priorizada</td></tr>
+<tr><td>Design</td><td>Protótipos, pesquisa e validação com usuários</td><td>Padrões de interação e navegação testados</td></tr>
+<tr><td>Engenharia</td><td>Contratos, autenticação, estado, testes e telemetria</td><td>Integrações observáveis e seguras</td></tr>
+<tr><td>Homologação</td><td>Regressão, acessibilidade, performance e aceite funcional</td><td>Evidências, pendências e aprovação</td></tr>
+<tr><td>Implantação</td><td>Piloto controlado, migração e monitoramento</td><td>Adoção sem regressões críticas</td></tr>
+</tbody></table>
+<p><b>Indicador de preservação recomendado:</b> percentual de operações legadas inventariadas, mapeadas, implementadas e homologadas. Nenhuma porcentagem foi calculada nesta versão por falta do inventário completo do Admin real.</p>
+</section>
+<section id="referencias"><h2>17. Referências e governança</h2><ul>
 <li><a target="_blank" rel="noopener noreferrer" href="https://marca.totvs.com/identidade-visual/">Identidade visual TOTVS</a> — orientação de marca.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=486619812">Documentação Linx Commerce</a> — referência funcional do produto existente.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/Smart+Finder">Smart Finder</a> — referência de busca e descoberta de produtos.</li>
