@@ -35,13 +35,13 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <div class="layout">
 <aside aria-label="Índice da documentação"><div class="logo">TOTVS<small>COMMERCE · ADMIN</small></div><div class="kicker">Documentação</div>
 <nav id="toc">
-<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#adequacoes-funcionais">Adequações implementadas</a><a href="#jornadas">Jornadas detalhadas</a><a href="#rastreabilidade">Rastreabilidade e homologação</a><a href="#referencias">Referências</a>
+<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#adequacoes-funcionais">Adequações implementadas</a><a href="#jornadas">Jornadas detalhadas</a><a href="#rastreabilidade">Rastreabilidade e homologação</a><a href="#cadastros">Cadastros simulados</a><a href="#referencias">Referências</a>
 </nav><a class="return" href="./index.html">← Voltar ao Admin</a>
 </aside>
 <main>
 <div class="topbar"><div class="crumb">TOTVS Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
 <div class="body">
-<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.4</span><span>Dados fictícios</span></div></header>
+<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.5</span><span>Dados fictícios</span></div></header>
 <div class="notice"><b>Natureza desta documentação:</b> registra a versão demonstrativa do projeto <code>newadminlc</code> e apresenta sua direção de produto. Não é documentação oficial da TOTVS, não substitui a documentação funcional da Linx Commerce e não comprova que todas as funcionalidades do Admin legado já foram implementadas.</div>
 <section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o TOTVS Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
 <div class="grid"><article class="card"><div class="metric">01</div><h3>Encontrar</h3><p>Reduzir esforço de navegação com grupos orientados a tarefas, nomes claros e menu retrátil.</p></article><article class="card"><div class="metric">02</div><h3>Entender</h3><p>Apresentar indicadores e estados com hierarquia visual, contexto e linguagem consistente.</p></article><article class="card"><div class="metric">03</div><h3>Agir</h3><p>Conectar alertas e consultas às jornadas operacionais, com filtros, detalhes e atalhos.</p></article></div>
@@ -295,7 +295,48 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 </tbody></table>
 <p><b>Indicador de preservação recomendado:</b> percentual de operações legadas inventariadas, mapeadas, implementadas e homologadas. Nenhuma porcentagem foi calculada nesta versão por falta do inventário completo do Admin real.</p>
 </section>
-<section id="referencias"><h2>17. Referências e governança</h2><ul>
+
+<section id="cadastros"><h2>17. Simulação de cadastros no novo Admin</h2>
+<p>O protótipo permite agora <b>criar, consultar, editar, excluir e restaurar registros demonstrativos</b> em áreas selecionadas. Os dados são processados diretamente no navegador, sem chamadas de rede para APIs da Linx Commerce. O objetivo é validar a experiência de preenchimento, consistência de listagens, busca, estados de interface e navegação entre cadastros.</p>
+<div class="callout"><b>Aviso de ambiente:</b> o cadastro simulado não cria produtos, clientes, contratos ou pedidos no Commerce. O armazenamento no navegador não é base de dados de produção, não possui controle de acesso, não garante compartilhamento entre dispositivos e pode ser perdido ao limpar os dados de navegação. Evite inserir dados pessoais reais.</div>
+<h3>17.1 Cobertura dos formulários</h3>
+<table><thead><tr><th>Módulo</th><th>Campos demonstrativos</th><th>Operações</th></tr></thead><tbody>
+<tr><td>Produtos e SKUs</td><td>SKU, nome, categoria, estoque, preço e situação</td><td>Criar, listar, filtrar, detalhar, editar, excluir e restaurar exemplos</td></tr>
+<tr><td>Clientes</td><td>Código, nome/razão social, e-mail, tipo de pessoa e situação</td><td>Criar, listar, filtrar, detalhar, editar, excluir e restaurar exemplos</td></tr>
+<tr><td>Categorias</td><td>Código, nome, categoria pai e situação</td><td>CRUD demonstrativo em lista própria</td></tr>
+<tr><td>Contratos B2B</td><td>Código, nome, tipo de vínculo, origem da regra e situação</td><td>CRUD demonstrativo, mantendo também a visão conceitual de contratos</td></tr>
+<tr><td>Grupos econômicos</td><td>Código, nome, matriz e situação</td><td>CRUD demonstrativo em lista própria</td></tr>
+<tr><td>Promoções</td><td>Código, nome, tipo (automática, cupom ou vale), datas e situação</td><td>CRUD demonstrativo com validação de vigência</td></tr>
+<tr><td>Cotações e compras B2B</td><td>Código, empresa, comprador, valor estimado e situação</td><td>CRUD demonstrativo em lista própria</td></tr>
+</tbody></table>
+<h3>17.2 Comportamentos implementados</h3><ul>
+<li><b>Cadastro:</b> abertura de formulário em diálogo, campos obrigatórios, controles apropriados (texto, e-mail, número, data, seleção), confirmação de salvamento e atualização da listagem.</li>
+<li><b>Edição:</b> carregamento dos dados existentes; o identificador do registro não é editável durante a alteração.</li>
+<li><b>Exclusão:</b> confirmação explícita antes da remoção local; não há exclusão de informações de produção.</li>
+<li><b>Busca:</b> pesquisa textual sobre os valores exibidos nos registros de cada módulo.</li>
+<li><b>Validação:</b> códigos obrigatórios e únicos por módulo, estoque e preços não negativos, e vigência final não anterior à inicial para promoções.</li>
+<li><b>Persistência:</b> <code>localStorage</code> do navegador com chave de demonstração <code>totvs-admin-demo-v1</code>, sem API e sem backend.</li>
+<li><b>Restauração:</b> comando explícito para recuperar os exemplos originais (Produtos/Clientes) ou apagar as listas locais criadas nos demais módulos.</li>
+</ul>
+<h3>17.3 Limitações importantes</h3>
+<p>Os formulários representam a interação básica, mas <b>não reproduzem os cadastros completos da Linx Commerce</b>. Em particular, não executam validações de SKU com ERP, vínculos reais de categoria, controle multicanal, tabelas de preço, regras tributárias, limites de crédito, alçadas de aprovação, campanhas publicadas, auditoria corporativa ou políticas de tenant. Eles não oferecem fluxo de publicação nem transições oficiais de estados.</p>
+<p>O estado persistido é local ao navegador. Em atualizações futuras de código, a estrutura armazenada pode precisar de migração e limpeza. Não há autenticação, autorização por perfil ou sincronização entre usuários.</p>
+<h3>17.4 Critérios para transformar o cadastro simulado em funcional</h3>
+<ol><li>Mapear telas e campos completos do cadastro atual e seus comportamentos por tenant/canal.</li>
+<li>Validar a API e as permissões necessárias para cada operação; não expor credenciais no frontend.</li>
+<li>Documentar validações de domínio, consistência entre objetos e alterações que geram indexação ou eventos.</li>
+<li>Separar criação, edição, salvamento, publicação, inativação e exclusão conforme a regra real de cada entidade.</li>
+<li>Desenhar estados de carregamento, sucesso, falha, conflito, validação e concorrência.</li>
+<li>Adicionar testes automatizados de formulário e integração, auditoria, observabilidade e métricas.</li>
+<li>Homologar retrocompatibilidade e rollout gradual antes de qualquer uso em produção.</li></ol>
+<h3>17.5 Roteiro de demonstração dos cadastros</h3>
+<div class="demo-step"><div class="number">1</div><div><h3>Produto</h3><p>Acessar Catálogo → Produtos e SKUs. Cadastrar um produto de teste, localizar na lista, editar e visualizar o detalhe.</p></div></div>
+<div class="demo-step"><div class="number">2</div><div><h3>Cliente</h3><p>Acessar Clientes e B2B → Clientes. Criar uma pessoa jurídica fictícia e pesquisar pelo código.</p></div></div>
+<div class="demo-step"><div class="number">3</div><div><h3>Contrato</h3><p>Acessar Contratos e regras comerciais. Criar um contrato de exemplo vinculado a um grupo e revisar a origem da regra.</p></div></div>
+<div class="demo-step"><div class="number">4</div><div><h3>Promoção</h3><p>Criar uma promoção fictícia e testar a validação das datas de vigência.</p></div></div>
+<div class="demo-step"><div class="number">5</div><div><h3>Persistência e reset</h3><p>Atualizar a página para verificar a persistência no navegador e utilizar o comando de restauração local para reiniciar a demonstração.</p></div></div>
+</section>
+<section id="referencias"><h2>18. Referências e governança</h2><ul>
 <li><a target="_blank" rel="noopener noreferrer" href="https://marca.totvs.com/identidade-visual/">Identidade visual TOTVS</a> — orientação de marca.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=486619812">Documentação Linx Commerce</a> — referência funcional do produto existente.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/Smart+Finder">Smart Finder</a> — referência de busca e descoberta de produtos.</li>
