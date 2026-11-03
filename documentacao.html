@@ -35,13 +35,13 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <div class="layout">
 <aside aria-label="Índice da documentação"><div class="logo">TOTVS<small>COMMERCE · ADMIN</small></div><div class="kicker">Documentação</div>
 <nav id="toc">
-<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#adequacoes-funcionais">Adequações implementadas</a><a href="#jornadas">Jornadas detalhadas</a><a href="#rastreabilidade">Rastreabilidade e homologação</a><a href="#cadastros">Cadastros simulados</a><a href="#referencias">Referências</a>
+<a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#adequacoes-funcionais">Adequações implementadas</a><a href="#jornadas">Jornadas detalhadas</a><a href="#rastreabilidade">Rastreabilidade e homologação</a><a href="#cadastros">Cadastros simulados</a><a href="#studio">Commerce Studio e vínculos</a><a href="#referencias">Referências</a>
 </nav><a class="return" href="./index.html">← Voltar ao Admin</a>
 </aside>
 <main>
 <div class="topbar"><div class="crumb">TOTVS Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
 <div class="body">
-<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.5</span><span>Dados fictícios</span></div></header>
+<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>TOTVS Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.6</span><span>Dados fictícios</span></div></header>
 <div class="notice"><b>Natureza desta documentação:</b> registra a versão demonstrativa do projeto <code>newadminlc</code> e apresenta sua direção de produto. Não é documentação oficial da TOTVS, não substitui a documentação funcional da Linx Commerce e não comprova que todas as funcionalidades do Admin legado já foram implementadas.</div>
 <section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o TOTVS Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
 <div class="grid"><article class="card"><div class="metric">01</div><h3>Encontrar</h3><p>Reduzir esforço de navegação com grupos orientados a tarefas, nomes claros e menu retrátil.</p></article><article class="card"><div class="metric">02</div><h3>Entender</h3><p>Apresentar indicadores e estados com hierarquia visual, contexto e linguagem consistente.</p></article><article class="card"><div class="metric">03</div><h3>Agir</h3><p>Conectar alertas e consultas às jornadas operacionais, com filtros, detalhes e atalhos.</p></article></div>
@@ -336,7 +336,33 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <div class="demo-step"><div class="number">4</div><div><h3>Promoção</h3><p>Criar uma promoção fictícia e testar a validação das datas de vigência.</p></div></div>
 <div class="demo-step"><div class="number">5</div><div><h3>Persistência e reset</h3><p>Atualizar a página para verificar a persistência no navegador e utilizar o comando de restauração local para reiniciar a demonstração.</p></div></div>
 </section>
-<section id="referencias"><h2>18. Referências e governança</h2><ul>
+
+<section id="studio"><h2>18. Commerce Studio e relacionamentos demonstrativos</h2>
+<p>O protótipo agora dispõe de uma tela de <b>Commerce Studio</b> acessível em <b>Experiência da loja → Commerce Studio</b>, dedicada à simulação de composição visual de uma loja. É uma proposta de interação, não uma reprodução validada da ferramenta real da Linx Commerce ou uma publicação em storefront de produção.</p>
+<h3>18.1 Experiência demonstrativa de edição</h3>
+<table><thead><tr><th>Elemento</th><th>Comportamento presente</th><th>Limitação</th></tr></thead><tbody>
+<tr><td>Canal e tema</td><td>Seleção independente de Loja virtual, B2B e Marketplace; Tema principal e Tema sazonal</td><td>São opções fictícias, não configuradas por API nem vinculadas a canais reais</td></tr>
+<tr><td>Componentes</td><td>Título, texto complementar, chamada do botão, visibilidade do banner e produtos em destaque</td><td>Não existe construtor de páginas completo, templates reais ou campos dinâmicos</td></tr>
+<tr><td>Prévia</td><td>Visualização desktop/mobile, refletindo mudanças enquanto se digita</td><td>Representação conceitual; não renderiza storefront real</td></tr>
+<tr><td>Rascunho</td><td>Salvar alterações em <code>localStorage</code>, segregadas por canal e tema</td><td>Sem histórico de autores, colaboração ou persistência corporativa</td></tr>
+<tr><td>Publicação</td><td>Confirmação explícita, cópia simulada do rascunho para a versão publicada e histórico local</td><td>Não publica em lojas, CDN, APIs ou ambientes reais</td></tr>
+<tr><td>Restauração</td><td>Voltar ao último estado publicado na simulação</td><td>Não é rollback técnico de uma publicação real</td></tr>
+</tbody></table>
+<p><b>Proteção contra perda de edição:</b> alterações ainda não salvas permanecem na sessão da página durante trocas entre desktop/mobile, canal e tema. Contudo, o rascunho só persiste após um salvamento explícito; fechar ou atualizar a página pode descartar as edições pendentes.</p>
+<h3>18.2 Cadastros com vínculos simulados</h3>
+<div class="diagram"><span>Categoria cadastrada</span><i>→</i><span>Seleção no produto</span><i>→</i><span>Consulta da listagem</span></div>
+<div class="diagram"><span>Grupo econômico cadastrado</span><i>→</i><span>Vínculo no contrato B2B</span><i>→</i><span>Consulta do contrato</span></div>
+<p>O formulário de Produtos e SKUs passou a apresentar um seletor com categorias iniciais fictícias e categorias criadas na própria demonstração. Da mesma forma, os contratos B2B podem selecionar grupos econômicos cadastrados localmente ou a origem padrão do canal. Esses vínculos são armazenados por nome, para fins de demonstração, e <b>não representam identificadores relacionais persistentes nem a lógica real de precedência dos contratos</b>.</p>
+<p>A interface impede excluir uma categoria que esteja referenciada em um produto e um grupo econômico referenciado em um contrato. Também protege a limpeza dessas listas enquanto houver dependências. Essa integridade é apenas local; renomeações dos registros relacionados ainda exigem evolução para IDs estáveis e atualização consistente dos vínculos.</p>
+<h3>18.3 Cenário de apresentação</h3><ol>
+<li>Em <b>Catálogo → Categorias</b>, criar a categoria fictícia “Casa e decoração”. Em <b>Produtos e SKUs</b>, cadastrar um SKU novo e selecioná-la; conferir o vínculo na listagem.</li>
+<li>Em <b>Clientes e B2B → Grupos econômicos</b>, criar um grupo de demonstração. Em <b>Contratos e regras comerciais</b>, vincular um contrato ao grupo.</li>
+<li>Em <b>Experiência da loja → Commerce Studio</b>, selecionar canal e tema, alterar um banner e testar desktop/mobile. Salvar rascunho, simular publicação e verificar o histórico.</li>
+<li>Testar as confirmações antes de exclusão e publicação, explicando que não há efeitos nos ambientes reais.</li>
+</ol>
+<h3>18.4 Requisitos para evolução arquitetural</h3><p>Antes de transformar o editor e os cadastros em funcionalidades reais, é necessário definir identificadores estáveis, relações entre entidades, versionamento de tema, escopo multicanal e multi-tenant, permissões por ação, publicação assíncrona, prévia fiel, concorrência de edição, auditoria, monitoramento, tratamento de erro e estratégias de rollback. As APIs e regras precisam ser validadas com Engenharia e a documentação técnica.</p>
+</section>
+<section id="referencias"><h2>19. Referências e governança</h2><ul>
 <li><a target="_blank" rel="noopener noreferrer" href="https://marca.totvs.com/identidade-visual/">Identidade visual TOTVS</a> — orientação de marca.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/pages/viewpage.action?pageId=486619812">Documentação Linx Commerce</a> — referência funcional do produto existente.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://share.linx.com.br/display/commerce/Smart+Finder">Smart Finder</a> — referência de busca e descoberta de produtos.</li>
