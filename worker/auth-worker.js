@@ -74,6 +74,7 @@ export default {
    url.pathname==="/api/products"||
    url.pathname==="/api/product-statuses"||
    url.pathname==="/api/catalog-thumbnails"||
+   url.pathname==="/api/catalog-references"||
    /^\/api\/items\/(products|skus|kits)\/[0-9]+$/.test(url.pathname)||
    /^\/api\/products\/[0-9]+$/.test(url.pathname)
   )){
@@ -149,6 +150,37 @@ export default {
       }catch{return {id,relativePath:null}}
      }));
      return output({items:entries},200,cors);
+    }
+    if(url.pathname==="/api/catalog-references"){
+     // Referências para formulários. Exclusivamente GET, sem credenciais ou metadados sensíveis.
+     const sources={
+      brands:{path:"brands",name:"name"},
+      categories:{path:"categories",name:"name"},
+      definitions:{path:"product-definitions",name:"displayName"},
+      tags:{path:"tags",name:"name"},
+      statuses:{path:"product-statuses",name:"status"}
+     };
+     const result={};
+     await Promise.all(Object.entries(sources).map(async([type,cfg])=>{
+      try{
+       const rows=[],seen=new Set();let truncated=false;
+       for(let page=1;page<=3;page++){
+        const response=await layerGet("/catalog/"+cfg.path+"?page="+page+"&pageSize=100");
+        if(response.error){result[type]={items:[],error:"UNAVAILABLE"};return}
+        const payload=response.data||{};
+        for(const entry of Array.isArray(payload.items)?payload.items:[]){
+         if(entry.id===undefined||entry.id===null||seen.has(entry.id))continue;
+         seen.add(entry.id);
+         rows.push({id:entry.id,name:entry[cfg.name]??entry.name??String(entry.id),
+          integrationId:entry.integrationId??null,enabled:entry.isEnabled??null});
+        }
+        if(page===3&&Number(payload.totalPages)>page)truncated=true;
+        if(page>=Number(payload.totalPages||1))break;
+       }
+       result[type]={items:rows,truncated};
+      }catch{result[type]={items:[],error:"UNAVAILABLE"}}
+     }));
+     return output({source:"layer-test",references:result},200,cors);
     }
     if(url.pathname==="/api/product-statuses"){
      const result=await layerGet("/catalog/product-statuses?page=1&pageSize=100");
