@@ -1309,7 +1309,137 @@ function vnextLinkBind(target){
  }));
 }
 
-function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent=titles?titles[1]:'Visualização conceitual e interativa do módulo '+page.toLowerCase()+'.';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=page==='Tarefas e notificações'?renderVnextTasks():page==='Saúde operacional'?renderVnextHealth():page==='Auditoria demonstrativa'?renderVnextAudit():page==='Simulador B2B'?renderVnextB2B():selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():page==='Moderação de clientes'?renderCustomerModeration():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():page==='Commerce Studio'?renderStudio():discoveryScreens[page]?renderDiscoveryScreen(page):['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):page==='Webhooks'?renderWebhooks():['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.insertAdjacentHTML('afterbegin',renderVnextHelp(page));bindVnextDomain(target,page);vnextBindList(target,page);vnextColumnPanel(target,page);vnextLinkBind(target);vnextTasksUpdate();bindStudio(target);bindModeration(target);target.querySelectorAll('[data-register-create]').forEach(b=>{if(!demoCan('write')){b.title='Ação indisponível para perfil '+vnextRole;b.setAttribute('aria-disabled','true')}b.addEventListener('click',()=>openRegister(b.dataset.registerCreate))});
+
+/* Manu IA — interface de insights, respostas determinísticas calculadas sobre as entidades carregadas. */
+const manuSuggestions=[
+'Como estão as vendas por canal?',
+'Quais pedidos precisam de atenção?',
+'Quais produtos estão com estoque crítico?',
+'Qual é o panorama de pagamentos?',
+'Como está minha carteira de clientes?',
+'O que precisa ser resolvido nas integrações?'
+];
+let manuHistory=[];
+function manuSnapshot(){
+ const orders=[...fakeOrders],products=[...fakeProducts],customers=[...fakeCustomers],integrations=[...mockIntegrations];
+ const total=orders.reduce((s,o)=>s+Number(o.total||0),0);
+ const byChannel={};
+ orders.forEach(o=>{const item=byChannel[o.channel]||{count:0,total:0};item.count++;item.total+=Number(o.total)||0;byChannel[o.channel]=item});
+ return {orders,products,customers,integrations,total,byChannel};
+}
+function manuCurrency(value){return fmtMoney(Number(value)||0)}
+function manuAnswer(query){
+ const q=String(query||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const d=manuSnapshot();
+ const number=x=>Number(x).toLocaleString('pt-BR');
+ const result=(heading,paragraph,metrics=[],details=[],routes=[])=>({heading,paragraph,metrics,details,routes});
+ if(/canal|marketplace|origem|participac|venda|receita|faturamento|ticket/.test(q)){
+  const ranked=Object.entries(d.byChannel).sort((a,b)=>b[1].total-a[1].total);
+  const ticket=d.orders.length?d.total/d.orders.length:0;
+  return result('Desempenho comercial por canal',
+   'A amostra atual reúne '+number(d.orders.length)+' pedidos e '+manuCurrency(d.total)+' em valor total registrado. O canal com maior participação é '+(ranked[0]?.[0]||'não identificado')+'.',
+   [['Pedidos',number(d.orders.length)],['Valor dos pedidos',manuCurrency(d.total)],['Ticket médio',manuCurrency(ticket)]],
+   ranked.map(([name,v])=>name+': '+number(v.count)+' pedidos · '+manuCurrency(v.total)+' ('+(d.total?v.total/d.total*100:0).toFixed(1).replace('.',',')+'% do valor)'),
+   [{label:'Abrir pedidos',page:'Pedidos'},{label:'Relatórios',page:'Relatórios de vendas'}]);
+ }
+ if(/pedido|atras|penden|conflito|separac|cancelad|problema/.test(q)){
+  const priority=d.orders.filter(o=>['Aguardando pagamento','Em separação','Cancelado'].includes(o.status));
+  const byStatus={};d.orders.forEach(o=>byStatus[o.status]=(byStatus[o.status]||0)+1);
+  return result('Pedidos que merecem atenção',
+   'Há '+number(priority.length)+' pedidos nos estados que demandam acompanhamento operacional. A prioridade é investigar pendências financeiras e pedidos ainda em separação antes de executar qualquer transição.',
+   [['Aguardando pagamento',number(byStatus['Aguardando pagamento']||0)],['Em separação',number(byStatus['Em separação']||0)],['Cancelados',number(byStatus['Cancelado']||0)]],
+   priority.slice(0,6).map(o=>'#'+o.id+' · '+o.status+' · '+manuCurrency(o.total)+' · '+o.channel),
+   [{label:'Consultar pedidos',page:'Pedidos'},{label:'Saúde operacional',page:'Saúde operacional'}]);
+ }
+ if(/estoque|sku|produto|catalogo|reposic|ruptura|indispon/.test(q)){
+  const low=d.products.filter(p=>Number(p.stock||0)<=20).sort((a,b)=>Number(a.stock||0)-Number(b.stock||0));
+  return result('Situação do catálogo e estoque',
+   'Identifiquei '+number(low.length)+' SKUs com até 20 unidades disponíveis na amostra. Recomendo revisar prioridade de reposição e origem do saldo antes de mudar a disponibilidade na loja.',
+   [['SKUs analisados',number(d.products.length)],['Estoque crítico (≤ 20)',number(low.length)],['Sem estoque',number(d.products.filter(p=>Number(p.stock||0)===0).length)]],
+   low.map(p=>p.sku+' · '+p.name+' · '+number(p.stock)+' unidades'),
+   [{label:'Abrir produtos e SKUs',page:'Produtos e SKUs'},{label:'Indexação',page:'Indexação de produtos'}]);
+ }
+ if(/pagamento|pix|boleto|cartao|financeir|transac|captura|estorno/.test(q)){
+  const byMethod={};d.orders.forEach(o=>byMethod[o.payment]=(byMethod[o.payment]||0)+1);
+  const pending=d.orders.filter(o=>o.status==='Aguardando pagamento');
+  return result('Panorama financeiro dos pedidos',
+   'A distribuição abaixo considera o meio de pagamento informado nos pedidos. O valor total dos pedidos não representa receita liquidada ou conciliada.',
+   [['Pedidos',number(d.orders.length)],['Aguardando pagamento',number(pending.length)],['Valor registrado',manuCurrency(d.total)]],
+   Object.entries(byMethod).map(([method,count])=>method+': '+number(count)+' pedidos').concat(pending.map(o=>'Pendente #'+o.id+' · '+o.payment+' · '+manuCurrency(o.total))),
+   [{label:'Abrir pagamentos',page:'Pagamentos'},{label:'Abrir pedidos',page:'Pedidos'}]);
+ }
+ if(/cliente|b2b|empresa|contrato|moderac|comprador|credito/.test(q)){
+  const corporate=d.customers.filter(x=>x.type==='Pessoa jurídica');
+  const pending=corporate.filter(x=>(x.moderation||'Em análise')==='Em análise');
+  const contracts=registerRows('Contratos');
+  return result('Visão da carteira de clientes e B2B',
+   'A base contém '+number(d.customers.length)+' clientes, incluindo '+number(corporate.length)+' empresas. Para a operação B2B, vale conferir moderação, grupos e contratos aplicáveis por canal.',
+   [['Clientes',number(d.customers.length)],['Empresas',number(corporate.length)],['Em análise',number(pending.length)]],
+   ['Contratos cadastrados: '+number(contracts.length),...corporate.slice(0,6).map(x=>x.name+' · '+(x.moderation||'Em análise')+' · '+(x.group||'Sem grupo informado'))],
+   [{label:'Abrir clientes',page:'Clientes'},{label:'Moderação B2B',page:'Moderação de clientes'},{label:'Simular regras B2B',page:'Simulador B2B'}]);
+ }
+ if(/integrac|webhook|fila|log|erro|falha|conector|sincroniz|replicac/.test(q)){
+  const issues=d.integrations.filter(x=>Number(x.errors||0)>0);
+  const webhooks=webhookDemo.filter(x=>/timeout|502|falha/i.test(x.result));
+  return result('Diagnóstico das integrações',
+   'Há '+number(issues.length)+' conectores e '+number(webhooks.length)+' webhooks com ocorrências sinalizadas na base de referência. Priorize investigar erro, tentativas e correlação antes de reprocessar.',
+   [['Conectores',number(d.integrations.length)],['Com atenção',number(issues.length)],['Webhooks com ocorrência',number(webhooks.length)]],
+   [...issues.map(x=>x.name+' · '+x.errors+' ocorrências'),...webhooks.map(x=>x.code+' · '+x.result)],
+   [{label:'Saúde operacional',page:'Saúde operacional'},{label:'Webhooks',page:'Webhooks'},{label:'Integrações',page:'Integrações'}]);
+ }
+ return result('Posso ajudar a analisar sua operação',
+  'Posso investigar vendas, pedidos, produtos, estoque, clientes, B2B, pagamentos e integrações a partir dos registros disponíveis. Experimente uma das perguntas sugeridas ou descreva o indicador que deseja consultar.',
+  [['Pedidos',number(d.orders.length)],['Produtos/SKUs',number(d.products.length)],['Clientes',number(d.customers.length)]],[],[{label:'Visão geral',page:'Área de trabalho'}]);
+}
+function manuMetricsMarkup(metrics){
+ return metrics?.length?'<div class="manu-metric-row">'+metrics.map(([label,value])=>'<div><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>').join('')+'</div>':'';
+}
+function manuResponseMarkup(answer){
+ return '<div class="manu-message-head"><span style="color:#9450da">✦</span> Manu IA</div>'+
+ '<b>'+esc(answer.heading)+'</b><p>'+esc(answer.paragraph)+'</p>'+manuMetricsMarkup(answer.metrics)+
+ (answer.details?.length?'<ul>'+answer.details.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
+ (answer.routes?.length?'<div class="manu-sources">'+answer.routes.map(x=>'<button type="button" data-manu-route="'+esc(x.page)+'">'+esc(x.label)+' ↗</button>').join('')+'</div>':'');
+}
+function renderManuIA(){
+ const snapshot=manuSnapshot();
+ if(!manuHistory.length)manuHistory.push({who:'assistant',answer:{
+  heading:'Olá! Eu sou a Manu.',
+  paragraph:'Seu espaço de análise para acompanhar indicadores, entender variações e encontrar o que precisa de atenção na operação. O que você gostaria de investigar?',
+  metrics:[['Pedidos',String(snapshot.orders.length)],['Produtos/SKUs',String(snapshot.products.length)],['Clientes',String(snapshot.customers.length)]],routes:[]}});
+ const log=manuHistory.map(m=>'<div class="manu-message '+m.who+'">'+(m.who==='user'?esc(m.text):manuResponseMarkup(m.answer))+'</div>').join('');
+ return '<div class="manu-workspace">'+
+ '<section class="manu-shell"><div class="manu-heading"><div class="manu-mark" aria-hidden="true">✦</div><div><h2>Manu IA</h2><p>Inteligência para acompanhar sua operação e apoiar decisões</p></div><div style="margin-left:auto"><button type="button" class="icon-button" id="manuClear" title="Iniciar nova conversa" aria-label="Nova conversa">↻</button></div></div>'+
+ '<div id="manuChat" class="manu-chat" role="log" aria-live="polite" aria-label="Conversa com Manu IA">'+log+'</div>'+
+ '<div class="manu-composer"><form id="manuForm"><input id="manuInput" type="text" maxlength="350" autocomplete="off" aria-label="Pergunte à Manu" placeholder="Pergunte sobre vendas, pedidos, catálogo, clientes…" required><button type="submit">Enviar ↗</button></form></div>'+
+ '<div class="manu-footnote">Análises geradas a partir dos dados disponíveis neste ambiente. Verifique as fontes antes de tomar decisões.</div></section>'+
+ '<aside><div class="manu-aside-card"><h3>O que você gostaria de analisar?</h3><div class="manu-prompts">'+manuSuggestions.map(q=>'<button type="button" data-manu-question="'+esc(q)+'"><span style="color:#9856ce">✦</span>'+esc(q)+'</button>').join('')+'</div></div>'+
+ '<div class="manu-aside-card"><h3>Contexto da análise</h3><div class="manu-context-list"><b>Unidade:</b> '+esc(vnextContext.unit)+'<br><b>Canal selecionado:</b> '+esc(vnextContext.channel)+'<br><b>Fontes:</b> Pedidos, Catálogo, Clientes e Integrações<br><b>Base:</b> Registros deste ambiente</div><div class="vnext-toolbar"><button type="button" id="manuReport">Exportar resumo CSV</button></div></div>'+
+ '<div class="manu-aside-card"><h3>Como a Manu ajuda?</h3><p class="manu-context-list">Faça perguntas sobre tendências, desempenho e pendências. A Manu organiza os indicadores e oferece acesso aos módulos relacionados.</p><details class="manu-context-list"><summary>Sobre as respostas</summary><p>Nesta versão, as respostas são calculadas por regras analíticas sobre a base de avaliação; não há integração com um modelo generativo nem acesso a dados de produção.</p></details></div></aside></div>';
+}
+function bindManuIA(target){
+ const form=target.querySelector('#manuForm');if(!form)return;
+ const appendQuestion=text=>{
+  const q=String(text||'').trim().slice(0,350);if(!q)return;
+  manuHistory.push({who:'user',text:q});
+  manuHistory.push({who:'assistant',answer:manuAnswer(q)});
+  if(manuHistory.length>30)manuHistory=manuHistory.slice(-30);
+  renderActiveModule('Manu IA');
+  const log=document.getElementById('manuChat');if(log)log.scrollTop=log.scrollHeight;
+  document.getElementById('manuInput')?.focus();
+ };
+ form.addEventListener('submit',e=>{e.preventDefault();appendQuestion(target.querySelector('#manuInput').value)});
+ target.querySelectorAll('[data-manu-question]').forEach(b=>b.addEventListener('click',()=>appendQuestion(b.dataset.manuQuestion)));
+ target.querySelectorAll('[data-manu-route]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.manuRoute)));
+ target.querySelector('#manuClear')?.addEventListener('click',()=>{manuHistory=[];renderActiveModule('Manu IA');target.querySelector('#manuInput')?.focus()});
+ target.querySelector('#manuReport')?.addEventListener('click',()=>{
+  const snap=manuSnapshot();
+  const lines=[['Indicador','Valor'],['Pedidos',snap.orders.length],['Valor registrado',snap.total],['Produtos e SKUs',snap.products.length],['Clientes',snap.customers.length],...Object.entries(snap.byChannel).map(([name,v])=>['Canal: '+name,v.total])];
+  const csv='\uFEFF'+lines.map(row=>row.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(';')).join('\r\n');
+  const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));link.download='manu-resumo.csv';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+ });
+}
+
+function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent=titles?titles[1]:'Visualização conceitual e interativa do módulo '+page.toLowerCase()+'.';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=page==='Manu IA'?renderManuIA():page==='Tarefas e notificações'?renderVnextTasks():page==='Saúde operacional'?renderVnextHealth():page==='Auditoria demonstrativa'?renderVnextAudit():page==='Simulador B2B'?renderVnextB2B():selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():page==='Moderação de clientes'?renderCustomerModeration():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():page==='Commerce Studio'?renderStudio():discoveryScreens[page]?renderDiscoveryScreen(page):['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):page==='Webhooks'?renderWebhooks():['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.insertAdjacentHTML('afterbegin',renderVnextHelp(page));bindVnextDomain(target,page);vnextBindList(target,page);vnextColumnPanel(target,page);vnextLinkBind(target);vnextTasksUpdate();bindManuIA(target);bindStudio(target);bindModeration(target);target.querySelectorAll('[data-register-create]').forEach(b=>{if(!demoCan('write')){b.title='Ação indisponível para perfil '+vnextRole;b.setAttribute('aria-disabled','true')}b.addEventListener('click',()=>openRegister(b.dataset.registerCreate))});
 target.querySelectorAll('[data-register-edit]').forEach(b=>b.addEventListener('click',()=>openRegister(page,b.dataset.registerEdit)));
 target.querySelectorAll('[data-register-delete]').forEach(b=>b.addEventListener('click',()=>confirmRegisterDelete(page,b.dataset.registerDelete)));
 target.querySelectorAll('[data-register-reset]').forEach(b=>b.addEventListener('click',()=>resetRegister(b.dataset.registerReset)));
@@ -1404,6 +1534,7 @@ const persistedUser=storedSession();if(persistedUser)showAdmin(persistedUser);
 loadRegisters();
 vnextContextInit();
 vnextSearchInit();
+document.getElementById('manuTopTrigger').addEventListener('click',()=>navigate('Manu IA'));
 document.getElementById('workQueue').addEventListener('click',()=>navigate('Tarefas e notificações'));
 vnextTasksUpdate();
 sync();
