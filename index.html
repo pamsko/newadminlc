@@ -2283,7 +2283,12 @@ function catalogFilteredRows(){
 function catalogCategoryName(p){
  if(p.category!==null&&p.category!==undefined&&p.category!=='')return String(p.category);
  const info=catalogRowDetails.get((p.entityType||'products')+':'+p.id);
- return info?.category??'';
+ const id=info?.category??'';
+ if(id!==''&&id!==null&&catalogSource==='layer'){
+  const match=catalogReferenceData?.categories?.items?.find(c=>String(c.id)===String(id));
+  return match?.name??String(id);
+ }
+ return id??'';
 }
 function catalogPriceText(p){
  let value=p.price;
@@ -2377,7 +2382,7 @@ function exportLayerCSV(){
  if(!catalogRows().length)return;
  const rows=catalogFilteredRows();
  if(!rows.length){toast('Nenhum produto encontrado para exportar.');return}
- const entries=[['ID','SKU','ID de integração','Nome','Situação','Marca'],...rows.map(p=>[p.id,p.sku,p.integrationId,p.name,layerStatusValue(p),p.brand])];
+ const entries=[['ID','SKU','ID de integração','Nome','Tipo','Categoria','Visibilidade','Marca','Preço','Estoque'],...rows.map(p=>[p.id,p.sku,p.integrationId,p.name,layerTypeLabel(p),catalogCategoryName(p),layerStatusValue(p),p.brand,p.price??catalogRowDetails.get((p.entityType||'products')+':'+p.id)?.price??'',p.stock??catalogRowDetails.get((p.entityType||'products')+':'+p.id)?.stock??''])];
  function csvCell(value){
   let txt=String(value??'');
   if(/^\s*[=+@-]/.test(txt))txt="'"+txt;
@@ -2386,7 +2391,7 @@ function exportLayerCSV(){
  const csv=String.fromCharCode(65279)+entries.map(row=>row.map(csvCell).join(';')).join('\r\n');
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
  const anchor=document.createElement('a');anchor.href=URL.createObjectURL(blob);
- anchor.download='produtos-layer-testes-'+new Date().toISOString().slice(0,10)+'.csv';
+ anchor.download='produtos-'+(catalogSource==='layer'?'layer-testes':'demonstracao')+'-'+new Date().toISOString().slice(0,10)+'.csv';
  document.body.appendChild(anchor);anchor.click();anchor.remove();
  setTimeout(()=>URL.revokeObjectURL(anchor.href),1000);
 }
@@ -2530,21 +2535,38 @@ function catalogRefValue(value){
  if(typeof value==='object')return String(value.id??value.categoryId??value.tagId??value.skuId??value.productId??'');
  return String(value);
 }
+function catalogDemoReferences(){
+ const rows=demoCatalogRows();
+ const items=(arr)=>[...new Set(arr.map(v=>String(v??'').trim()).filter(Boolean))].map(v=>({id:v,name:v}));
+ return {
+  brands:{items:items(rows.map(p=>p.brand))},
+  categories:{items:items([...rows.map(p=>p.category),...registerRows('Categorias').map(p=>p.name)])},
+  definitions:{items:[{id:'default',name:'Definição padrão'}]},
+  statuses:{items:items(rows.map(p=>p.raw?.status))},
+  tags:{items:[]},
+  products:{items:rows.filter(p=>p.entityType==='products').map(p=>({id:p.id,name:p.name||p.sku}))},
+  skus:{items:rows.filter(p=>p.entityType==='skus').map(p=>({id:p.id,name:p.name||p.sku}))},
+  suppliers:{items:items(rows.map(p=>p.raw?.supplier))},
+  properties:{items:[]}
+ };
+}
+function catalogReferenceSource(){return catalogSource==='demo'?catalogDemoReferences():catalogReferenceData}
 function catalogRefPicker(key,value,uniqueId){
  const source=CATALOG_REFERENCE_FIELDS[key],special=CATALOG_SELECT_ENUMS[key];
  if(!source&&!special)return null;
- const values=special?special.map(([id,name])=>({id,name})):(catalogReferenceData?.[source]?.items||[]);
+ const refs=catalogReferenceSource();
+ const values=special?special.map(([id,name])=>({id,name})):(refs?.[source]?.items||[]);
  const selected=Array.isArray(value)?value.map(catalogRefValue):[catalogRefValue(value)];
  const chosen=Object.prototype.hasOwnProperty.call(catalogDraftSelections,uniqueId)?catalogDraftSelections[uniqueId]:(selected.find(x=>x!=='')||'');
  const existing=values.some(option=>String(option.id)===chosen);
  const opts='<option value="">Selecione...</option>'+
   (chosen&&!existing?'<option value="'+esc(chosen)+'" selected>Atual: '+esc(chosen)+' (fora da lista)</option>':'')+
   values.map(option=>'<option value="'+esc(String(option.id))+'" '+(String(option.id)===chosen?'selected':'')+'>'+esc(String(option.name))+' · '+esc(String(option.id))+'</option>').join('');
- const loading=source&&!catalogReferenceData;
- const sourceMeta=source?catalogReferenceData?.[source]:null;
+ const loading=source&&catalogSource==='layer'&&!catalogReferenceData;
+ const sourceMeta=source?refs?.[source]:null;
  return '<label class="catalog-edit-field catalog-live-select"><span>'+esc(catalogRefLabel(key))+'</span>'+
   '<select data-catalog-select="'+esc(uniqueId)+'" aria-label="'+esc(catalogRefLabel(key))+'" '+(loading?'disabled':'')+'>'+opts+'</select>'+
-  (loading?'<small>Carregando opções da Layer…</small>':sourceMeta?.truncated?'<small>Lista parcial: primeiras 300 opções</small>':'')+
+  (loading?'<small>Carregando opções…</small>':sourceMeta?.truncated?'<small>Lista parcial: primeiras 300 opções</small>':'')+
   (Array.isArray(value)&&value.length?'<small>Vinculados atualmente: '+value.map(x=>esc(catalogRefValue(x))).join(', ')+'</small>':'')+
   '</label>';
 }
@@ -2702,7 +2724,7 @@ function openLayerNewRegistration(){
    const val=catalogMissingFormField(key);
    return '<div class="catalog-section-block"><h3>'+esc(catalogRefLabel(key))+'</h3>'+catalogFormField(key,val,'create-'+current+'-'+key)+'</div>';
   }).join('');
-  body.innerHTML='<div class="catalog-readonly-banner">Explore o cadastro com opções reais da Layer. Apenas comboboxes estão disponíveis; nenhum valor será salvo.</div>'+
+  body.innerHTML='<div class="catalog-readonly-banner">Explore o cadastro. Os comboboxes usam referências da fonte selecionada, sem permitir gravações.</div>'+
    '<label class="catalog-new-kind">Tipo de cadastro<select id="layerNewKind">'+[['products','Produto'],['skus','SKU'],['kits','Kit']].map(([key,name])=>'<option value="'+key+'" '+(key===current?'selected':'')+'>'+name+'</option>').join('')+'</select></label>'+
    (catalogReferenceError?'<p class="catalog-ref-warning">'+esc(catalogReferenceError)+'</p>':'')+
    '<div class="catalog-detail-tabs" role="tablist">'+tabHtml+'</div>'+
@@ -2713,7 +2735,7 @@ function openLayerNewRegistration(){
   catalogBindLiveSelects(body);
  }
  render();overlay.querySelector('#closeLayerNew').focus();
- loadCatalogReferences().then(()=>{if(overlay.isConnected)render()});
+ if(catalogSource==='layer')loadCatalogReferences().then(()=>{if(overlay.isConnected)render()});
 }
 function showDemoCatalogDetails(record,mode='view'){
  const raw=record.raw||{};
