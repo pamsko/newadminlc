@@ -2332,6 +2332,7 @@ function renderCatalogRelated(key,value){
 /* Editor de consulta: campos reais do cadastro exibidos com controles desabilitados. */
 /* Referências reais de cadastro: selects exploráveis sem persistência. */
 let catalogReferenceData=null,catalogReferencePromise=null,catalogReferenceError='';
+let catalogDraftSelections={};
 async function loadCatalogReferences(){
  if(catalogReferenceData)return catalogReferenceData;
  if(catalogReferencePromise)return catalogReferencePromise;
@@ -2371,7 +2372,7 @@ function catalogRefPicker(key,value,uniqueId){
  if(!source&&!special)return null;
  const values=special?special.map(([id,name])=>({id,name})):(catalogReferenceData?.[source]?.items||[]);
  const selected=Array.isArray(value)?value.map(catalogRefValue):[catalogRefValue(value)];
- const chosen=selected.find(x=>x!=='')||'';
+ const chosen=Object.prototype.hasOwnProperty.call(catalogDraftSelections,uniqueId)?catalogDraftSelections[uniqueId]:(selected.find(x=>x!=='')||'');
  const existing=values.some(option=>String(option.id)===chosen);
  const opts='<option value="">Selecione...</option>'+
   (chosen&&!existing?'<option value="'+esc(chosen)+'" selected>Atual: '+esc(chosen)+' (fora da lista)</option>':'')+
@@ -2390,6 +2391,13 @@ function catalogFormField(key,value,path=''){
  if(typeof value==='boolean'&&CATALOG_SELECT_ENUMS[key])return catalogRefPicker(key,value,path||key);
  if(value!==null&&typeof value==='object')return '<div class="catalog-field-group"><h4>'+esc(catalogRefLabel(key))+'</h4>'+catalogNestedFields(value,key,0)+'</div>';
  return catalogInput(catalogRefLabel(key),value);
+}
+function catalogBindLiveSelects(overlay){
+ overlay.querySelectorAll('[data-catalog-select]').forEach(select=>{
+  select.addEventListener('change',()=>{
+   catalogDraftSelections[select.dataset.catalogSelect]=select.value;
+  });
+ });
 }
 function catalogMissingFormField(key){
  const defaults={
@@ -2441,7 +2449,8 @@ const CATALOG_ENTITY_GROUPS={
   ['SKUs e relacionamentos',['skuIds','skus','associations','associationDataSources']],
   ['Mídias',['media']],
   ['Entrega',['shipping']],
-  ['Referências e programas',['references','loyaltyPrograms']]
+  ['Referências e programas',['references','loyaltyPrograms']],
+  ['Relacionamentos',['__relations']]
  ],
  skus:[
   ['Identificação',['id','sku','integrationId','name','upc','productIds','productDefinitionId']],
@@ -2449,7 +2458,8 @@ const CATALOG_ENTITY_GROUPS={
   ['Exibição',['display']],
   ['Estoque e dimensões',['inventorySettings','dimensions']],
   ['Fornecedores',['suppliers']],
-  ['Outros dados',['misc']]
+  ['Outros dados',['misc']],
+  ['Relacionamentos',['__relations']]
  ],
  kits:[
   ['Identificação',['id','sku','integrationId','name','behavior','brandId','itemCount']],
@@ -2459,7 +2469,8 @@ const CATALOG_ENTITY_GROUPS={
   ['Mídias',['media']],
   ['Preços e disponibilidade',['pricing','availability']],
   ['Entrega',['shipping']],
-  ['Conteúdo',['seo','descriptions','display']]
+  ['Conteúdo',['seo','descriptions','display']],
+  ['Relacionamentos',['__relations']]
  ]
 };
 function catalogInput(label,value){
@@ -2479,6 +2490,8 @@ function catalogNestedFields(value,prefix='',depth=0){
  if(depth>5)return '<p class="catalog-muted">Nível de detalhe não disponível.</p>';
  return '<div class="catalog-edit-grid">'+Object.entries(value).map(([key,val])=>{
   const name=CATALOG_FIELD_LABELS[key]||key;
+  const select=catalogRefPicker(key,val,(prefix?prefix+'-':'')+key);
+  if(select)return select;
   if(val!==null&&typeof val==='object')
    return '<div class="catalog-field-group"><h4>'+esc(name)+'</h4>'+catalogNestedFields(val,name,depth+1)+'</div>';
   return catalogInput(name,val);
