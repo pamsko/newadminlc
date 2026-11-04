@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Documentação de produto, UX/UI, arquitetura e apresentação do protótipo Agl Commerce Admin.">
-<title>Documentação do Admin | Agl Commerce</title>
+<meta name="description" content="Documentação de produto, UX/UI, arquitetura e apresentação do protótipo vNext Commerce Admin.">
+<title>Documentação do Admin | vNext Commerce</title>
 <style>
 :root{--navy:#002233;--navy2:#06384a;--cyan:#00dbff;--cyanSoft:#e4faff;--orange:#ff8900;--purple:#a44dff;--green:#00896d;--bg:#f4f8fa;--line:#dce9ee;--text:#123041;--muted:#5e7481;--shadow:0 7px 24px #0022330a}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:80px}body{margin:0;background:var(--bg);font:14px/1.65 Inter,"Segoe UI",Arial,sans-serif;color:var(--text)}a{color:#007796}a:focus-visible,button:focus-visible{outline:3px solid #00bded;outline-offset:3px}button{font:inherit;cursor:pointer}.layout{display:grid;grid-template-columns:255px minmax(0,1fr);min-height:100vh}
@@ -33,17 +33,17 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 </head>
 <body>
 <div class="layout">
-<aside aria-label="Índice da documentação"><div class="logo">AGL<small>COMMERCE · ADMIN</small></div><div class="kicker">Documentação</div>
+<aside aria-label="Índice da documentação"><div class="logo">vNext<small>COMMERCE · ADMIN</small></div><div class="kicker">Documentação</div>
 <nav id="toc">
 <a href="#visao">Visão geral</a><a href="#escopo">Escopo e cobertura</a><a href="#navegacao">Navegação</a><a href="#ux">Princípios de UX/UI</a><a href="#componentes">Componentes</a><a href="#identidade">Identidade visual</a><a href="#tecnologia">Tecnologia</a><a href="#apis">APIs e webhooks</a><a href="#dados">Dados e segurança</a><a href="#qualidade">Qualidade e acessibilidade</a><a href="#roteiro">Roteiro de apresentação</a><a href="#evolucao">Próximos passos</a><a href="#estudo-funcional">Estudo da Linx Commerce</a><a href="#adequacoes-funcionais">Adequações implementadas</a><a href="#jornadas">Jornadas detalhadas</a><a href="#rastreabilidade">Rastreabilidade e homologação</a><a href="#cadastros">Cadastros simulados</a><a href="#studio">Commerce Studio e vínculos</a><a href="#doc-navigation">Navegação documentada</a><a href="#relatorio-descoberta">Relatório de descoberta</a><a href="#acesso">Acesso e preferências</a><a href="#referencias">Referências</a>
 </nav><a class="return" href="./index.html">← Voltar ao Admin</a>
 </aside>
 <main>
-<div class="topbar"><div class="crumb">Agl Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
+<div class="topbar"><div class="crumb">vNext Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
 <div class="body">
-<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>Agl Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.9</span><span>Dados fictícios</span></div></header>
+<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>vNext Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 1.9</span><span>Dados fictícios</span></div></header>
 <div class="notice"><b>Natureza desta documentação:</b> registra a versão demonstrativa do projeto <code>newadminlc</code> e apresenta sua direção de produto. Não é documentação oficial da plataforma Linx Commerce, não substitui a documentação funcional da Linx Commerce e não comprova que todas as funcionalidades do Admin legado já foram implementadas.</div>
-<section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o Agl Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
+<section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o vNext Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
 <div class="grid"><article class="card"><div class="metric">01</div><h3>Encontrar</h3><p>Reduzir esforço de navegação com grupos orientados a tarefas, nomes claros e menu retrátil.</p></article><article class="card"><div class="metric">02</div><h3>Entender</h3><p>Apresentar indicadores e estados com hierarquia visual, contexto e linguagem consistente.</p></article><article class="card"><div class="metric">03</div><h3>Agir</h3><p>Conectar alertas e consultas às jornadas operacionais, com filtros, detalhes e atalhos.</p></article></div>
 <h3>Objetivos de experiência</h3><p>Menos etapas para localizar uma função; maior consistência entre listagens; redução de dúvidas sobre pedidos e operações; melhor aproveitamento da área útil; e evolução segura com equivalência funcional e retrocompatibilidade.</p></section>
 <section id="escopo"><h2>02. Escopo e cobertura funcional</h2><p>Os itens abaixo distinguem telas efetivamente demonstradas, navegação conceitual e integrações ainda não disponíveis.</p>
@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <tr><td>Mapas e gráficos</td><td>Exibir período, métrica e origem dos dados; permitir explorar detalhes</td></tr>
 <tr><td>Mensagens de estado</td><td>Distinguir vazio, carregando, sucesso, erro, permissão insuficiente e indisponibilidade — em evolução</td></tr>
 </tbody></table></section>
-<section id="identidade"><h2>06. Identidade visual e design tokens</h2><p>A identidade visual é uma proposta própria de <b>Agl Commerce</b>. Para prototipação, aplica azul-escuro, ciano, branco e neutros, além de cores de apoio. O logotipo foi aproximado em HTML/CSS e <b>não é o arquivo institucional oficial</b>.</p>
+<section id="identidade"><h2>06. Identidade visual e design tokens</h2><p>A identidade visual é uma proposta própria de <b>vNext Commerce</b>. Para prototipação, aplica azul-escuro, ciano, branco e neutros, além de cores de apoio. O logotipo foi aproximado em HTML/CSS e <b>não é o arquivo institucional oficial</b>.</p>
 <div class="palette">
 <div class="swatch"><div class="color" style="background:#002233"></div><div class="label"><strong>Azul base</strong><code>#002233</code><div>Sidebar, títulos e ações</div></div></div>
 <div class="swatch"><div class="color" style="background:#00dbff"></div><div class="label"><strong>Ciano</strong><code>#00DBFF</code><div>Destaques e foco</div></div></div>
@@ -101,7 +101,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <div class="swatch"><div class="color" style="background:#123041"></div><div class="label"><strong>Texto</strong><code>#123041</code><div>Legibilidade</div></div></div>
 </div>
 <h3>Tipografia, espaçamento e iconografia</h3><p>O protótipo utiliza a pilha de fontes <code>Inter, Segoe UI, Arial, sans-serif</code>, com fontes de sistema como fallback. Não utiliza nem distribui fontes proprietárias. Bordas leves, cards arredondados, espaços consistentes e ícones simples sustentam uma interface de operação densa. Esses estilos ainda devem ser formalizados em um design system com tokens semânticos e componentes reutilizáveis.</p>
-<div class="callout"><b>Governança de marca:</b> antes de uma adoção institucional, validar logotipo, tipografia, paleta, padrões de aplicação e permissões de uso com o guia e a equipe responsável pela identidade visual Agl.</div></section>
+<div class="callout"><b>Governança de marca:</b> antes de uma adoção institucional, validar logotipo, tipografia, paleta, padrões de aplicação e permissões de uso com o guia e a equipe responsável pela identidade visual vNext.</div></section>
 <section id="tecnologia"><h2>07. Linguagens, tecnologias e arquitetura</h2>
 <div class="grid"><div class="card"><h3>HTML5</h3><p>Estrutura semântica das telas e dos componentes.</p></div><div class="card"><h3>CSS3</h3><p>Layout com Grid e Flexbox, tokens por variáveis CSS, responsividade e transições.</p></div><div class="card"><h3>JavaScript puro</h3><p>Estado local, renderização de listas, filtros, eventos, interações e visualizações.</p></div></div>
 <div class="diagram"><span>ChatGPT · evolução do código</span><i>→</i><span>GitHub · newadminlc</span><i>→</i><span>Netlify · site estático</span></div>
@@ -190,7 +190,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <p><b>Implicação de arquitetura:</b> manter credenciais e tokens fora do frontend estático. Validar contratos por recurso, tenant, perfis, sessão, CORS, erros, paginação e versionamento antes de selecionar endpoints. Webhooks exigem desenho de consumo seguro e rastreável, não apenas um botão na interface.</p>
 <p>Fontes: <a href="https://share.linx.com.br/pages/viewpage.action?pageId=412262957" target="_blank" rel="noopener noreferrer">Integrações — APIs Nativas</a> · <a href="https://share.linx.com.br/pages/viewpage.action?pageId=563933331" target="_blank" rel="noopener noreferrer">Autenticação JWT</a>.</p>
 <h3>14.9 Relayout anterior e continuidade funcional</h3>
-<p>A documentação do relayout de dezembro de 2025 registra ganhos pretendidos de contraste, navegação, indicadores, cards informativos e consistência visual, preservando a operação. Também registra atenção a links antigos/redirecionamentos. O redesenho Agl Commerce deve levar esse histórico em conta: não repetir melhorias apenas cosméticas e não retirar acessos estabelecidos.</p>
+<p>A documentação do relayout de dezembro de 2025 registra ganhos pretendidos de contraste, navegação, indicadores, cards informativos e consistência visual, preservando a operação. Também registra atenção a links antigos/redirecionamentos. O redesenho vNext Commerce deve levar esse histórico em conta: não repetir melhorias apenas cosméticas e não retirar acessos estabelecidos.</p>
 <p>Fonte: <a href="https://share.linx.com.br/pages/viewpage.action?pageId=635280824" target="_blank" rel="noopener noreferrer">Novo Painel Administrativo (relayout 2025)</a>.</p>
 <h3>14.10 Requisitos de pesquisa e validação ainda abertos</h3>
 <table><thead><tr><th>Tema</th><th>O que ainda precisamos confirmar</th><th>Como validar</th></tr></thead><tbody>
@@ -378,7 +378,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <p><b>Próximas dependências:</b> definição dos formulários reais de Marcas e Definições; cadastro específico de Cupons e Vales; tela de Monitoramento de logs com filtros; diferenciação de permissões e publicação; homologação de compatibilidade com os comportamentos por canal, loja e tenant.</p>
 </section>
 
-<section id="relatorio-descoberta"><h2>20. Relatório de Descoberta — Admin de Agl Commerce</h2>
+<section id="relatorio-descoberta"><h2>20. Relatório de Descoberta — Admin de vNext Commerce</h2>
 <p><b>Fonte:</b> relatório funcional de 11 páginas, datado de 03/11/2026, com navegação autenticada do Admin da Linx Commerce em modo somente leitura e pesquisa na documentação Linx Share. A sessão registrada identificou o Admin na versão <b>R.3.7.13</b>. Esta seção distingue <b>observado no ambiente</b>, <b>documentado no Linx Share</b> e <b>proposto para o novo projeto</b>. Não constitui uma homologação de todos os perfis, tenants ou versões.</p>
 <h3>20.1 Inventário funcional observado</h3>
 <table><thead><tr><th>Módulo legado</th><th>Recursos observados no relatório</th><th>Adequação no novo Admin</th></tr></thead><tbody>
@@ -439,7 +439,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <li><a target="_blank" rel="noopener noreferrer" href="https://projetos.layer.core.dcg.com.br/api/v3/webhooks/docs">Documentação de webhooks</a> — referência técnica fornecida; conteúdo pendente de validação.</li>
 <li><a target="_blank" rel="noopener noreferrer" href="https://github.com/pamsko/newadminlc">Repositório newadminlc</a> — histórico das alterações do protótipo.</li>
 </ul><div class="callout"><b>Atualização documental:</b> esta página deve acompanhar mudanças de arquitetura, navegação, design system e escopo. Recomenda-se manter data, versão e decisões de produto revisadas a cada marco relevante.</div></section>
-<div class="footer">Agl Commerce Admin · Documentação do protótipo conceitual · Conteúdo demonstrativo e não oficial · 03/11/2026</div>
+<div class="footer">vNext Commerce Admin · Documentação do protótipo conceitual · Conteúdo demonstrativo e não oficial · 03/11/2026</div>
 </div></main></div>
 <script>
 const anchors=[...document.querySelectorAll('#toc a')];
