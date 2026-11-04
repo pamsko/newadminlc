@@ -229,6 +229,37 @@ body.dark-mode{--navy:#062638;--navy2:#073b51;--text:#e5f4fa;--muted:#a9c0cd;--l
 .dark-mode .detail-warning{background:#46351b;color:#ffe5b9;border-color:#685331}
 .dark-mode .nav-children,.dark-mode .demo-register-table,.dark-mode .module-table-wrap{color:var(--text)}
 @media(max-width:820px){#demoLogin{grid-template-columns:1fr}.login-brand-side{padding:32px}.login-brand-side h1{font-size:29px}.login-form-wrap{padding:20px}.profile-name{display:none}}
+
+/* Editor ampliado compartilhado por todos os módulos de cadastro */
+.expanded-register-overlay{padding:12px;align-items:center}
+.expanded-register-dialog{width:min(1380px,100%);height:min(900px,calc(100vh - 24px));max-height:calc(100vh - 24px);display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:16px}
+.expanded-register-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 25px;border-bottom:1px solid #dce9ef;flex-shrink:0}
+.expanded-register-header h2{font-size:24px;margin:3px 0}.expanded-register-header p{margin:0;color:#5a7788;font-size:12px}
+.expanded-register-layout{display:grid;grid-template-columns:245px minmax(0,1fr);min-height:0;flex:1}
+.expanded-register-tabs{background:#f1f8fa;border-right:1px solid #dce9ef;padding:14px 10px;overflow:auto}
+.expanded-register-tabs button{width:100%;border:0;background:transparent;color:#335a6b;font-size:12px;text-align:left;border-radius:8px;padding:12px 10px;display:flex;gap:10px;align-items:center;font-weight:700}
+.expanded-register-tabs button span{font-size:10px;color:#7297a6}.expanded-register-tabs button.active{background:#002233;color:#fff}.expanded-register-tabs button.active span{color:#00dbff}
+#demoRegisterForm{min-height:0;display:flex;flex-direction:column}
+.expanded-register-content{overflow:auto;min-height:0;flex:1;padding:20px 26px}
+.expanded-register-section[hidden]{display:none}.expanded-section-title{margin:0 0 19px}.expanded-section-title small{font-size:11px;color:#19839b;font-weight:700}
+.expanded-section-title h3{margin:5px 0;font-size:21px}.expanded-section-title p{font-size:12px;color:#698391;margin:0}
+.expanded-register-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+.expanded-field{display:grid;gap:6px;color:#294c5a;font-size:12px;font-weight:700;min-width:0}
+.expanded-field strong{color:#c15824}.expanded-field input,.expanded-field select,.expanded-field textarea{width:100%;border-radius:9px;border:1px solid #c7dae3;background:#fff;color:#163a4b;min-height:43px;padding:10px;font:inherit}
+.expanded-field textarea{min-height:105px;resize:vertical}.expanded-field:has(textarea){grid-column:1/-1}
+.expanded-field.is-check{display:flex;align-items:center;align-self:center;gap:10px}.expanded-field.is-check input{width:19px;min-height:19px;height:19px}
+.expanded-register-footer{border-top:1px solid #dce9ef;background:#fff;padding:14px 22px;flex-shrink:0}
+.expanded-register-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.expanded-register-actions button{border:1px solid #d1e2e8;background:white;color:#1b566e;border-radius:9px;padding:10px 14px;font-size:12px;font-weight:750}
+.expanded-register-actions .expanded-register-save{background:#002233;color:white;border-color:#002233}
+.dark-mode .expanded-register-dialog,.dark-mode .expanded-register-footer{background:var(--card);color:var(--text);border-color:var(--line)}
+.dark-mode .expanded-register-header{border-color:var(--line)}.dark-mode .expanded-register-tabs{background:#112935;border-color:var(--line)}
+.dark-mode .expanded-register-tabs button{color:#c3dce6}.dark-mode .expanded-register-tabs button.active{background:#04506a}
+.dark-mode .expanded-field,.dark-mode .expanded-section-title h3{color:var(--text)}
+.dark-mode .expanded-field input,.dark-mode .expanded-field select,.dark-mode .expanded-field textarea,.dark-mode .expanded-register-actions button{background:#102a38;color:var(--text);border-color:var(--line)}
+.dark-mode .expanded-register-actions .expanded-register-save{background:#07516a;color:#fff}
+@media(max-width:780px){.expanded-register-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.expanded-register-tabs{display:flex;overflow:auto;max-height:80px;border-right:0;border-bottom:1px solid #dce9ef}.expanded-register-tabs button{white-space:nowrap;width:auto}.expanded-register-fields{grid-template-columns:1fr}.expanded-register-content{padding:16px}.expanded-register-header{padding:13px}.expanded-register-actions{justify-content:space-between}}
+
 </style>
 </head>
 <body>
@@ -424,54 +455,144 @@ function renderRegisterList(page){
  (filtered.length?'<div class="demo-register-table"><table><thead><tr><th>'+esc(model.fields[0][1])+'</th>'+headers.map(x=>'<th>'+esc(x[1])+'</th>').join('')+'<th>Ações</th></tr></thead><tbody>'+filtered.map(x=>'<tr><td><b>'+esc(x[model.id])+'</b></td>'+headers.map(f=>'<td>'+esc(f[2]==='money'?fmtMoney(Number(x[f[0]])||0):x[f[0]]??'—')+'</td>').join('')+'<td><div class="demo-register-actions"><button data-register-edit="'+esc(x[model.id])+'">Editar</button><button class="delete" data-register-delete="'+esc(x[model.id])+'">Excluir</button></div></td></tr>').join('')+'</tbody></table></div>':'<div class="module-empty">Nenhum registro encontrado. Use “Cadastrar” para criar um exemplo.</div>')+
  registerTools(page)+'</section>';
 }
+
+/* Padrão expandido de cadastro: cobertura das principais áreas do discovery, tudo local. */
+const registerEditorSections={
+'Produtos e SKUs':[
+['Dados gerais',['sku','name','kind','parent','externalId','source','status','definition','brand','category','secondaryCategories','supplier']],
+['Comercial e visibilidade',['visibility','searchable','priceRule','startVisibility','endVisibility','gift','freeShipping','purchasePolicy','flags']],
+['SEO e descrições',['seoTitle','slug','metaDescription','metaKeywords','shortDescription','longDescription','warranty','searchTerms']],
+['Mídias',['mainImage','imageGallery','videoUrl','mediaAlt','imageUsage']],
+['Associações e atributos',['crossSell','relatedSkus','variationOptions','color','size','ean','customAttributes']],
+['Preço, estoque e entrega',['price','costPrice','promoPrice','promoFrom','promoUntil','stock','minimumStock','replenishment','preorder','backorder','restockDate','deliveryType','weight','width','height','depth','shippingDays']],
+['Publicação',['channel','indexingStatus','replicationStatus','publicationNotes']]
+],
+'Clientes':[
+['Identificação',['id','name','type','email','companyId','externalId','status']],
+['Contato e endereços',['phone','mobile','postalCode','address','number','complement','district','city','uf','addressType']],
+['Canais e vínculos',['channel','group','parentCompany','linkedCompanies','companyTradeName']],
+['Moderação e conta',['moderation','moderationReason','registrationSource','emailVerified','documentVerified','accountNotes']]
+],
+'Categorias':[
+['Identificação',['code','name','parent','status']],
+['Exibição e SEO',['slug','description','seoTitle','metaDescription','showOnStore','sortOrder']],
+['Contexto e regras',['channel','catalog','integrationId','attributes','navigationNotes']]
+],
+'Contratos':[
+['Identificação e vínculo',['code','name','scope','origin','status','channel']],
+['Catálogo e preços',['catalogMode','productList','priceMode','priceList','stockMode']],
+['Pagamento e entrega',['paymentMode','paymentMethods','deliveryMode','deliveryMethods']],
+['Limites e crédito',['orderMin','orderMax','quantityLimit','creditMode','creditLimit','creditCycle','notes']]
+],
+'Grupos econômicos':[
+['Dados gerais',['code','name','company','status','priority','integrationId','groupType']],
+['Relacionamentos',['linkedCompanies','defaultChannel','scope','contract','members']],
+['Políticas',['pricePolicy','creditNotes','purchasePolicy','notes']]
+],
+'Promoções':[
+['Identificação',['code','name','kind','status','channel']],
+['Vigência',['start','end','timezone']],
+['Aplicação e regras',['discountType','discount','couponCode','minSubtotal','usageLimit','eligibleSkus','eligibleGroups','stacking','notes']]
+],
+'Cotações e compras':[
+['Identificação',['code','company','buyer','status','channel','contract']],
+['Itens e valores',['items','total','currency','requestedDelivery']],
+['Aprovação e vigência',['approver','createdAt','expiresAt','approvalNotes','orderCode','notes']]
+]};
+const registerExtraFields={
+ externalId:['Identificador de integração','text'],definition:['Definição de produto','text'],secondaryCategories:['Categorias adicionais (separe por vírgula)','text'],supplier:['Fornecedor','text'],
+ searchable:['Pesquisável','select',false,['Sim','Não']],priceRule:['Exibição do preço','select',false,['Sim','Não','Somente logado']],
+ startVisibility:['Início da visibilidade','date'],endVisibility:['Fim da visibilidade','date'],gift:['Permitir presente','checkbox'],freeShipping:['Frete grátis','checkbox'],purchasePolicy:['Política de compra','text'],flags:['Flags e tags','text'],
+ seoTitle:['Título da página','text'],slug:['URL amigável / slug','text'],metaDescription:['Meta description','textarea'],metaKeywords:['Meta keywords','text'],shortDescription:['Descrição curta','textarea'],longDescription:['Descrição completa','textarea'],warranty:['Garantia','textarea'],searchTerms:['Termos de busca','text'],
+ mainImage:['URL da imagem principal','url'],imageGallery:['URLs das demais mídias (uma por linha)','textarea'],videoUrl:['URL do vídeo','url'],mediaAlt:['Descrição acessível da mídia','text'],imageUsage:['Uso da imagem','select',false,['Thumbnail','Detalhe','Zoom']],
+ crossSell:['SKUs para compre junto','text'],relatedSkus:['SKUs associados','text'],variationOptions:['Opções de variação','text'],color:['Cor','text'],size:['Tamanho','text'],ean:['EAN / código de barras','text'],customAttributes:['Atributos adicionais (JSON opcional)','textarea'],
+ costPrice:['Preço de custo (R$)','money'],promoPrice:['Preço promocional (R$)','money'],promoFrom:['Início da promoção','date'],promoUntil:['Fim da promoção','date'],minimumStock:['Estoque mínimo','number'],replenishment:['Reposição','select',false,['Normal','Descontinuado']],preorder:['Pré-venda','checkbox'],backorder:['Permitir venda sem estoque','checkbox'],restockDate:['Previsão de reposição','date'],deliveryType:['Tipo de entrega','select',false,['Normal','Virtual']],weight:['Peso (kg)','decimal'],width:['Largura (cm)','decimal'],height:['Altura (cm)','decimal'],depth:['Profundidade (cm)','decimal'],shippingDays:['Prazo de envio (dias)','number'],
+ channel:['Canal','select',false,['Loja virtual','B2B','Marketplace']],indexingStatus:['Estado de indexação ilustrativo','select',false,['Não indexado','Em fila','Indexado']],replicationStatus:['Estado de replicação ilustrativo','select',false,['Pendente','Replicado','Falha']],publicationNotes:['Observações de publicação','textarea'],
+ phone:['Telefone','tel'],mobile:['Celular','tel'],postalCode:['CEP','text'],address:['Logradouro','text'],number:['Número','text'],complement:['Complemento','text'],district:['Bairro','text'],city:['Cidade','text'],uf:['UF','select',false,['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']],addressType:['Tipo de endereço','select',false,['Principal','Comercial','Entrega','Filial']],parentCompany:['Matriz / empresa relacionada','text'],linkedCompanies:['Filiais ou empresas vinculadas','textarea'],companyTradeName:['Nome fantasia','text'],moderationReason:['Justificativa / observações de moderação','textarea'],registrationSource:['Origem do cadastro','select',false,['Admin','Loja','ERP','Integração']],emailVerified:['E-mail verificado','select',false,['Não','Sim']],documentVerified:['Documento verificado','select',false,['Não','Sim']],accountNotes:['Anotações da conta','textarea'],
+ description:['Descrição','textarea'],showOnStore:['Exibir na loja','select',false,['Sim','Não']],sortOrder:['Ordem de exibição','number'],catalog:['Catálogo de referência','text'],integrationId:['Código externo','text'],attributes:['Atributos vinculados','textarea'],navigationNotes:['Observações de navegação','textarea'],
+ catalogMode:['Catálogo permitido','select',false,['Todos os produtos','Seleção dinâmica','Lista específica']],productList:['Lista de produtos / mix','textarea'],priceMode:['Origem de preço','select',false,['Preço do módulo','Preço do contrato']],priceList:['Lista de preços','text'],stockMode:['Origem do estoque','select',false,['Módulo/canal','Específico do contrato']],paymentMode:['Condições de pagamento','select',false,['Todas ativas','Seleção explícita']],paymentMethods:['Meios de pagamento permitidos','text'],deliveryMode:['Condições de entrega','select',false,['Todas ativas','Seleção explícita']],deliveryMethods:['Modalidades de entrega permitidas','text'],orderMin:['Pedido mínimo (R$)','money'],orderMax:['Pedido máximo (R$) — vazio significa sem limite','money'],quantityLimit:['Quantidade máxima — vazio significa sem limite','number'],creditMode:['Controle de crédito','select',false,['Sem controle','Limitado']],creditLimit:['Limite de crédito (R$)','money'],creditCycle:['Competência do crédito','select',false,['Mensal','Por período','Não aplicável']],
+ priority:['Prioridade de aplicação','number'],groupType:['Tipo de grupo','select',false,['Padrão','Clube de vantagens','Clube de assinaturas']],defaultChannel:['Canal padrão','text'],contract:['Contrato relacionado','text'],members:['Clientes / empresas do grupo','textarea'],pricePolicy:['Política de preço','textarea'],creditNotes:['Política de crédito','textarea'],
+ timezone:['Fuso de referência','select',false,['America/Sao_Paulo','UTC']],discountType:['Tipo de desconto','select',false,['Percentual','Valor fixo','Frete grátis']],discount:['Valor do desconto','decimal'],couponCode:['Código de cupom','text'],minSubtotal:['Subtotal mínimo (R$)','money'],usageLimit:['Limite de utilizações','number'],eligibleSkus:['SKUs participantes','textarea'],eligibleGroups:['Grupos elegíveis','textarea'],stacking:['Acumular promoções','select',false,['Não','Sim']],
+ items:['Itens da cotação','textarea'],currency:['Moeda','select',false,['BRL','USD']],requestedDelivery:['Entrega pretendida','date'],approver:['Aprovador','text'],createdAt:['Data da solicitação','date'],expiresAt:['Expiração','date'],approvalNotes:['Observações da aprovação','textarea'],orderCode:['Pedido gerado','text'],notes:['Observações','textarea']
+};
+function registerEditorFields(page){
+ const main=registerModels[page].fields;
+ const lookup=new Map(main.map(f=>[f[0],f]));
+ return registerEditorSections[page].map(([title,names])=>({title,fields:names.map(n=>lookup.get(n)||[n,...registerExtraFields[n]]).filter(x=>x&&x[1])}));
+}
 function openRegister(page,key){
  const model=registerModels[page];if(!model)return;
  const data=registerRows(page),existing=key==null?null:data.find(x=>String(x[model.id])===String(key));
- const backdrop=document.createElement('div');backdrop.className='demo-register-overlay';backdrop.setAttribute('role','presentation');
- const fields=model.fields.map(([name,label,type,required,options])=>{
- const val=existing?.[name]??'';
- const common='name="'+esc(name)+'" id="register-'+esc(name)+'" '+(required?'required ':'')+(name===model.id&&existing?'readonly ':'');
- const relationOptions=type==='category'?[...new Set(['Vestuário','Calçados','Acessórios',...registerRows('Categorias').map(x=>x.name)])]:type==='relation-group'?[...new Set(['Padrão do canal',...registerRows('Grupos econômicos').map(x=>x.name)])]:type==='relation-group-optional'?['Sem vínculo',...registerRows('Grupos econômicos').map(x=>x.name)]:null;
- const control=(type==='select'||relationOptions)?'<select '+common+'><option value="" disabled '+(!val?'selected':'')+'>Selecione uma opção</option>'+(relationOptions||options).map(x=>'<option value="'+esc(x)+'" '+(val===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>':
- '<input '+common+' type="'+(type==='money'||type==='number'?'number':type)+'" '+(type==='money'?'step="0.01" min="0"':type==='number'?'step="1" min="0"':'maxlength="160"')+' value="'+esc(val)+'">';
- return '<label for="register-'+esc(name)+'">'+esc(label)+(required?' *':'')+control+'</label>';
- }).join('');
- backdrop.innerHTML='<div class="demo-register-dialog" role="dialog" aria-modal="true" aria-labelledby="demoRegisterTitle"><div class="demo-register-head"><div><h2 id="demoRegisterTitle">'+(existing?'Editar ':'Cadastrar ')+esc(model.label.toLowerCase())+'</h2><p>Simulação local. Nenhum dado será enviado aos serviços da plataforma.</p></div><button type="button" class="demo-register-x" aria-label="Fechar cadastro" data-close-register>×</button></div><form id="demoRegisterForm"><div class="demo-register-fields">'+fields+'</div><div id="demoRegisterError" class="demo-register-error" role="alert"></div><div class="demo-register-footer"><button type="button" data-close-register>Cancelar</button><button type="submit">Salvar cadastro</button></div></form></div>';
+ if(key!=null&&!existing){toast('Cadastro não encontrado.');return}
+ const sections=registerEditorFields(page),allFields=sections.flatMap(s=>s.fields),draftKey='vnext-register-draft-v2:'+page+':'+(existing?.[model.id]||'new');
+ let restored=null;try{restored=JSON.parse(localStorage.getItem(draftKey)||'null')}catch(e){}
+ if(restored&&!window.confirm('Existe um rascunho local deste cadastro. Deseja recuperá-lo?'))restored=null;
+ const initial={...(existing||{}),...(restored||{})};
+ let active=0,dirty=!!restored;
+ const backdrop=document.createElement('div');backdrop.className='demo-register-overlay expanded-register-overlay';backdrop.setAttribute('role','presentation');
+ const fieldControl=([name,label,type,required,options])=>{
+  const val=initial[name]??'';
+  const common='name="'+esc(name)+'" id="register-'+esc(name)+'" '+(name===model.id&&existing?'readonly ':'');
+  const relation=type==='category'?[...new Set(['Vestuário','Calçados','Acessórios',...registerRows('Categorias').map(x=>x.name)])]:type==='relation-group'?[...new Set(['Padrão do canal',...registerRows('Grupos econômicos').map(x=>x.name)])]:type==='relation-group-optional'?['Sem vínculo',...registerRows('Grupos econômicos').map(x=>x.name)]:null;
+  const choices=relation||options;
+  let input;
+  if(type==='checkbox')input='<input type="checkbox" '+common+' '+(val===true||val==='true'?'checked':'')+'>';
+  else if(choices)input='<select '+common+'><option value="">Selecione</option>'+[...new Set([...(val?[String(val)]:[]),...choices])].map(x=>'<option value="'+esc(x)+'" '+(String(val)===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>';
+  else if(type==='textarea')input='<textarea '+common+' rows="4" maxlength="8000">'+esc(val)+'</textarea>';
+  else input='<input '+common+' type="'+(['money','number','decimal'].includes(type)?'number':type)+'" '+(['money','decimal'].includes(type)?'min="0" step="0.01"':type==='number'?'min="0" step="1"':'maxlength="300"')+' value="'+esc(val)+'">';
+  return '<label class="expanded-field '+(type==='checkbox'?'is-check':'')+'" for="register-'+esc(name)+'"><span>'+esc(label)+(required?' <strong>*</strong>':'')+'</span>'+input+'</label>';
+ };
+ backdrop.innerHTML='<div class="demo-register-dialog expanded-register-dialog" role="dialog" aria-modal="true" aria-labelledby="demoRegisterTitle">'+
+ '<header class="expanded-register-header"><div><div class="eyebrow">vNext Commerce · cadastro demonstrativo</div><h2 id="demoRegisterTitle">'+(existing?'Editar ':'Cadastrar ')+esc(model.label.toLowerCase())+'</h2><p>Preencha as seções; os dados ficam armazenados somente neste navegador.</p></div><button type="button" class="demo-register-x" data-close-register aria-label="Fechar cadastro">×</button></header>'+
+ '<div class="expanded-register-layout"><nav class="expanded-register-tabs" aria-label="Seções do cadastro">'+sections.map((s,i)=>'<button type="button" data-editor-tab="'+i+'" class="'+(i===0?'active':'')+'"><span>'+String(i+1).padStart(2,'0')+'</span> '+esc(s.title)+'</button>').join('')+'</nav>'+
+ '<form id="demoRegisterForm" novalidate><div class="expanded-register-content">'+sections.map((s,i)=>'<section class="expanded-register-section" data-editor-section="'+i+'" '+(i?'hidden':'')+'><div class="expanded-section-title"><small>Etapa '+(i+1)+' de '+sections.length+'</small><h3>'+esc(s.title)+'</h3><p>Campos de demonstração, sujeitos a validação funcional antes de integração real.</p></div><div class="expanded-register-fields">'+s.fields.map(fieldControl).join('')+'</div></section>').join('')+'</div>'+
+ '<div class="expanded-register-footer"><div id="demoRegisterError" class="demo-register-error" role="alert"></div><div class="expanded-register-actions"><button type="button" id="registerDraft">Salvar rascunho</button><button type="button" id="registerPrevious">Anterior</button><button type="button" id="registerNext">Próximo</button><button type="submit" class="expanded-register-save">Salvar cadastro</button></div></div></form></div></div>';
  document.body.appendChild(backdrop);
- const first=backdrop.querySelector('[name]');first?.focus();
+ const form=backdrop.querySelector('form'),parts=[...backdrop.querySelectorAll('[data-editor-section]')],tabs=[...backdrop.querySelectorAll('[data-editor-tab]')],error=backdrop.querySelector('#demoRegisterError');
  const oldScroll=document.body.style.overflow;document.body.style.overflow='hidden';
- const close=()=>{backdrop.remove();document.body.style.overflow=oldScroll;document.removeEventListener('keydown',keys)};
- const keys=e=>{if(e.key==='Escape'){e.preventDefault();close()}if(e.key==='Tab'){const nodes=[...backdrop.querySelectorAll('button,input,select')].filter(x=>!x.disabled);if(!nodes.length)return;const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};
+ const readValues=()=>{const out={...initial};for(const f of allFields){const el=form.elements.namedItem(f[0]);if(!el)continue;out[f[0]]=f[2]==='checkbox'?el.checked:el.value;if(['money','number','decimal'].includes(f[2]))out[f[0]]=el.value===''?'':Number(el.value);if(['text','email','textarea'].includes(f[2]))out[f[0]]=String(out[f[0]]).trim()}return out};
+ const navigateTab=i=>{active=Math.max(0,Math.min(parts.length-1,i));parts.forEach((p,j)=>p.hidden=j!==active);tabs.forEach((t,j)=>{t.classList.toggle('active',j===active);t.setAttribute('aria-current',j===active?'step':'false')});backdrop.querySelector('#registerPrevious').disabled=active===0;backdrop.querySelector('#registerNext').disabled=active===parts.length-1;error.textContent='';backdrop.querySelector('.expanded-register-content').scrollTop=0};
+ const showIssue=(message,field)=>{error.textContent=message;if(field){const el=form.elements.namedItem(field);if(el){const section=parts.findIndex(x=>x.contains(el));if(section>=0)navigateTab(section);error.textContent=message;el.focus()}}};
+ const close=force=>{if(!force&&dirty&&!window.confirm('Há alterações não salvas. Sair do cadastro? Você pode salvar um rascunho antes.'))return;backdrop.remove();document.body.style.overflow=oldScroll;document.removeEventListener('keydown',keys)};
+ const keys=e=>{if(e.key==='Escape'){e.preventDefault();close(false)}};
  document.addEventListener('keydown',keys);
- backdrop.querySelectorAll('[data-close-register]').forEach(x=>x.addEventListener('click',close));
- backdrop.addEventListener('click',e=>{if(e.target===backdrop)close()});
- backdrop.querySelector('form').addEventListener('submit',e=>{
-  e.preventDefault();const form=e.currentTarget;if(!form.reportValidity())return;
-  const values=Object.fromEntries(new FormData(form).entries());
-  for(const field of model.fields)if(field[2]==='money'||field[2]==='number')values[field[0]]=Number(values[field[0]]);
-  for(const field of model.fields)if(field[2]==='text'||field[2]==='email')values[field[0]]=String(values[field[0]]||'').trim();
+ backdrop.querySelectorAll('[data-close-register]').forEach(b=>b.addEventListener('click',()=>close(false)));
+ backdrop.addEventListener('click',e=>{if(e.target===backdrop)close(false)});
+ form.addEventListener('input',()=>{dirty=true});
+ form.addEventListener('change',()=>{dirty=true});
+ tabs.forEach(t=>t.addEventListener('click',()=>navigateTab(Number(t.dataset.editorTab))));
+ backdrop.querySelector('#registerNext').addEventListener('click',()=>navigateTab(active+1));
+ backdrop.querySelector('#registerPrevious').addEventListener('click',()=>navigateTab(active-1));
+ backdrop.querySelector('#registerDraft').addEventListener('click',()=>{try{localStorage.setItem(draftKey,JSON.stringify(readValues()));dirty=false;toast('Rascunho salvo neste navegador.')}catch(e){showIssue('Não foi possível armazenar o rascunho local.')}});
+ form.addEventListener('submit',e=>{
+  e.preventDefault();const values=readValues();
+  for(const f of allFields){const value=values[f[0]];if(f[3]&&(value==null||String(value).trim()==='')){showIssue('Preencha o campo obrigatório: '+f[1]+'.',f[0]);return}}
+  for(const f of allFields){const el=form.elements.namedItem(f[0]);if(el&&!el.checkValidity()){showIssue('Revise o valor informado em '+f[1]+'.',f[0]);return}}
   const id=String(values[model.id]||'').trim();
-  const error=backdrop.querySelector('#demoRegisterError');
-  if(!id){error.textContent='Informe um código válido.';return}
-  if(!existing&&data.some(x=>String(x[model.id]).toLocaleLowerCase('pt-BR')===id.toLocaleLowerCase('pt-BR'))){error.textContent='Já existe um cadastro com este código.';return}
-  if(page==='Contratos'&&values.scope==='Grupo econômico'&&values.origin==='Padrão do canal'){error.textContent='Selecione o grupo econômico do contrato.';return}
-  if(page==='Promoções'&&values.end<values.start){error.textContent='O fim da vigência não pode ser anterior ao início.';return}
+  if(!id){showIssue('Informe um identificador válido.',model.id);return}
+  if(!existing&&data.some(x=>String(x[model.id]).toLowerCase()===id.toLowerCase())){showIssue('Já existe um registro com este identificador.',model.id);return}
   if(page==='Produtos e SKUs'){
-   if(values.kind==='SKU / Variação'&&!values.parent){error.textContent='Informe o produto pai para uma variação.';return}
-   if(values.kind==='SKU / Variação'&&values.parent===values.sku){error.textContent='O SKU não pode ser seu próprio produto pai.';return}
-   if(values.kind==='SKU / Variação'&&!data.some(x=>x.sku===values.parent&&x.sku!==values.sku)){error.textContent='O produto pai informado deve existir entre os cadastros locais.';return}
-   if(values.kind==='Kit'&&values.parent){error.textContent='Kits não usam o campo Produto pai nesta simulação.';return}
-   if(!existing&&values.stock===0)values.status='Esgotado';
- }
-  if(page==='Clientes'){
-   values.orders=existing?.orders??0;values.spent=existing?.spent??0;
-   if(values.type==='Pessoa física'&&values.group!=='Sem vínculo'){error.textContent='Somente pessoa jurídica pode ser vinculada a grupo econômico nesta demonstração.';return}
- }
-  const before=existing?{...existing}:null;
+   if(values.kind==='SKU / Variação'&&!values.parent){showIssue('Selecione um produto pai para a variação.','parent');return}
+   if(values.kind==='SKU / Variação'&&(values.parent===values.sku||!data.some(x=>x.sku===values.parent&&x.sku!==values.sku))){showIssue('O código do produto pai deve corresponder a outro cadastro existente.','parent');return}
+   if(values.kind==='Kit'&&values.parent){showIssue('O kit não deve usar o campo de produto pai nesta simulação.','parent');return}
+   if(values.promoFrom&&values.promoUntil&&values.promoUntil<values.promoFrom){showIssue('A vigência promocional é inválida.','promoUntil');return}
+   if(values.startVisibility&&values.endVisibility&&values.endVisibility<values.startVisibility){showIssue('A vigência de visibilidade é inválida.','endVisibility');return}
+   if(values.customAttributes){try{JSON.parse(values.customAttributes)}catch(e){showIssue('Atributos adicionais devem conter JSON válido.','customAttributes');return}}
+  }
+  if(page==='Clientes'&&values.type==='Pessoa física'&&values.group&&values.group!=='Sem vínculo'){showIssue('Vínculo com grupo econômico está reservado à pessoa jurídica.','group');return}
+  if(page==='Contratos'&&values.scope==='Grupo econômico'&&values.origin==='Padrão do canal'){showIssue('Selecione o grupo econômico para este tipo de contrato.','origin');return}
+  if(page==='Promoções'&&values.start&&values.end&&values.end<values.start){showIssue('O fim da vigência não pode ser anterior ao início.','end');return}
+  if(page==='Cotações e compras'&&values.createdAt&&values.expiresAt&&values.expiresAt<values.createdAt){showIssue('Expiração anterior à data de solicitação.','expiresAt');return}
+  if(page==='Clientes'){values.orders=existing?.orders??0;values.spent=existing?.spent??0}
+  if(page==='Produtos e SKUs'&&values.stock===0&&values.status==='Ativo')values.status='Esgotado';
+  const snapshot=existing?{...existing}:null;
   if(existing)Object.assign(existing,values);else data.unshift(values);
-  if(!persistRegisters(page)){if(existing)Object.assign(existing,before);else data.shift();return}
-  close();moduleFilters.query='';renderActiveModule(page);toast((existing?'Cadastro atualizado':'Cadastro criado')+' apenas neste navegador.');
+  if(!persistRegisters(page)){if(existing)Object.assign(existing,snapshot);else data.shift();showIssue('O cadastro não pôde ser salvo no armazenamento do navegador.');return}
+  try{localStorage.removeItem(draftKey)}catch(e){}
+  dirty=false;close(true);moduleFilters.query='';renderActiveModule(page);toast((existing?'Cadastro atualizado':'Cadastro criado')+' neste navegador.');
  });
+ navigateTab(0);
+ backdrop.querySelector('input,select,textarea')?.focus();
 }
 function confirmRegisterDelete(page,key){
  const model=registerModels[page],data=registerRows(page);const idx=data.findIndex(x=>String(x[model.id])===String(key));if(idx<0)return;
