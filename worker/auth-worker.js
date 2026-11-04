@@ -77,7 +77,7 @@ export default {
    if(!env.LAYER_API_USERNAME||!env.LAYER_API_PASSWORD)return output({error:"LAYER_NOT_CONFIGURED"},503,cors);
    const pageValue=url.searchParams.get("page")||"1";
    const sizeValue=url.searchParams.get("pageSize")||"20";
-   if(!/^\\d+$/.test(pageValue)||!/^\\d+$/.test(sizeValue))return output({error:"INVALID_PAGINATION"},400,cors);
+   if(!/^[0-9]+$/.test(pageValue)||!/^[0-9]+$/.test(sizeValue))return output({error:"INVALID_PAGINATION"},400,cors);
    const page=Number(pageValue),pageSize=Number(sizeValue);
    if(!Number.isSafeInteger(page)||page<1||page>100000||!Number.isSafeInteger(pageSize)||pageSize<1||pageSize>100)return output({error:"INVALID_PAGINATION"},400,cors);
    const layerBase="https://projetos.layer.core.dcg.com.br";
