@@ -160,14 +160,17 @@ export default {
       tags:{path:"tags",name:"name"},
       statuses:{path:"product-statuses",name:"status"},
       products:{path:"products",name:"name"},
-      skus:{path:"skus",name:"name"}
+      skus:{path:"skus",name:"name"},
+      suppliers:{path:"suppliers",name:"name"},
+      properties:{path:"../configuration/property-metadata",name:"displayName"}
      };
      const result={};
      await Promise.all(Object.entries(sources).map(async([type,cfg])=>{
       try{
        const rows=[],seen=new Set();let truncated=false;
        for(let page=1;page<=3;page++){
-        const response=await layerGet("/catalog/"+cfg.path+"?page="+page+"&pageSize=100");
+        const resource=type==="properties"?"/configuration/property-metadata":"/catalog/"+cfg.path;
+        const response=await layerGet(resource+"?page="+page+"&pageSize=100");
         if(response.error){result[type]={items:[],error:"UNAVAILABLE"};return}
         const payload=response.data||{};
         for(const entry of Array.isArray(payload.items)?payload.items:[]){
