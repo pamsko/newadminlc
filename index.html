@@ -2330,6 +2330,90 @@ function renderCatalogRelated(key,value){
  return '<section class="catalog-section"><h3>'+title+'</h3>'+content+'</section>';
 }
 /* Editor de consulta: campos reais do cadastro exibidos com controles desabilitados. */
+/* Referências reais de cadastro: selects exploráveis sem persistência. */
+let catalogReferenceData=null,catalogReferencePromise=null,catalogReferenceError='';
+async function loadCatalogReferences(){
+ if(catalogReferenceData)return catalogReferenceData;
+ if(catalogReferencePromise)return catalogReferencePromise;
+ catalogReferencePromise=(async()=>{
+  try{
+   const response=await fetch(AUTH_API+'/api/catalog-references',{headers:{Authorization:'Bearer '+authSessionToken,Accept:'application/json'},cache:'no-store'});
+   if(!response.ok)throw new Error('REFERENCES_'+response.status);
+   const payload=await response.json();
+   catalogReferenceData=payload.references||{};
+   catalogReferenceError='';
+   return catalogReferenceData;
+  }catch(error){catalogReferenceError='Referências indisponíveis: '+error.message;return null}
+  finally{catalogReferencePromise=null}
+ })();
+ return catalogReferencePromise;
+}
+const CATALOG_REFERENCE_FIELDS={
+ brandId:'brands',mainCategoryId:'categories',productDefinitionId:'definitions',
+ productStatusId:'statuses',categories:'categories',tags:'tags',
+ skuIds:'skus',skus:'skus',productIds:'products',items:'products',
+ composition:'products',products:'products'
+};
+const CATALOG_SELECT_ENUMS={
+ isVisible:[['true','Sim'],['false','Não']],
+ isSearchable:[['true','Sim'],['false','Não']],
+ sendToMarketplace:[['true','Sim'],['false','Não']],
+ behavior:[['bundle','Kit fixo'],['mix','Kit configurável']]
+};
+function catalogRefLabel(key){return CATALOG_FIELD_LABELS[key]||key}
+function catalogRefValue(value){
+ if(value===null||value===undefined)return '';
+ if(typeof value==='object')return String(value.id??value.categoryId??value.tagId??value.skuId??value.productId??'');
+ return String(value);
+}
+function catalogRefPicker(key,value,uniqueId){
+ const source=CATALOG_REFERENCE_FIELDS[key],special=CATALOG_SELECT_ENUMS[key];
+ if(!source&&!special)return null;
+ const values=special?special.map(([id,name])=>({id,name})):(catalogReferenceData?.[source]?.items||[]);
+ const selected=Array.isArray(value)?value.map(catalogRefValue):[catalogRefValue(value)];
+ const chosen=selected.find(x=>x!=='')||'';
+ const existing=values.some(option=>String(option.id)===chosen);
+ const opts='<option value="">Selecione...</option>'+
+  (chosen&&!existing?'<option value="'+esc(chosen)+'" selected>Atual: '+esc(chosen)+' (fora da lista)</option>':'')+
+  values.map(option=>'<option value="'+esc(String(option.id))+'" '+(String(option.id)===chosen?'selected':'')+'>'+esc(String(option.name))+' · '+esc(String(option.id))+'</option>').join('');
+ const loading=source&&!catalogReferenceData;
+ const sourceMeta=source?catalogReferenceData?.[source]:null;
+ return '<label class="catalog-edit-field catalog-live-select"><span>'+esc(catalogRefLabel(key))+'</span>'+
+  '<select data-catalog-select="'+esc(uniqueId)+'" aria-label="'+esc(catalogRefLabel(key))+'" '+(loading?'disabled':'')+'>'+opts+'</select>'+
+  (loading?'<small>Carregando opções da Layer…</small>':sourceMeta?.truncated?'<small>Lista parcial: primeiras 300 opções</small>':'')+
+  (Array.isArray(value)&&value.length?'<small>Vinculados atualmente: '+value.map(x=>esc(catalogRefValue(x))).join(', ')+'</small>':'')+
+  '</label>';
+}
+function catalogFormField(key,value,path=''){
+ const select=catalogRefPicker(key,value,path||key);
+ if(select)return select;
+ if(typeof value==='boolean'&&CATALOG_SELECT_ENUMS[key])return catalogRefPicker(key,value,path||key);
+ if(value!==null&&typeof value==='object')return '<div class="catalog-field-group"><h4>'+esc(catalogRefLabel(key))+'</h4>'+catalogNestedFields(value,key,0)+'</div>';
+ return catalogInput(catalogRefLabel(key),value);
+}
+function catalogMissingFormField(key){
+ const defaults={
+  display:{isVisible:null,isSearchable:null,visibleFrom:'',visibleTo:'',showPrice:true},
+  seo:{pageTitle:'',urlFriendly:'',metaDescription:'',metaKeywords:''},
+  descriptions:{shortDescription:'',longDescription:''},
+  shipping:{width:'',height:'',depth:'',weight:''},
+  availability:{},pricing:{},rules:{},inventorySettings:{},dimensions:{},
+  propertyValues:[],variationProperties:[],flags:[],tags:[],categories:[],skus:[],skuIds:[],productIds:[],
+  composition:[],items:[],associations:[],associationDataSources:[],loyaltyPrograms:[],
+  suppliers:[],references:{},misc:{},media:{product:[],skus:[]}
+ };
+ return Object.prototype.hasOwnProperty.call(defaults,key)?defaults[key]:'';
+}
+function catalogRelationsPanel(kind,item={}){
+ const relations=kind==='skus'?
+  [['productIds','Produtos associados'],['productDefinitionId','Definição de produto']]:
+  kind==='kits'?
+  [['categories','Categorias'],['brandId','Marca'],['composition','Produtos da composição'],['productDefinitionId','Definição de produto']]:
+  [['brandId','Marca'],['mainCategoryId','Categoria principal'],['categories','Categorias vinculadas'],['productDefinitionId','Definição de produto'],['productStatusId','Situação do cadastro'],['tags','Tags'],['skuIds','SKUs associados']];
+ return '<section class="catalog-relation-panel"><div><h3>Relacionamentos do catálogo</h3><p>Selecione opções reais para simular vínculos. As seleções não serão gravadas.</p></div><div class="catalog-edit-grid">'+
+  relations.map(([key,label])=>catalogRefPicker(key,item[key]??null,'relation-'+key)||catalogInput(label,item[key]??'')).join('')+
+  '</div></section>';
+}
 const CATALOG_FIELD_LABELS={
  id:'ID',sku:'Código / SKU',integrationId:'ID de integração',name:'Nome',brandId:'Marca (ID)',brandName:'Marca',
  productDefinitionId:'Definição de produto (ID)',mainCategoryId:'Categoria principal (ID)',productStatusId:'Situação do produto (ID)',
