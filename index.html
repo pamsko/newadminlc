@@ -2126,7 +2126,7 @@ function layerMediaURL(raw){
 }
 function layerThumb(p){
  const key=String(p?.id??'');
- const src=catalogSource==='layer'?layerThumbs.get(key):layerMediaURL(p?.raw?.mainImage??'');
+ const src=catalogSource==='layer'?(p?.entityType==='skus'?'':layerThumbs.get(key)):layerMediaURL(p?.raw?.mainImage??'');
  const placeholder='<span class="catalog-thumb-placeholder" aria-label="Sem imagem"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="2"/><path d="m4 18 6-6 4 4 3-3 4 4"/></svg></span>';
  return src?'<img loading="lazy" referrerpolicy="no-referrer" src="'+esc(src)+'" alt="Imagem de '+esc(p?.name??'produto')+'" onerror="this.replaceWith(this.nextElementSibling)" />'+placeholder:placeholder;
 }
@@ -2272,7 +2272,7 @@ function catalogFilteredRows(){
  const q=layerText(layerSearch.trim());
  if(q){
   const keys=layerField==='all'?['id','sku','integrationId','name','category','brand']:[layerField];
-  rows=rows.filter(p=>keys.some(key=>layerText(p[key]).includes(q)));
+  rows=rows.filter(p=>keys.some(key=>layerText(key==='category'?catalogCategoryName(p):p[key]).includes(q)));
  }
  if(layerStatus!=='all')rows=rows.filter(p=>String(layerStatusValue(p))===layerStatus);
  if(layerBrand!=='all')rows=rows.filter(p=>String(p.brand??'')===layerBrand);
@@ -2317,7 +2317,7 @@ function renderLayerProducts(){
  else if(isLayer&&!data)content='<div class="catalog-state"><button id="layerRetry" type="button">Consultar produtos</button></div>';
  else if(!visible.length)content='<div class="catalog-state"><div><strong>Nenhum registro encontrado</strong><p>Confira os filtros aplicados.</p><button id="layerClearInline" type="button">Limpar filtros</button></div></div>';
  else content='<div class="catalog-table-scroll"><table class="catalog-products-table"><thead><tr>'+
- '<th>ID</th><th>SKU / Código</th><th>ID de integração</th><th>Imagem</th><th>Nome</th><th>Tipo</th><th>Categoria</th><th>Visibilidade</th><th>Marca</th><th>Preço</th><th>Estoque</th><th class="catalog-actions-head">Ações</th>'+
+ '<th>ID</th><th>SKU / Código</th><th>ID de integração</th><th>Imagem</th><th>Nome</th><th>Tipo</th><th>Categoria</th><th>Visibilidade</th><th>Marca</th><th title="Na Layer, preços são vinculados a SKUs e tabelas de preços">Preço</th><th title="Na Layer, estoque disponível é apurado por SKU e depósito">Estoque</th><th class="catalog-actions-head">Ações</th>'+
  '</tr></thead><tbody>'+visible.map(p=>'<tr><td class="catalog-id">'+layerEsc(p.id)+'</td><td>'+layerEsc(p.sku)+'</td><td>'+layerEsc(p.integrationId)+'</td>'+
  '<td><div class="catalog-thumb" '+(isLayer?'data-layer-thumbnail="'+esc(String(p.id))+'"':'')+'>'+layerThumb(p)+'</div></td>'+
  '<td><strong>'+layerEsc(p.name)+'</strong></td>'+
@@ -2339,6 +2339,7 @@ function renderLayerProducts(){
  '<label><span>Ordenação</span><select id="layerOrder">'+[['name-asc','Nome: A–Z'],['name-desc','Nome: Z–A'],['id-desc','ID: maior primeiro'],['id-asc','ID: menor primeiro'],['sku-asc','SKU: A–Z'],['sku-desc','SKU: Z–A']].map(([key,label])=>'<option value="'+key+'" '+(layerOrder===key?'selected':'')+'>'+label+'</option>').join('')+'</select></label>'+
  '<button type="button" class="catalog-clear" id="layerClear">Limpar filtros</button></div></div>'+
  '<div class="catalog-result-bar"><strong>'+filtered.length+' resultado'+(filtered.length===1?'':'s')+'</strong><span>'+(isLayer?'Layer · Consulta somente leitura':'Demonstração · Dados locais')+'</span></div>'+content+
+ (isLayer?'<p class="catalog-source-info catalog-price-note">Na Layer, preço é consultado na tabela principal e estoque por SKU e depósito. Valores não disponíveis permanecem como —.</p>':'')+
  '<div class="catalog-pagination"><div>Exibindo '+(visible.length?(layerPage-1)*layerPageSize+1:0)+'–'+Math.min(layerPage*layerPageSize,filtered.length)+' de '+filtered.length+'</div>'+
  '<div class="catalog-page-controls"><label for="layerPageSize">Por página</label><select id="layerPageSize">'+[10,20,50,100].map(n=>'<option '+(layerPageSize===n?'selected':'')+'>'+n+'</option>').join('')+'</select>'+
  '<button type="button" id="layerPrev" '+(layerPage===1?'disabled':'')+'>Anterior</button><span>Página '+layerPage+' de '+pageCount+'</span><button type="button" id="layerNext" '+(layerPage>=pageCount?'disabled':'')+'>Próxima</button></div></div></section>';
@@ -2406,6 +2407,7 @@ function bindLayerCatalog(target,page){
  const reset=()=>{layerSearch='';layerField='all';layerStatus='all';layerBrand='all';layerOrder='name-asc';layerPage=1;render()};
  target.querySelector('#catalogSourceSelect')?.addEventListener('change',e=>{
   catalogSource=e.target.value==='layer'?'layer':'demo';
+  layerEntityType='products';
   layerRequestId++;layerLoading=false;layerData=null;layerError='';reset();
   if(catalogSource==='layer')loadLayerProducts();
  });
