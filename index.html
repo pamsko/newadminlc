@@ -974,7 +974,147 @@ function orderDetailBody(o){
 function openOrderDetail(key){selectedOrderId=key;selectedOrderTab='overview';renderActiveModule('Pedidos');window.scrollTo({top:0,behavior:'instant'})}
 
 function showDetail(type,key){let item=type==='order'?fakeOrders.find(x=>x.id===key):type==='product'?fakeProducts.find(x=>x.sku===key):fakeCustomers.find(x=>x.id===key);if(!item)return;const label=type==='order'?'Pedido #'+key:type==='product'?'Produto '+key:'Cliente '+key;const content=Object.entries(item).map(([k,v])=>'<div><small>'+esc(({id:'Código',client:'Cliente',total:'Valor',date:'Data',status:'Status',stock:'Estoque',sku:'SKU',price:'Preço',spent:'Valor comprado',orders:'Pedidos'}[k]||k))+'</small><b>'+esc(['total','price','spent'].includes(k)?fmtMoney(v):v)+'</b></div>').join('');document.getElementById('modalTitle').textContent=label;document.getElementById('modalText').innerHTML='<div class="module-detail-grid">'+content+'</div><p style="margin-top:14px">Dados fictícios — nenhuma operação foi executada.</p>';document.getElementById('modalLayer').classList.add('open')}
-function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent=titles?titles[1]:'Visualização conceitual e interativa do módulo '+page.toLowerCase()+'.';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():page==='Moderação de clientes'?renderCustomerModeration():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():page==='Commerce Studio'?renderStudio():discoveryScreens[page]?renderDiscoveryScreen(page):['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):page==='Webhooks'?renderWebhooks():['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);bindStudio(target);bindModeration(target);target.querySelectorAll('[data-register-create]').forEach(b=>b.addEventListener('click',()=>openRegister(b.dataset.registerCreate)));
+
+/* Domínios transversais: estado local por usuário/escopo — nenhum serviço externo é acessado. */
+const VNEXT_CONTEXT_KEY='vnext-demo-context-v1',VNEXT_AUDIT_KEY='vnext-demo-audit-v1',VNEXT_VIEW_KEY='vnext-demo-views-v1';
+const VNEXT_CHANNELS={B2C:['Loja virtual','Mobile','Marketplace'],B2B:['B2B','Atacado'],Hub:['Hub','Integrações']};
+let vnextContext={unit:'B2C',channel:'Loja virtual'},vnextRole='Administrador',vnextPage='Área de trabalho';
+function vnextRead(key,fallback){try{const x=JSON.parse(localStorage.getItem(key));return x??fallback}catch(e){return fallback}}
+function vnextStore(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){toast('Armazenamento local indisponível.');return false}}
+function auditEvent(action,entity,details){
+ const entries=vnextRead(VNEXT_AUDIT_KEY,[]);
+ entries.unshift({when:new Date().toLocaleString('pt-BR'),who:loggedUser||'Demonstração',action,entity,context:vnextContext.unit+' / '+vnextContext.channel,details:String(details||'').slice(0,240)});
+ vnextStore(VNEXT_AUDIT_KEY,entries.slice(0,100));
+}
+function demoCan(action){return vnextRole==='Administrador'||(vnextRole==='Operação'&&action!=='delete'&&action!=='export'&&action!=='publish')}
+function demoGuard(action,feature){if(demoCan(action))return true;toast('Perfil '+vnextRole+': ação '+feature+' indisponível nesta simulação.');auditEvent('Acesso bloqueado','Permissões',feature);return false}
+function vnextContextInit(){
+ const restored=vnextRead(VNEXT_CONTEXT_KEY,{unit:'B2C',channel:'Loja virtual'});
+ if(VNEXT_CHANNELS[restored.unit])vnextContext.unit=restored.unit;
+ vnextContext.channel=VNEXT_CHANNELS[vnextContext.unit].includes(restored.channel)?restored.channel:VNEXT_CHANNELS[vnextContext.unit][0];
+ const unit=document.getElementById('ctxUnit'),channel=document.getElementById('ctxChannel');
+ const syncContext=()=>{
+  unit.value=vnextContext.unit;
+  channel.innerHTML=VNEXT_CHANNELS[vnextContext.unit].map(x=>'<option '+(x===vnextContext.channel?'selected':'')+'>'+esc(x)+'</option>').join('');
+  document.getElementById('ctxScope').textContent='Tenant fictício';
+  document.getElementById('vnextContext').title='Ambiente simulado; alterações não afetam canais reais. '+vnextContext.unit+' / '+vnextContext.channel;
+ };
+ syncContext();
+ const changeScope=(nextUnit,nextChannel)=>{
+  if(document.querySelector('.expanded-register-overlay')&&!window.confirm('Existe um cadastro aberto. Deseja mudar o contexto?'))return syncContext();
+  const previous=vnextContext.unit+'/'+vnextContext.channel;
+  vnextContext={unit:nextUnit,channel:nextChannel};
+  vnextStore(VNEXT_CONTEXT_KEY,vnextContext);syncContext();auditEvent('Alterar contexto','Ambiente',previous+' → '+nextUnit+'/'+nextChannel);
+  if(vnextPage==='Área de trabalho')sync();else renderActiveModule(vnextPage);
+ };
+ unit.addEventListener('change',()=>changeScope(unit.value,VNEXT_CHANNELS[unit.value][0]));
+ channel.addEventListener('change',()=>changeScope(unit.value,channel.value));
+ const role=document.getElementById('demoRole');role.value=vnextRole;role.addEventListener('change',()=>{
+  vnextRole=role.value;setProfile(false);auditEvent('Alterar perfil demonstrativo','Perfil',vnextRole);
+  if(vnextPage!=='Área de trabalho')renderActiveModule(vnextPage);
+  toast('Perfil de demonstração: '+vnextRole);
+ });
+}
+function vnextSearchData(query){
+ const q=query.trim().toLocaleLowerCase('pt-BR');if(q.length<2)return [];
+ const items=[
+ ...fakeOrders.map(x=>({kind:'Pedido',name:'#'+x.id+' · '+x.client,route:'Pedidos',ref:x.id,search:[x.id,x.client,x.channel,orderMetadata[x.id]?.[0]].join(' ')})),
+ ...fakeProducts.map(x=>({kind:'Produto/SKU',name:x.sku+' · '+x.name,route:'Produtos e SKUs',ref:x.sku,search:[x.sku,x.name,x.category].join(' ')})),
+ ...fakeCustomers.map(x=>({kind:'Cliente',name:x.id+' · '+x.name,route:'Clientes',ref:x.id,search:[x.id,x.name,x.email].join(' ')})),
+ ...registerRows('Contratos').map(x=>({kind:'Contrato',name:x.code+' · '+x.name,route:'Contratos',ref:x.code,search:x.code+' '+x.name})),
+ ...mockIntegrations.map(x=>({kind:'Integração',name:x.name,route:'Integrações',ref:'',search:x.name+' '+x.type}))
+ ];
+ return items.filter(x=>x.search.toLocaleLowerCase('pt-BR').includes(q)).slice(0,12);
+}
+function vnextSearchInit(){
+ const input=document.getElementById('globalSearch');
+ const results=document.createElement('div');results.id='vnextSearchResults';results.className='vnext-search-results';results.hidden=true;
+ document.querySelector('.topbar').appendChild(results);
+ const draw=()=>{
+  const q=input.value.trim(),items=vnextSearchData(q);
+  results.hidden=q.length<2;
+  if(results.hidden)return;
+  results.innerHTML='<div class="hint">Busca global · dados fictícios · '+items.length+' resultados</div>'+
+  (items.length?items.map((x,i)=>'<button type="button" data-vnext-result="'+i+'"><b>'+esc(x.name)+'</b><small>'+esc(x.kind)+' · Abrir '+esc(x.route)+'</small></button>').join(''):'<div class="vnext-empty">Nenhum resultado encontrado. Experimente um nome, número ou SKU.</div>');
+  results.querySelectorAll('[data-vnext-result]').forEach(b=>b.addEventListener('click',()=>{
+   const selected=items[Number(b.dataset.vnextResult)];results.hidden=true;input.value='';
+   navigate(selected.route);
+   if(selected.kind==='Pedido')openOrderDetail(selected.ref);
+   if(selected.kind==='Produto/SKU'||selected.kind==='Cliente')showDetail(selected.kind==='Cliente'?'customer':'product',selected.ref);
+  }));
+ };
+ input.addEventListener('input',draw);
+ input.addEventListener('keydown',e=>{if(e.key==='Escape'){results.hidden=true}if(e.key==='Enter'){e.preventDefault();const first=results.querySelector('[data-vnext-result]');if(first)first.click();else draw()}});
+ document.addEventListener('click',e=>{if(!e.target.closest('.top-search')&&!results.contains(e.target))results.hidden=true});
+}
+function vnextTaskItems(){
+ return [
+ {name:'Clientes B2B aguardando moderação',count:fakeCustomers.filter(x=>x.type==='Pessoa jurídica'&&(x.moderation||'Em análise')==='Em análise').length,route:'Moderação de clientes',kind:'Cliente'},
+ {name:'Produtos sem estoque',count:fakeProducts.filter(x=>Number(x.stock)===0).length,route:'Produtos e SKUs',kind:'Catálogo'},
+ {name:'Pedidos aguardando pagamento',count:fakeOrders.filter(x=>x.status==='Aguardando pagamento').length,route:'Pedidos',kind:'Pedido'},
+ {name:'Eventos de integração com atenção',count:mockIntegrations.filter(x=>x.errors>0).length,route:'Saúde operacional',kind:'Integração'}
+ ];
+}
+function renderVnextTasks(){
+ const rows=vnextTaskItems();const total=rows.reduce((a,b)=>a+b.count,0);
+ return domainHeader('Tarefas e notificações','Pendências calculadas sobre dados de demonstração. Não representam incidentes reais.')+
+ cards([['Itens no painel',String(total),'Amostra local'],['Categorias',String(rows.length),'Filas distintas'],['Perfil ativo',vnextRole,'Permissões simuladas']])+
+ '<div class="vnext-grid">'+rows.map(x=>'<article class="vnext-metric"><small>'+esc(x.kind)+'</small><strong>'+x.count+'</strong><p>'+esc(x.name)+'</p><div class="vnext-toolbar"><button data-vnext-route="'+esc(x.route)+'">Consultar fila</button></div></article>').join('')+'</div>'+
+ '<div class="vnext-help">Esses alertas são derivados de registros de exemplo. Não enviamos e-mails, notificações push nem alertas operacionais.</div>';
+}
+function renderVnextHealth(){
+ const incidents=[...mockIntegrations.filter(x=>x.errors>0).map(x=>({id:x.name,state:x.state,count:x.errors,date:x.last,route:'Integrações'})),
+ ...webhookDemo.filter(x=>x.result.includes('502')||x.result.includes('Timeout')).map(x=>({id:x.code,state:x.result,count:x.attempts,date:'Exemplo local',route:'Webhooks'}))];
+ return domainHeader('Saúde operacional','Painel de diagnóstico com estados isolados por domínio e referências fictícias.')+
+ cards([['Ocorrências de exemplo',String(incidents.length),'Não são incidentes reais'],['Conectores demonstrados',String(mockIntegrations.length),'Dados estáticos'],['Retentativas reais','0','Nenhuma conexão estabelecida']])+
+ '<section class="vnext-panel"><h3>Integrações que exigiriam investigação</h3><div class="vnext-table-scroll"><table><thead><tr><th>Entidade</th><th>Condição</th><th>Ocorrências/tentativas</th><th>Última atividade</th><th>Ação</th></tr></thead><tbody>'+
+ incidents.map(x=>'<tr><td>'+esc(x.id)+'</td><td>'+esc(x.state)+'</td><td>'+esc(x.count)+'</td><td>'+esc(x.date)+'</td><td><button data-vnext-route="'+esc(x.route)+'">Investigar</button></td></tr>').join('')+'</tbody></table></div></section>'+
+ '<div class="vnext-help">Em produção: correlation ID, idade da fila, erro estruturado, retentativa idempotente, healthcheck, alertas e logs protegidos. Reprocessamento está indisponível.</div>';
+}
+function renderVnextAudit(){
+ const entries=vnextRead(VNEXT_AUDIT_KEY,[]);
+ return domainHeader('Auditoria demonstrativa','Histórico local de ações, perfil, horário e contexto — não substitui auditoria de backend.')+
+ '<section class="vnext-panel"><div class="vnext-toolbar"><b>'+entries.length+' eventos locais</b><button id="auditClear" type="button">Limpar histórico local</button></div>'+
+ (entries.length?'<ul class="vnext-audit">'+entries.map(x=>'<li><b>'+esc(x.action)+'</b> · '+esc(x.entity)+'<small>'+esc(x.when)+' · '+esc(x.who)+' · '+esc(x.context)+' · '+esc(x.details)+'</small></li>').join('')+'</ul>':'<div class="vnext-empty">Ainda não foram registradas ações nesta demonstração.</div>')+'</section>';
+}
+let b2bPreviewClient='',b2bPreviewChannel='B2B';
+function renderVnextB2B(){
+ const clients=fakeCustomers.filter(x=>x.type==='Pessoa jurídica');
+ const customer=clients.find(x=>x.id===b2bPreviewClient)||clients[0]||null;
+ const contracts=registerRows('Contratos').filter(x=>x.status==='Ativo');
+ const group=customer?.group&&customer.group!=='Sem vínculo'?customer.group:'';
+ const groupContract=contracts.find(x=>x.scope==='Grupo econômico'&&x.origin===group);
+ const channelContract=contracts.find(x=>x.scope!=='Grupo econômico');
+ const effective=groupContract||channelContract;
+ const source=groupContract?'Contrato do grupo econômico':channelContract?'Contrato padrão do canal':'Nenhum contrato identificado';
+ const value=effective?.creditMode==='Limitado'?effective.creditLimit:'Sem controle definido';
+ return domainHeader('Simulador B2B','Demonstração explicativa da precedência grupo → canal, sem cálculo comercial real.')+
+ '<section class="vnext-panel"><h3>Selecionar contexto do comprador</h3><div class="vnext-toolbar"><label>Empresa <select id="b2bClient">'+clients.map(x=>'<option value="'+esc(x.id)+'" '+(customer?.id===x.id?'selected':'')+'>'+esc(x.name)+'</option>').join('')+'</select></label><label>Canal <select id="b2bChannel">'+['B2B','Atacado'].map(x=>'<option '+(x===b2bPreviewChannel?'selected':'')+'>'+x+'</option>').join('')+'</select></label></div></section>'+
+ '<div class="vnext-grid"><article class="vnext-metric"><small>Grupo econômico</small><strong>'+esc(group||'Sem grupo')+'</strong><p>Relacionamento declarado no cadastro</p></article><article class="vnext-metric"><small>Contrato encontrado</small><strong>'+esc(effective?.name||'Não definido')+'</strong><p>'+esc(source)+'</p></article><article class="vnext-metric"><small>Crédito demonstrado</small><strong>'+esc(value||'Não informado')+'</strong><p>Não representa saldo ou limite efetivo</p></article></div>'+
+ '<section class="vnext-panel"><h3>Explicação da regra</h3><p>Empresa → grupo econômico → contrato do grupo, quando houver → contrato padrão do canal como alternativa. A seleção é ilustrativa, sem simular corretamente múltiplos grupos, prioridade, preço por SKU, catálogo, estoque, crédito e pagamento.</p>'+
+ '<div class="vnext-help">O contrato por canal e a prioridade de grupos exigem especificação validada. Não use o resultado para precificação ou aprovação financeira.</div><div class="vnext-toolbar"><button data-vnext-route="Grupos econômicos">Gerenciar grupos</button><button data-vnext-route="Contratos">Gerenciar contratos</button><button data-vnext-route="Clientes">Consultar clientes</button></div></section>';
+}
+function renderVnextHelp(page){
+ const tips={
+ 'Produtos e SKUs':'Produto pai concentra conteúdo e SEO. SKU possui preço, estoque e entrega. Confira a origem ERP/Admin e a disponibilidade por canal.',
+ 'Pedidos':'Pedido, pagamento, entrega e integração possuem estados independentes. Antes de qualquer ação, valide transições e permissões.',
+ 'Clientes':'Cuidado com dados pessoais e impersonação. Na operação B2B, grupos e contratos podem alterar catálogo, preço, crédito e pagamento.',
+ 'Contratos':'A relação grupo/canal tem precedência contextual. Campo vazio de limite não deve ser interpretado automaticamente como zero.',
+ 'Promoções':'Valide vigência, canal, acumulação e conflitos de promoção antes de ativar.',
+ 'Webhooks':'Em produção: exigir permissão para teste/retry, idempotência, assinatura/header e logs sem segredos.'
+ };
+ if(!tips[page])return '';
+ return '<div class="vnext-help"><b>Ajuda contextual:</b> '+esc(tips[page])+' <a href="./documentacao.html" target="_blank" rel="noopener noreferrer">Abrir documentação</a></div>';
+}
+function bindVnextDomain(target,page){
+ target.querySelectorAll('[data-vnext-route]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.vnextRoute)));
+ target.querySelector('#auditClear')?.addEventListener('click',()=>{if(!window.confirm('Limpar os eventos de auditoria apenas deste navegador?'))return;vnextStore(VNEXT_AUDIT_KEY,[]);renderActiveModule(page)});
+ target.querySelector('#b2bClient')?.addEventListener('change',e=>{b2bPreviewClient=e.target.value;renderActiveModule(page)});
+ target.querySelector('#b2bChannel')?.addEventListener('change',e=>{b2bPreviewChannel=e.target.value;renderActiveModule(page)});
+}
+function vnextTasksUpdate(){const count=vnextTaskItems().reduce((sum,x)=>sum+x.count,0);const el=document.getElementById('taskCount');if(el)el.textContent=count}
+
+function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent=titles?titles[1]:'Visualização conceitual e interativa do módulo '+page.toLowerCase()+'.';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=page==='Tarefas e notificações'?renderVnextTasks():page==='Saúde operacional'?renderVnextHealth():page==='Auditoria demonstrativa'?renderVnextAudit():page==='Simulador B2B'?renderVnextB2B():selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():page==='Moderação de clientes'?renderCustomerModeration():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():page==='Commerce Studio'?renderStudio():discoveryScreens[page]?renderDiscoveryScreen(page):['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):page==='Webhooks'?renderWebhooks():['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.insertAdjacentHTML('afterbegin',renderVnextHelp(page));bindVnextDomain(target,page);vnextTasksUpdate();bindStudio(target);bindModeration(target);target.querySelectorAll('[data-register-create]').forEach(b=>b.addEventListener('click',()=>openRegister(b.dataset.registerCreate)));
 target.querySelectorAll('[data-register-edit]').forEach(b=>b.addEventListener('click',()=>openRegister(page,b.dataset.registerEdit)));
 target.querySelectorAll('[data-register-delete]').forEach(b=>b.addEventListener('click',()=>confirmRegisterDelete(page,b.dataset.registerDelete)));
 target.querySelectorAll('[data-register-reset]').forEach(b=>b.addEventListener('click',()=>resetRegister(b.dataset.registerReset)));
@@ -997,7 +1137,7 @@ target.querySelector('#ordersBack')?.addEventListener('click',()=>{selectedOrder
 target.querySelectorAll('[data-orderdetailtab]').forEach(b=>b.addEventListener('click',()=>{selectedOrderTab=b.dataset.orderdetailtab;renderActiveModule('Pedidos')}));
 target.querySelectorAll('[data-detailaction]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.detailaction,'Demonstração somente leitura. As permissões, estados e integrações do ambiente real ainda não foram conectados.')));
 target.querySelectorAll('[data-product]').forEach(b=>b.addEventListener('click',()=>showDetail('product',b.dataset.product)));target.querySelectorAll('[data-customer]').forEach(b=>b.addEventListener('click',()=>showDetail('customer',b.dataset.customer)));target.querySelectorAll('[data-report]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.report,'Análise demonstrativa. Os dados reais dependerão de APIs e eventos de pedido.')));target.querySelectorAll('[data-feature]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.feature,'Funcionalidade em exploração UX/UI.')));target.querySelectorAll('[data-smart]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.smart)));bindSmartDemo(target,page);target.querySelector('#moduleNew')?.addEventListener('click',()=>registerModels[page]?openRegister(page,null):modal('Nova ação — '+page,'Esta operação ainda não possui cadastro demonstrativo.'));target.querySelector('#moduleExplore')?.addEventListener('click',()=>modal('Explorar '+page,'Próximo passo: definir a jornada e as regras de negócio deste módulo.'))}
-function navigate(page){selectedOrderId=null;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===page));const current=document.querySelector('[data-page].active');if(current?.classList.contains('nav-child')){const folder=current.closest('.nav-folder');document.querySelectorAll('[data-folder]').forEach(b=>{const isCurrent=b===folder?.querySelector('[data-folder]');b.setAttribute('aria-expanded',String(isCurrent));b.nextElementSibling.hidden=!isCurrent;});}moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);window.scrollTo({top:0,behavior:'instant'})}
+function navigate(page){vnextPage=page;selectedOrderId=null;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===page));const current=document.querySelector('[data-page].active');if(current?.classList.contains('nav-child')){const folder=current.closest('.nav-folder');document.querySelectorAll('[data-folder]').forEach(b=>{const isCurrent=b===folder?.querySelector('[data-folder]');b.setAttribute('aria-expanded',String(isCurrent));b.nextElementSibling.hidden=!isCurrent;});}moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);window.scrollTo({top:0,behavior:'instant'})}
 
 
 /* Experiência de login demonstrativo. Não é autenticação nem controle de acesso. */
@@ -1067,6 +1207,11 @@ setDarkMode(preferredTheme);
 const persistedUser=storedSession();if(persistedUser)showAdmin(persistedUser);
 
 loadRegisters();
+vnextContextInit();
+vnextSearchInit();
+document.getElementById('workQueue').addEventListener('click',()=>navigate('Tarefas e notificações'));
+document.getElementById('notifications').addEventListener('click',()=>navigate('Tarefas e notificações'));
+vnextTasksUpdate();
 sync();
 })();
 </script>
