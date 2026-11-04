@@ -500,6 +500,10 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .dark-mode .wf-start-node,.dark-mode .wf-event-card.is-selected{background:#184452;color:#baedf6;border-color:#39798c}.dark-mode .wf-end-node{background:#174634;color:#baefd5;border-color:#397659}.dark-mode .wf-impact-warning{background:#3b301c;border-color:#68542a;color:#fae4b9}.dark-mode .workflow-status.is-live{background:#173d31;color:#a5ead2;border-color:#34745a}.dark-mode .workflow-status.is-paused{background:#3d311f;color:#f4dba3;border-color:#6b572e}
 @media(max-width:980px){.wf-builder-layout{grid-template-columns:1fr}.wf-library-items{max-height:220px}.wf-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.workflow-editor-overlay{padding:0}.workflow-editor-shell{height:100dvh;border-radius:0}.workflow-editor-header{padding:12px 18px}.workflow-editor-header h2{font-size:18px}.workflow-editor-steps{padding:6px}.workflow-editor-steps button{font-size:10px;padding:7px}.workflow-editor-main{padding:14px}.wf-editor-fields,.wf-review-grid,.wf-event-grid{grid-template-columns:1fr}.workflow-editor-footer{display:block}.workflow-editor-footer>div{justify-content:flex-end;margin-top:8px}.workflow-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.wf-table-actions{position:relative}.wf-table-actions summary{list-style:none;border:1px solid var(--line);padding:7px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;background:var(--card);font-size:12px}.wf-table-actions summary::-webkit-details-marker{display:none}
+.wf-table-actions-list{position:absolute;right:0;top:calc(100% + 5px);z-index:20;min-width:178px;border:1px solid var(--line);box-shadow:var(--shadow);background:var(--card);padding:6px;border-radius:10px;display:grid;gap:2px}
+.workflow-table .wf-table-actions-list button{border:0;text-align:left;background:transparent;border-radius:6px;padding:9px 10px;color:var(--text)}.workflow-table .wf-table-actions-list button:hover{background:var(--bg)}.workflow-table .wf-table-actions-list button:last-child{color:#b84a4a}
 </style>
 </head>
 <body>
@@ -1520,7 +1524,7 @@ function renderWorkflows(){
  const lastRuns=runs.filter(r=>r.status==='Concluído').length;
  const tabs='<div class="workflow-main-tabs" role="tablist"><button type="button" data-wf-tab="flows" class="'+(workflowUI.tab==='flows'?'active':'')+'">Fluxos</button><button type="button" data-wf-tab="runs" class="'+(workflowUI.tab==='runs'?'active':'')+'">Histórico de testes <span>'+runs.length+'</span></button></div>';
  const table=shown.length?'<div class="workflow-table-scroll"><table class="workflow-table"><thead><tr><th>Código / nome</th><th>Contexto</th><th>Tipo</th><th>Acionamento</th><th>Situação</th><th>Versão</th><th>Ações</th></tr></thead><tbody>'+
- shown.map(f=>'<tr><td><strong>'+esc(f.name)+'</strong><small>'+esc(f.code)+(f.integrationId?' · '+esc(f.integrationId):'')+'</small></td><td>'+esc(f.entity||'—')+'</td><td>'+esc(workflowKind(f))+'</td><td><span class="workflow-truncate">'+esc(workflowEvent(f))+'</span></td><td>'+workflowBadge(f.status)+'</td><td>v'+Math.max(1,workflowVersionNumber(f.code))+'</td><td><div class="workflow-row-actions"><button type="button" data-wf-edit="'+esc(f.code)+'" aria-label="Editar '+esc(f.name)+'">Editar</button><button type="button" data-wf-more="'+esc(f.code)+'">Ações ▾</button></div></td></tr>').join('')+'</tbody></table></div>':'<div class="workflow-empty">Nenhum fluxo encontrado para os filtros selecionados.</div>';
+ shown.map(f=>'<tr><td><strong>'+esc(f.name)+'</strong><small>'+esc(f.code)+(f.integrationId?' · '+esc(f.integrationId):'')+'</small></td><td>'+esc(f.entity||'—')+'</td><td>'+esc(workflowKind(f))+'</td><td><span class="workflow-truncate">'+esc(workflowEvent(f))+'</span></td><td>'+workflowBadge(f.status)+'</td><td>v'+Math.max(1,workflowVersionNumber(f.code))+'</td><td><div class="workflow-row-actions"><button type="button" data-wf-edit="'+esc(f.code)+'" aria-label="Editar '+esc(f.name)+'">Editar</button><details class="wf-table-actions"><summary>Ações</summary><div class="wf-table-actions-list"><button type="button" data-wf-action="Duplicar" data-wf-code="'+esc(f.code)+'">Duplicar</button><button type="button" data-wf-action="Testar configuração" data-wf-code="'+esc(f.code)+'">Testar configuração</button><button type="button" data-wf-action="'+(f.status==='Ativo'?'Pausar':'Ativar')+'" data-wf-code="'+esc(f.code)+'">'+(f.status==='Ativo'?'Pausar':'Ativar')+'</button><button type="button" data-wf-action="Excluir" data-wf-code="'+esc(f.code)+'">Excluir</button></div></details></div></td></tr>').join('')+'</tbody></table></div>':'<div class="workflow-empty">Nenhum fluxo encontrado para os filtros selecionados.</div>';
  const filters='<div class="workflow-filters"><label class="workflow-search"><span>Pesquisar fluxo</span><input id="wfSearch" type="search" placeholder="Nome, código ou integração…" value="'+esc(workflowUI.query)+'"></label>'+
  '<label><span>Contexto</span><select id="wfContext">'+workflowSelectOptions(['Todos',...Object.keys(workflowEventMap)],workflowUI.context)+'</select></label>'+
  '<label><span>Tipo</span><select id="wfType">'+workflowSelectOptions(['Todos','Sequencial','Máquina de Estados'],workflowUI.type)+'</select></label>'+
@@ -1548,12 +1552,9 @@ function workflowLogTest(flow){
  workflowUI.tab='runs';renderActiveModule('Fluxos (workflows)');
  modal('Teste concluído','Foram validadas '+tasks.length+' tarefas na sequência de '+flow.name+'. Nenhum pedido, pagamento, estoque, e-mail ou integração foi alterado.');
 }
-function workflowActionMenu(code){
+function workflowActionMenu(code,action){
  const f=registerRows('Fluxos (workflows)').find(x=>x.code===code);if(!f)return;
- const options=['Editar','Duplicar','Testar configuração',f.status==='Ativo'?'Pausar':'Ativar','Excluir'];
- const choice=window.prompt('Ações de '+f.name+':\n'+options.map((x,i)=>(i+1)+'. '+x).join('\n')+'\n\nInforme o número da ação:');
- if(choice==null)return;
- const action=options[Number(choice)-1];if(!action){toast('Ação não reconhecida.');return}
+ if(!action){toast('Ação não reconhecida.');return}
  if(action==='Editar'){openWorkflowEditor(code);return}
  if(action==='Duplicar'){
   if(!demoGuard('write','duplicar fluxo'))return;
@@ -1669,7 +1670,8 @@ function openWorkflowEditor(code){
  ];
  const save=(activation=false)=>{
   if(!demoGuard(activation?'publish':'write',activation?'ativar fluxo':'salvar fluxo'))return;
-  const problems=workflowValidation(draft,activation);
+  if(!activation&&!String(draft.name||'').trim())draft.name='Novo fluxo '+draft.code;
+  const problems=activation?workflowValidation(draft,true):[];
   if(problems.length){notice(problems[0]);if(activation){stage=problems.some(x=>/tarefa|parâmetro|ações|ação/.test(x))?2:problems.some(x=>/evento|condição|estado|agendamento/.test(x))?1:0;render()}return}
   if(old&&JSON.stringify(old)!==oldJSON){notice('Outro processo alterou este fluxo. Reabra para revisar.');return}
   if(!draft.code||rows.some(x=>x!==old&&x.code===draft.code)){notice('Informe um código único para o fluxo.');return}
@@ -1749,7 +1751,7 @@ function bindWorkflow(target){
  }));
  target.querySelector('#wfReset')?.addEventListener('click',()=>{Object.assign(workflowUI,{query:'',context:'Todos',type:'Todos',status:'Todos'});renderActiveModule('Fluxos (workflows)')});
  target.querySelectorAll('[data-wf-edit]').forEach(b=>b.addEventListener('click',()=>openWorkflowEditor(b.dataset.wfEdit)));
- target.querySelectorAll('[data-wf-more]').forEach(b=>b.addEventListener('click',()=>workflowActionMenu(b.dataset.wfMore)));
+ target.querySelectorAll('[data-wf-action]').forEach(b=>b.addEventListener('click',()=>workflowActionMenu(b.dataset.wfCode,b.dataset.wfAction)));
  target.querySelectorAll('[data-wf-run]').forEach(b=>b.addEventListener('click',()=>{
   const run=vnextRead(WORKFLOW_RUNS,[])[Number(b.dataset.wfRun)];
   if(!run)return;
