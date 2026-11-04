@@ -1369,41 +1369,174 @@ function domainHeader(title,subtitle){return '<div class="domain-banner"><div><b
 function domainCards(items){return '<div class="domain-grid">'+items.map(x=>'<div class="panel domain-card"><small>'+x[0]+'</small><strong>'+x[1]+'</strong><p>'+x[2]+'</p></div>').join('')+'</div>'}
 function renderIndexation(){return domainHeader('Indexação de produtos','Observabilidade e manutenção de catálogo — dados e operações fictícias.')+domainCards([['Fila de indexação','24','Eventos aguardando processamento'],['Processados na última hora','1.284','Volume demonstrativo'],['Produtos com falha','3','Investigar logs e possíveis causas']])+'<section class="panel module-panel"><div class="panel-title"><div><h2>Monitoramento da indexação</h2><p>Consulte SKUs, situação de processamento e ocorrências.</p></div><button class="icon-button" data-domain-action="Ver logs">Ver logs</button></div>'+demoTable(['SKU','Evento / situação','Última atualização','Resultado'],indexationRows)+'<div class="domain-info"><b>Ações sensíveis:</b> reindexação completa e exclusão do índice devem exigir permissão específica, confirmação do impacto, auditoria e controles técnicos. Nenhuma dessas ações está disponível neste protótipo.</div></section>'}
 
-const WORKFLOW_RUNS='vnext-workflow-runs-v1';
+
+const WORKFLOW_RUNS='vnext-workflow-runs-v2';
+const WORKFLOW_VERSIONS='vnext-workflow-versions-v1';
+const workflowUI={query:'',context:'Todos',type:'Todos',status:'Todos',tab:'flows'};
+const workflowEventMap={
+ 'Pedido':['OrderPurchased','OrderPaid','OrderRiskApproved','OrderRiskDeclined','OrderPaymentCancelled','OrderRefunded','OrderInvoiceInserted','OrderShipped','OrderDelivered','OrderGlobalStatusCancelled'],
+ 'Cliente':['CustomerInserted','CustomerUpdated','CustomerDeleted','CustomerFraudster'],
+ 'Produto':['ProductInserted','ProductUpdated','ProductDeleted','StockKeepUnitSaved','StockKeepUnitUpdated','StockKeepUnitDeleted'],
+ 'Entrega':['DeliveryStatusUpdated','DeliveryCreated','DeliveryCancelled'],
+ 'Pedido Hub':['HubOrderImported','HubOrderUpdated'],
+ 'Pedido externo':['ExternalOrderCreated','ExternalOrderUpdated'],
+ 'Pedido em compra':['PurchaseOrderCreated','PurchaseOrderUpdated']
+};
+const workflowTaskCatalog=[
+ {group:'Controle e orquestração',id:'Executar workflow sequencial',risk:'medium',parameter:'Código do fluxo a executar'},
+ {group:'Controle e orquestração',id:'Agendar execução',risk:'medium',parameter:'Fluxo e atraso em minutos'},
+ {group:'Controle e orquestração',id:'Exibir mensagem de erro',risk:'high',parameter:'Mensagem de erro'},
+ {group:'Controle e orquestração',id:'Exibir aviso',risk:'low',parameter:'Mensagem'},
+ {group:'Pedido e status',id:'Alterar status',risk:'high',parameter:'Novo status do pedido'},
+ {group:'Pedido e status',id:'Finalizar pedido',risk:'high',parameter:'Motivo da finalização'},
+ {group:'Pedido e status',id:'Cancelar pedido',risk:'high',parameter:'Motivo do cancelamento'},
+ {group:'Pedido e status',id:'Reverter status',risk:'high',parameter:'Status de destino'},
+ {group:'Pedido e status',id:'Adicionar tag',risk:'low',parameter:'Tag do pedido'},
+ {group:'Pedido e status',id:'Remover tag',risk:'low',parameter:'Tag do pedido'},
+ {group:'Pedido e status',id:'Atualizar observações',risk:'low',parameter:'Texto da observação'},
+ {group:'Pagamento',id:'Confirmar pagamento pendente',risk:'high',parameter:'Identificador ou condição financeira'},
+ {group:'Pagamento',id:'Cancelar pagamento pendente',risk:'high',parameter:'Motivo da operação'},
+ {group:'Pagamento',id:'Sincronizar pagamentos',risk:'high',parameter:'Gateway / contrato'},
+ {group:'Pagamento',id:'Atualizar status do pagamento',risk:'high',parameter:'Status financeiro'},
+ {group:'Estoque e entrega',id:'Confirmar reserva',risk:'high',parameter:'Referência da reserva'},
+ {group:'Estoque e entrega',id:'Cancelar reserva',risk:'high',parameter:'Motivo da liberação'},
+ {group:'Estoque e entrega',id:'Realocar reservas',risk:'high',parameter:'Critério de realocação'},
+ {group:'Estoque e entrega',id:'Liberar expedição',risk:'high',parameter:'Tipo de expedição'},
+ {group:'Estoque e entrega',id:'Dividir entregas em pacotes',risk:'high',parameter:'Critério de divisão'},
+ {group:'Estoque e entrega',id:'Marcar entrega como entregue',risk:'high',parameter:'Identificador da entrega'},
+ {group:'Integração e comunicação',id:'Enviar pedido para fila de integração',risk:'high',parameter:'Fila / conector de destino'},
+ {group:'Integração e comunicação',id:'Verificar antifraude ClearSale',risk:'high',parameter:'Conector / regra'},
+ {group:'Integração e comunicação',id:'Enviar e-mail ao consumidor',risk:'medium',parameter:'Template de e-mail'},
+ {group:'Integração e comunicação',id:'Enviar e-mail ao seller',risk:'medium',parameter:'Template de e-mail'},
+ {group:'Integração e comunicação',id:'Enviar e-mail à filial',risk:'medium',parameter:'Template de e-mail'}
+];
 function workflowSteps(value){return String(value||'').split('\n').map(x=>x.trim()).filter(Boolean)}
+function workflowTaskRows(record){
+ if(Array.isArray(record.tasks))return record.tasks.map(t=>({...t}));
+ return workflowSteps(record.steps).map(line=>{const parts=line.split('|');const name=parts.shift()?.trim()||'';return {name,param:parts.join('|').trim()}}).filter(t=>t.name);
+}
+function workflowTaskMeta(task){return workflowTaskCatalog.find(x=>x.id===task.name)||{id:task.name,group:'Personalizado',risk:'medium',parameter:'Parâmetro'}}
+function workflowEvent(record){return record.event||record.trigger||'Execução manual'}
+function workflowKind(record){return record.kind||record.workflowType||'Sequencial'}
+function workflowVersions(){return vnextRead(WORKFLOW_VERSIONS,{})}
+function workflowValidation(record,forActivation=false){
+ const issues=[];
+ if(!String(record.name||'').trim())issues.push('Informe o nome do fluxo.');
+ if(!String(record.entity||'').trim())issues.push('Selecione um contexto.');
+ if(!['Sequencial','Máquina de Estados'].includes(workflowKind(record)))issues.push('Selecione um tipo de fluxo válido.');
+ const event=workflowEvent(record);
+ if(record.triggerMode==='Evento'&&(!workflowEventMap[record.entity]||!workflowEventMap[record.entity].includes(event)))issues.push('O evento não é compatível com o contexto selecionado.');
+ if(record.triggerMode==='Agendado'&&(!Number.isFinite(Number(record.delay))||Number(record.delay)<1))issues.push('Defina um atraso em minutos para o agendamento.');
+ if(workflowKind(record)==='Máquina de Estados'&&(!record.sourceState||!record.targetState))issues.push('Informe o estado de origem e o estado de destino.');
+ if(workflowKind(record)==='Máquina de Estados'&&record.sourceState===record.targetState)issues.push('Os estados de origem e destino devem ser diferentes.');
+ if(record.conditionField&&(!record.conditionOperator||!String(record.conditionValue||'').trim()))issues.push('Complete operador e valor da condição.');
+ const tasks=workflowTaskRows(record);
+ if(forActivation&&!tasks.length)issues.push('Adicione pelo menos uma tarefa antes de ativar.');
+ if(tasks.length>25)issues.push('Máximo de 25 tarefas por fluxo.');
+ tasks.forEach((task,i)=>{
+  if(!task.name)issues.push('Selecione uma ação para a tarefa '+(i+1)+'.');
+  if(!String(task.param||'').trim())issues.push('Informe o parâmetro da tarefa '+(i+1)+' ('+task.name+').');
+  if(task.name==='Executar workflow sequencial'&&String(task.param||'').trim()===String(record.code||'').trim())issues.push('O fluxo não pode executar a si próprio diretamente.');
+ });
+ return issues;
+}
+function workflowFilteredRows(){
+ return registerRows('Fluxos (workflows)').filter(f=>{
+  const q=workflowUI.query.trim().toLocaleLowerCase('pt-BR');
+  return (!q||[f.code,f.name,f.integrationId,f.entity,workflowEvent(f)].join(' ').toLocaleLowerCase('pt-BR').includes(q))
+   &&(workflowUI.context==='Todos'||f.entity===workflowUI.context)
+   &&(workflowUI.type==='Todos'||workflowKind(f)===workflowUI.type)
+   &&(workflowUI.status==='Todos'||f.status===workflowUI.status);
+ });
+}
+function workflowSelectOptions(options,current){return options.map(x=>'<option value="'+esc(x)+'" '+(x===current?'selected':'')+'>'+esc(x)+'</option>').join('')}
+function workflowBadge(status){return '<span class="workflow-status '+(status==='Ativo'?'is-live':status==='Pausado'?'is-paused':'')+'">'+esc(status||'Rascunho')+'</span>'}
+function workflowVersionNumber(code){return (workflowVersions()[code]||[]).length}
 function renderWorkflows(){
- const flows=registerRows('Fluxos (workflows)'),runs=vnextRead(WORKFLOW_RUNS,[]);
- const active=flows.filter(x=>x.status==='Ativo').length;
- return domainHeader('Fluxos e automações','Configure eventos, condições e ações para organizar processos da plataforma.')+
- domainCards([['Fluxos cadastrados',String(flows.length),'Total na área de trabalho'],['Ativos',String(active),'Prontos para avaliação'],['Testes recentes',String(runs.length),'Histórico local']])+
- renderRegisterList('Fluxos (workflows)')+
- '<section class="panel module-panel"><div class="panel-title"><div><h2>Estrutura e testes dos fluxos</h2><p>Visualize a sequência das etapas e valide regras antes de ativar.</p></div></div>'+
- (flows.length?flows.map(x=>'<article class="vnext-panel"><div class="panel-title"><div><h3>'+esc(x.name)+'</h3><p>'+esc(x.entity||'Entidade não definida')+' · '+esc(x.trigger||'Disparo não definido')+' · '+esc(x.channel||'Todos os canais')+'</p></div>'+pill(x.status)+'</div>'+
- '<div class="vnext-workflow-steps"><span>Evento: '+esc(x.trigger||'Manual')+'</span>'+ (x.conditionField?'<span>Condição: '+esc(x.conditionField)+' '+esc(x.conditionOperator||'')+' '+esc(x.conditionValue||'')+'</span>':'')+
- (workflowSteps(x.steps).length?workflowSteps(x.steps).map((s,i)=>'<span>'+(i+1)+'. '+esc(s)+'</span>').join(''):'<span>Defina etapas para executar o fluxo</span>')+'</div>'+
- '<div class="vnext-toolbar"><button type="button" data-workflow-edit="'+esc(x.code)+'">Editar configuração</button><button type="button" data-workflow-test="'+esc(x.code)+'">Testar fluxo</button><button type="button" data-workflow-toggle="'+esc(x.code)+'">'+(x.status==='Ativo'?'Pausar':'Ativar')+'</button></div></article>').join(''):'<div class="vnext-empty">Nenhum fluxo cadastrado. Use “Cadastrar fluxo” para começar.</div>')+
- '<h3 style="margin-top:22px">Execuções de teste</h3>'+
- (runs.length?demoTable(['Data','Fluxo','Resultado','Etapas avaliadas'],runs.slice(0,12).map(x=>[x.when,x.code,x.result,String(x.steps)])):'<p class="hint">Os testes dos fluxos aparecerão aqui.</p>')+
- '<p class="hint">Os testes avaliam somente a sequência configurada no navegador. Não disparam eventos, pagamentos, webhooks ou operações reais.</p></section>';
+ const flows=registerRows('Fluxos (workflows)'),shown=workflowFilteredRows(),runs=vnextRead(WORKFLOW_RUNS,[]);
+ const active=flows.filter(f=>f.status==='Ativo').length;
+ const lastRuns=runs.filter(r=>r.status==='Concluído').length;
+ const tabs='<div class="workflow-main-tabs" role="tablist"><button type="button" data-wf-tab="flows" class="'+(workflowUI.tab==='flows'?'active':'')+'">Fluxos</button><button type="button" data-wf-tab="runs" class="'+(workflowUI.tab==='runs'?'active':'')+'">Histórico de testes <span>'+runs.length+'</span></button></div>';
+ const table=shown.length?'<div class="workflow-table-scroll"><table class="workflow-table"><thead><tr><th>Código / nome</th><th>Contexto</th><th>Tipo</th><th>Acionamento</th><th>Situação</th><th>Versão</th><th>Ações</th></tr></thead><tbody>'+
+ shown.map(f=>'<tr><td><strong>'+esc(f.name)+'</strong><small>'+esc(f.code)+(f.integrationId?' · '+esc(f.integrationId):'')+'</small></td><td>'+esc(f.entity||'—')+'</td><td>'+esc(workflowKind(f))+'</td><td><span class="workflow-truncate">'+esc(workflowEvent(f))+'</span></td><td>'+workflowBadge(f.status)+'</td><td>v'+Math.max(1,workflowVersionNumber(f.code))+'</td><td><div class="workflow-row-actions"><button type="button" data-wf-edit="'+esc(f.code)+'" aria-label="Editar '+esc(f.name)+'">Editar</button><button type="button" data-wf-more="'+esc(f.code)+'">Ações ▾</button></div></td></tr>').join('')+'</tbody></table></div>':'<div class="workflow-empty">Nenhum fluxo encontrado para os filtros selecionados.</div>';
+ const filters='<div class="workflow-filters"><label class="workflow-search"><span>Pesquisar fluxo</span><input id="wfSearch" type="search" placeholder="Nome, código ou integração…" value="'+esc(workflowUI.query)+'"></label>'+
+ '<label><span>Contexto</span><select id="wfContext">'+workflowSelectOptions(['Todos',...Object.keys(workflowEventMap)],workflowUI.context)+'</select></label>'+
+ '<label><span>Tipo</span><select id="wfType">'+workflowSelectOptions(['Todos','Sequencial','Máquina de Estados'],workflowUI.type)+'</select></label>'+
+ '<label><span>Situação</span><select id="wfStatus">'+workflowSelectOptions(['Todos','Ativo','Pausado','Rascunho','Inativo'],workflowUI.status)+'</select></label>'+
+ '<button type="button" class="workflow-filter-clear" id="wfReset">Limpar filtros</button></div>';
+ const runsView=runs.length?'<div class="workflow-table-scroll"><table class="workflow-table"><thead><tr><th>Data e hora</th><th>Fluxo</th><th>Evento / contexto</th><th>Resultado</th><th>Etapas</th><th>Detalhes</th></tr></thead><tbody>'+
+ runs.map((r,i)=>'<tr><td>'+esc(r.when)+'</td><td><b>'+esc(r.name||r.code)+'</b><small>'+esc(r.code)+'</small></td><td>'+esc(r.event||'Validação manual')+'<small>'+esc(r.context||'—')+'</small></td><td>'+workflowBadge(r.status||'Concluído')+'</td><td>'+esc(String(r.steps))+'</td><td><button type="button" data-wf-run="'+i+'">Visualizar</button></td></tr>').join('')+'</tbody></table></div>':'<div class="workflow-empty">Nenhum teste registrado. Abra um fluxo e utilize Testar configuração.</div>';
+ return '<div class="workflow-page">'+
+ '<header class="workflow-page-header"><div><div class="eyebrow">Configs / Automação de processos</div><h2>Gerenciar fluxos</h2><p>Configure eventos, condições e tarefas com visibilidade sobre impactos e dependências.</p></div><button class="primary" type="button" id="wfCreate">+ Criar fluxo</button></header>'+
+ '<div class="workflow-kpis"><div><span>Fluxos cadastrados</span><strong>'+flows.length+'</strong></div><div><span>Fluxos ativos</span><strong>'+active+'</strong></div><div><span>Rascunhos e pausados</span><strong>'+flows.filter(x=>x.status!=='Ativo').length+'</strong></div><div><span>Testes registrados</span><strong>'+runs.length+'</strong></div></div>'+
+ '<div class="panel workflow-management">'+tabs+(workflowUI.tab==='flows'?filters+table:runsView)+
+ '<div class="workflow-table-footer"><span>'+(workflowUI.tab==='flows'?shown.length+' de '+flows.length+' fluxos':'Histórico local de validações')+'</span><span>Metadados e execuções organizados por fluxo</span></div></div>'+
+ '<section class="workflow-guidance"><div><strong>Como um fluxo funciona</strong><p>Gatilho → contexto → condição → tarefa → resultado</p></div><p>Antes de ativar, revise os efeitos de tarefas financeiras, de estoque e de integração. Testes locais não alteram registros operacionais.</p></section>'+
+ '</div>';
+}
+function workflowLogTest(flow){
+ const issues=workflowValidation(flow,true);
+ if(issues.length){toast(issues[0]);return}
+ const tasks=workflowTaskRows(flow),when=new Date().toLocaleString('pt-BR');
+ const lines=tasks.map((t,i)=>({step:i+1,name:t.name,param:t.param,result:'Validada a configuração (sem execução)'}));
+ const record={code:flow.code,name:flow.name,when,status:'Concluído',context:flow.entity,event:workflowEvent(flow),steps:tasks.length,lines,trace:'WF-LOCAL-'+Date.now()};
+ const runs=vnextRead(WORKFLOW_RUNS,[]);runs.unshift(record);
+ if(!vnextStore(WORKFLOW_RUNS,runs.slice(0,75)))return;
+ auditEvent('Testar configuração de fluxo','Fluxos',flow.code);
+ workflowUI.tab='runs';renderActiveModule('Fluxos (workflows)');
+ modal('Teste concluído','Foram validadas '+tasks.length+' tarefas na sequência de '+flow.name+'. Nenhum pedido, pagamento, estoque, e-mail ou integração foi alterado.');
+}
+function workflowActionMenu(code){
+ const f=registerRows('Fluxos (workflows)').find(x=>x.code===code);if(!f)return;
+ const options=['Editar','Duplicar','Testar configuração',f.status==='Ativo'?'Pausar':'Ativar','Excluir'];
+ const choice=window.prompt('Ações de '+f.name+':\n'+options.map((x,i)=>(i+1)+'. '+x).join('\n')+'\n\nInforme o número da ação:');
+ if(choice==null)return;
+ const action=options[Number(choice)-1];if(!action){toast('Ação não reconhecida.');return}
+ if(action==='Editar'){openWorkflowEditor(code);return}
+ if(action==='Duplicar'){
+  if(!demoGuard('write','duplicar fluxo'))return;
+  const rows=registerRows('Fluxos (workflows)');
+  let id='WF-'+String(Date.now()).slice(-7);
+  while(rows.some(x=>x.code===id))id+='-1';
+  const clone={...f,code:id,name:f.name+' (cópia)',status:'Rascunho',createdBy:loggedUser||'Usuário',createdAt:new Date().toLocaleString('pt-BR'),modifiedAt:'',tasks:workflowTaskRows(f)};
+  rows.unshift(clone);if(!persistRegisters('Fluxos (workflows)')){rows.shift();return}
+  auditEvent('Duplicar fluxo','Fluxos',code+' → '+id);openWorkflowEditor(id);return;
+ }
+ if(action==='Testar configuração'){workflowLogTest(f);return}
+ if(action==='Excluir'){
+  if(!demoGuard('delete','excluir fluxo'))return;
+  if(f.status==='Ativo'){toast('Pause o fluxo antes de excluí-lo.');return}
+  if(!window.confirm('Excluir '+f.name+'? Esta ação remove o cadastro local.'))return;
+  const rows=registerRows('Fluxos (workflows)'),idx=rows.indexOf(f);rows.splice(idx,1);
+  if(!persistRegisters('Fluxos (workflows)')){rows.splice(idx,0,f);return}
+  auditEvent('Excluir fluxo','Fluxos',code);renderActiveModule('Fluxos (workflows)');return;
+ }
+ if(!demoGuard('publish','alterar ativação de fluxo'))return;
+ const newStatus=action==='Pausar'?'Pausado':'Ativo';
+ const issues=workflowValidation(f,newStatus==='Ativo');
+ if(issues.length){toast(issues[0]);return}
+ const high=workflowTaskRows(f).filter(t=>workflowTaskMeta(t).risk==='high').length;
+ if(!window.confirm((newStatus==='Ativo'?'Ativar':'Pausar')+' '+f.name+'?\nContexto: '+f.entity+'\nGatilho: '+workflowEvent(f)+'\nTarefas de alto impacto: '+high+'\n\nO estado será alterado somente neste ambiente.'))return;
+ const prev=f.status;f.status=newStatus;if(!persistRegisters('Fluxos (workflows)')){f.status=prev;return}
+ auditEvent('Alterar ativação do fluxo','Fluxos',code+' '+prev+' → '+newStatus);
+ renderActiveModule('Fluxos (workflows)');
 }
 function bindWorkflow(target){
- target.querySelectorAll('[data-workflow-edit]').forEach(b=>b.addEventListener('click',()=>openRegister('Fluxos (workflows)',b.dataset.workflowEdit)));
- target.querySelectorAll('[data-workflow-toggle]').forEach(b=>b.addEventListener('click',()=>{
-  if(!demoGuard('write','alterar fluxo'))return;
-  const x=registerRows('Fluxos (workflows)').find(v=>v.code===b.dataset.workflowToggle);if(!x)return;
-  const status=x.status==='Ativo'?'Pausado':'Ativo';
-  if(status==='Ativo'&&!workflowSteps(x.steps).length){toast('Adicione ao menos uma etapa antes de ativar.');openRegister('Fluxos (workflows)',x.code);return}
-  if(!window.confirm((status==='Ativo'?'Ativar':'Pausar')+' o fluxo '+x.name+' neste ambiente?'))return;
-  const old=x.status;x.status=status;if(!persistRegisters('Fluxos (workflows)')){x.status=old;return}
-  auditEvent('Alterar estado do fluxo','Fluxos',x.code+' · '+status);renderActiveModule('Fluxos (workflows)');toast('Fluxo atualizado.');
+ target.querySelector('#wfCreate')?.addEventListener('click',()=>openWorkflowEditor());
+ target.querySelectorAll('[data-wf-tab]').forEach(b=>b.addEventListener('click',()=>{workflowUI.tab=b.dataset.wfTab;renderActiveModule('Fluxos (workflows)')}));
+ const filter={wfSearch:'query',wfContext:'context',wfType:'type',wfStatus:'status'};
+ Object.entries(filter).forEach(([id,key])=>target.querySelector('#'+id)?.addEventListener(id==='wfSearch'?'input':'change',e=>{
+  workflowUI[key]=e.target.value;const pos=e.target.selectionStart;
+  renderActiveModule('Fluxos (workflows)');
+  if(id==='wfSearch'){const next=document.getElementById(id);next?.focus();if(next&&pos!=null)next.setSelectionRange(pos,pos)}
  }));
- target.querySelectorAll('[data-workflow-test]').forEach(b=>b.addEventListener('click',()=>{
-  const x=registerRows('Fluxos (workflows)').find(v=>v.code===b.dataset.workflowTest);if(!x)return;
-  const steps=workflowSteps(x.steps);if(!steps.length){toast('Adicione pelo menos uma etapa para testar.');return}
-  const summary=steps.map((s,i)=>(i+1)+'. '+s).join(' → ');
-  const result='Validação concluída';
-  const logs=vnextRead(WORKFLOW_RUNS,[]);logs.unshift({code:x.code,when:new Date().toLocaleString('pt-BR'),result,steps:steps.length});
-  if(vnextStore(WORKFLOW_RUNS,logs.slice(0,30))){auditEvent('Testar fluxo','Fluxos',x.code+' · '+steps.length+' etapas');renderActiveModule('Fluxos (workflows)');modal('Teste de fluxo: '+x.name,'Sequência avaliada: '+summary+'. Nenhuma ação foi executada fora deste ambiente.')}
+ target.querySelector('#wfReset')?.addEventListener('click',()=>{Object.assign(workflowUI,{query:'',context:'Todos',type:'Todos',status:'Todos'});renderActiveModule('Fluxos (workflows)')});
+ target.querySelectorAll('[data-wf-edit]').forEach(b=>b.addEventListener('click',()=>openWorkflowEditor(b.dataset.wfEdit)));
+ target.querySelectorAll('[data-wf-more]').forEach(b=>b.addEventListener('click',()=>workflowActionMenu(b.dataset.wfMore)));
+ target.querySelectorAll('[data-wf-run]').forEach(b=>b.addEventListener('click',()=>{
+  const run=vnextRead(WORKFLOW_RUNS,[])[Number(b.dataset.wfRun)];
+  if(!run)return;
+  modal('Teste · '+(run.name||run.code),'Evento: '+(run.event||'Manual')+' | Contexto: '+(run.context||'—')+' | Identificador: '+(run.trace||'—')+'\n'+(run.lines||[]).map(x=>x.step+'. '+x.name+' — '+x.result).join('\n')+'\nSem execução transacional.');
  }));
 }
 function renderContracts(){return domainHeader('Contratos e regras comerciais B2B','Condições comerciais configuradas por canal e grupo econômico.')+domainCards([['Contratos','3','Dados fictícios'],['Vinculados a grupos','2','Escopo específico'],['Contrato padrão','1','Fallback por canal a validar']])+'<section class="panel module-panel"><h2>Contratos comerciais</h2><p class="hint">O contrato pode controlar catálogo, preços, estoque, pagamentos, entrega, limites e crédito.</p>'+demoTable(['Código','Contrato','Vínculo','Origem da regra','Status'],contractsRows)+'<div class="domain-info"><b>Origem das regras:</b> identificar claramente quando as condições são determinadas pelo contrato de um grupo econômico ou pelo contrato padrão do canal. As precedências e exceções precisam ser validadas na implementação real.</div><button class="primary" data-domain-action="Consultar contrato">Consultar contrato</button></section>'+renderRegisterList('Contratos')}
