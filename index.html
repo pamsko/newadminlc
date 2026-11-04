@@ -521,6 +521,11 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .visual-funnel-step:hover{filter:brightness(1.11)}
 @media(max-width:920px){.geo-filterbar{grid-template-columns:repeat(2,minmax(0,1fr))}.geo-filterbar button{grid-column:span 2}}
 @media(max-width:520px){.geo-filterbar{grid-template-columns:1fr}.geo-filterbar button{grid-column:auto}}
+
+/* Identificadores transversais: coluna preservada mesmo sem integração preenchida */
+.demo-register-table td code,.module-table td code,.workflow-table td code{font-size:11px;padding:3px 6px;border-radius:5px;background:var(--bg);color:var(--text);white-space:nowrap}
+.demo-register-table th,.module-table th,.workflow-table th{white-space:nowrap}
+.expanded-field input[readonly]{background:var(--bg);color:var(--muted);cursor:default}
 </style>
 </head>
 <body>
@@ -1034,18 +1039,37 @@ function loadRegisters(){
   registerExtras[k]=safeRead(k,examples);
 }
 }
-function registerRows(page){return page==='Produtos e SKUs'?fakeProducts:page==='Clientes'?fakeCustomers:registerExtras[page]||[]}
+
+/* Identificação transversal dos cadastros: ID interno imutável, código comercial e ID de integração opcional. */
+const REGISTER_INTERNAL_SEQ='totvs-admin-demo-internal-id-seq-v1';
+let internalSequence=0;
+try{internalSequence=Number(localStorage.getItem(REGISTER_INTERNAL_SEQ))||0}catch(e){}
+function nextInternalId(){
+ internalSequence++;
+ try{localStorage.setItem(REGISTER_INTERNAL_SEQ,String(internalSequence))}catch(e){}
+ return 'LC-'+String(internalSequence).padStart(7,'0');
+}
+function ensureRegisterIdentity(row,model){
+ if(!row.internalId)row.internalId=nextInternalId();
+ if(row.integrationId==null)row.integrationId=String(row.externalId||'');
+ return row;
+}
+function registerIdentifierCells(row,model){
+ ensureRegisterIdentity(row,model);
+ return '<td><code>'+esc(row.internalId)+'</code></td><td><b>'+esc(row[model.id]||'—')+'</b></td><td>'+esc(row.integrationId||'—')+'</td>';
+}
+function registerRows(page){const rows=page==='Produtos e SKUs'?fakeProducts:page==='Clientes'?fakeCustomers:registerExtras[page]||[];const model=registerModels[page];if(model)rows.forEach(row=>ensureRegisterIdentity(row,model));return rows}
 function persistRegisters(page){return safeSave(page==='Produtos e SKUs'?'products':page==='Clientes'?'customers':page,registerRows(page))}
 function registerTools(page){return '<div class="demo-register-toolbar"><span class="demo-chip">Gestão de cadastros</span><button class="ghost" data-register-reset="'+esc(page)+'">Restaurar exemplos / limpar cadastros locais</button></div>'}
 function renderRegisterList(page){
  const model=registerModels[page],data=registerRows(page);
  const term=moduleFilters.query.trim().toLocaleLowerCase('pt-BR');
  const filtered=data.filter(x=>Object.values(x).some(v=>String(v).toLocaleLowerCase('pt-BR').includes(term)));
- const headers=model.fields.filter(x=>x[0]!==model.id).slice(0,4);
+ const headers=model.fields.filter(x=>![model.id,'internalId','integrationId','externalId'].includes(x[0])).slice(0,3);
  return '<section class="panel module-panel"><div class="panel-title"><div><h2>'+esc(model.label)+'s cadastrados</h2><p>Consulte e gerencie os registros cadastrados.</p></div><button class="primary" data-register-create="'+esc(page)+'">+ Cadastrar '+esc(model.label.toLowerCase())+'</button></div>'+
  '<div class="demo-register-note">As alterações são mantidas no ambiente atual. É possível restaurar os registros iniciais.</div>'+
- '<div class="module-filters"><input aria-label="Buscar cadastros" type="search" id="moduleQuery" value="'+esc(moduleFilters.query)+'" placeholder="Buscar por código, nome ou situação..."><button class="icon-button" id="moduleClear">Limpar busca</button></div>'+
- (filtered.length?'<div class="demo-register-table"><table><thead><tr><th>'+esc(model.fields[0][1])+'</th>'+headers.map(x=>'<th>'+esc(x[1])+'</th>').join('')+'<th>Ações</th></tr></thead><tbody>'+filtered.map(x=>'<tr><td><b>'+esc(x[model.id])+'</b></td>'+headers.map(f=>'<td>'+esc(f[2]==='money'?fmtMoney(Number(x[f[0]])||0):x[f[0]]??'—')+'</td>').join('')+'<td><div class="demo-register-actions"><button data-register-edit="'+esc(x[model.id])+'">Editar</button><button class="delete" data-register-delete="'+esc(x[model.id])+'">Excluir</button></div></td></tr>').join('')+'</tbody></table></div>':'<div class="module-empty">Nenhum registro encontrado. Use “Cadastrar” para criar um exemplo.</div>')+
+ '<div class="module-filters"><input aria-label="Buscar cadastros" type="search" id="moduleQuery" value="'+esc(moduleFilters.query)+'" placeholder="Buscar por ID, código, ID de integração, nome ou situação..."><button class="icon-button" id="moduleClear">Limpar busca</button></div>'+
+ (filtered.length?'<div class="demo-register-table"><table><thead><tr><th>ID</th><th>Código de cadastro</th><th>ID de integração</th>'+headers.map(x=>'<th>'+esc(x[1])+'</th>').join('')+'<th>Ações</th></tr></thead><tbody>'+filtered.map(x=>'<tr>'+registerIdentifierCells(x,model)+headers.map(f=>'<td>'+esc(f[2]==='money'?fmtMoney(Number(x[f[0]])||0):x[f[0]]??'—')+'</td>').join('')+'<td><div class="demo-register-actions"><button data-register-edit="'+esc(x[model.id])+'">Editar</button><button class="delete" data-register-delete="'+esc(x[model.id])+'">Excluir</button></div></td></tr>').join('')+'</tbody></table></div>':'<div class="module-empty">Nenhum registro encontrado. Use “Cadastrar” para criar um exemplo.</div>')+
  registerTools(page)+'</section>';
 }
 
@@ -1134,7 +1158,9 @@ const registerExtraFields={
 function registerEditorFields(page){
  const main=registerModels[page].fields;
  const lookup=new Map(main.map(f=>[f[0],f]));
- return registerEditorSections[page].map(([title,names])=>({title,fields:names.map(n=>lookup.get(n)||[n,...registerExtraFields[n]]).filter(x=>x&&x[1])}));
+ const sections=registerEditorSections[page].map(([title,names])=>({title,fields:names.filter(n=>!['integrationId','externalId','internalId'].includes(n)).map(n=>lookup.get(n)||[n,...registerExtraFields[n]]).filter(x=>x&&x[1])}));
+ sections[0].fields.unshift(['internalId','ID interno','text',false],['integrationId','ID de integração','text',false]);
+ return sections;
 }
 function openRegister(page,key){
  if(!demoGuard('write','salvar cadastro'))return;
@@ -1144,13 +1170,13 @@ function openRegister(page,key){
  const sections=registerEditorFields(page),allFields=sections.flatMap(s=>s.fields),draftKey='vnext-register-draft-v2:'+page+':'+(existing?.[model.id]||'new');
  let restored=null;try{restored=JSON.parse(localStorage.getItem(draftKey)||'null')}catch(e){}
  if(restored&&!window.confirm('Existe um rascunho local deste cadastro. Deseja recuperá-lo?'))restored=null;
- const initial={channel:vnextContext.channel,unit:vnextContext.unit,...(existing||{}),...(restored||{})};
+ const initial={channel:vnextContext.channel,unit:vnextContext.unit,...(existing||{}),...(restored||{})};initial.internalId=existing?.internalId||initial.internalId||nextInternalId();initial.integrationId=initial.integrationId??initial.externalId??'';
  const originalSnapshot=existing?JSON.stringify(existing):null;
  let active=0,dirty=!!restored,autosaveTimer=null,externalChange=false;
  const backdrop=document.createElement('div');backdrop.className='demo-register-overlay expanded-register-overlay';backdrop.setAttribute('role','presentation');
  const fieldControl=([name,label,type,required,options])=>{
   const val=initial[name]??'';
-  const common='name="'+esc(name)+'" id="register-'+esc(name)+'" '+(name===model.id&&existing?'readonly ':'');
+  const common='name="'+esc(name)+'" id="register-'+esc(name)+'" '+((name===model.id&&existing)||name==='internalId'?'readonly ':'');
   const relation=type==='category'?[...new Set(['Vestuário','Calçados','Acessórios',...registerRows('Categorias').map(x=>x.name)])]:type==='relation-group'?[...new Set(['Padrão do canal',...registerRows('Grupos econômicos').map(x=>x.name)])]:type==='relation-group-optional'?['Sem vínculo',...registerRows('Grupos econômicos').map(x=>x.name)]:null;
   const choices=relation||options;
   let input;
@@ -1246,6 +1272,7 @@ function openRegister(page,key){
   for(const f of allFields){const el=form.elements.namedItem(f[0]);if(el&&!el.checkValidity()){showIssue('Revise o valor informado em '+f[1]+'.',f[0]);return}}
   const id=String(values[model.id]||'').trim();
   if(!id){showIssue('Informe um identificador válido.',model.id);return}
+  if(values.integrationId&&String(values.integrationId).length>300){showIssue('ID de integração excede o limite de 300 caracteres.','integrationId');return}
   if(!existing&&data.some(x=>String(x[model.id]).toLowerCase()===id.toLowerCase())){showIssue('Já existe um registro com este identificador.',model.id);return}
   if(page==='Produtos e SKUs'){
    if(values.kind==='SKU / Variação'&&!values.parent){showIssue('Selecione um produto pai para a variação.','parent');return}
@@ -1272,7 +1299,7 @@ function openRegister(page,key){
   values.unit=existing?.unit||vnextContext.unit;values.channel=values.channel||vnextContext.channel;
   if(page==='Produtos e SKUs'&&values.stock===0&&values.status==='Ativo')values.status='Esgotado';
   const snapshot=existing?{...existing}:null;
-  if(existing)Object.assign(existing,values);else data.unshift(values);
+  if(existing){values.internalId=existing.internalId;Object.assign(existing,values)}else data.unshift(values);
   if(!persistRegisters(page)){if(existing)Object.assign(existing,snapshot);else data.shift();showIssue('O cadastro não pôde ser salvo no armazenamento do navegador.');return}
   auditEvent(existing?'Atualizar cadastro':'Criar cadastro',page,id+' · '+vnextContext.unit+' / '+vnextContext.channel);
   try{localStorage.removeItem(draftKey)}catch(e){}
@@ -1400,7 +1427,7 @@ let rows=vnextListApply('Pedidos',a).map(o=>'<tr><td><input type="checkbox" aria
 const tabs='<div class="order-tabs" role="group" aria-label="Visões de pedidos">'+orderTabs.map(([label,value])=>'<button type="button" data-ordertab="'+value+'" class="'+(orderView===value?'active':'')+'">'+label+'</button>').join('')+'</div>';
 const viewActions='<div class="saved-view-row"><span>Visões rápidas</span><button type="button" data-orderpreset="paid">Pagos</button><button type="button" data-orderpreset="market">Marketplace</button><button type="button" data-orderpreset="reset">Restaurar visão</button><button type="button" id="ordersExport">Exportar CSV</button></div>';
 return moduleShell('Gestão de Pedidos','Gerencie a operação de ponta a ponta, com consultas, filtros e ações contextuais.',cards([['Pedidos do período','156','+12,4% vs. anterior'],['Aguardando pagamento','18','Ação necessária'],['Em separação','32','Em processamento'],['Faturamento',fmtMoney(14820.5),'Visão simulada']])+'<section class="panel module-panel"><div class="panel-title"><div><h2>Todos os pedidos</h2><p>Consulte pedidos e acompanhe seus estados financeiro, comercial e logístico.</p></div><span class="status">Operação</span></div>'+tabs+filters('orders',fakeOrders)+advancedOrdersUI()+viewActions+vnextListToolbar('Pedidos',a.length)+(rows.length?table(['','Pedido','Cliente','Canal','Pagamento','Status','Criado em','Valor','Ações'],rows):'<div class="module-empty">Nenhum pedido encontrado para os filtros selecionados.</div>')+'<div class="module-footer"><span>'+a.length+' pedidos exibidos</span><span>Selecione pedidos para ações em lote</span></div></section>')}
-function renderProducts(){const a=rowsFiltered(fakeProducts,'products');let rows=vnextListApply('Produtos e SKUs',a).map(p=>'<tr><td><button class="cell-link" data-product="'+p.sku+'">'+p.sku+'</button></td><td><b>'+esc(p.name)+'</b></td><td>'+p.category+'</td><td>'+p.stock+'</td><td>'+fmtMoney(p.price)+'</td><td>'+pill(p.status)+'</td><td><div class="module-actions"><button data-product="'+esc(p.sku)+'">Visualizar</button><button data-register-edit="'+esc(p.sku)+'">Editar</button><button data-register-delete="'+esc(p.sku)+'">Excluir</button></div></td></tr>');return moduleShell('Gestão de Produtos','Produtos, estoque e preços em um único lugar.',cards([['Produtos ativos','1.284','Catálogo publicado'],['SKUs totais','2.437','Variações incluídas'],['Estoque crítico','17','Requer atenção'],['Sem estoque','8','Reposição pendente']])+'<section class="panel module-panel"><h2>Produtos cadastrados</h2><p class="hint">Exemplos de SKUs e inventário para navegação.</p>'+filters('products',fakeProducts)+vnextListToolbar('Produtos e SKUs',a.length)+(rows.length?table(['SKU','Produto','Categoria','Estoque','Preço','Status','Ações'],rows):'<div class="module-empty">Nenhum produto encontrado.</div>')+'<div class="module-footer"><span>'+a.length+' produtos exibidos</span><span>Catálogo</span></div>'+registerTools('Produtos e SKUs')+'</section>')}
+function renderProducts(){fakeProducts.forEach(x=>ensureRegisterIdentity(x,registerModels['Produtos e SKUs']));const a=rowsFiltered(fakeProducts,'products');let rows=vnextListApply('Produtos e SKUs',a).map(p=>'<tr>'+registerIdentifierCells(p,registerModels['Produtos e SKUs'])+'<td><b>'+esc(p.name)+'</b></td><td>'+p.category+'</td><td>'+p.stock+'</td><td>'+fmtMoney(p.price)+'</td><td>'+pill(p.status)+'</td><td><div class="module-actions"><button data-product="'+esc(p.sku)+'">Visualizar</button><button data-register-edit="'+esc(p.sku)+'">Editar</button><button data-register-delete="'+esc(p.sku)+'">Excluir</button></div></td></tr>');return moduleShell('Gestão de Produtos','Produtos, estoque e preços em um único lugar.',cards([['Produtos ativos','1.284','Catálogo publicado'],['SKUs totais','2.437','Variações incluídas'],['Estoque crítico','17','Requer atenção'],['Sem estoque','8','Reposição pendente']])+'<section class="panel module-panel"><h2>Produtos cadastrados</h2><p class="hint">Exemplos de SKUs e inventário para navegação.</p>'+filters('products',fakeProducts)+vnextListToolbar('Produtos e SKUs',a.length)+(rows.length?table(['ID','Código de cadastro','ID de integração','Produto','Categoria','Estoque','Preço','Status','Ações'],rows):'<div class="module-empty">Nenhum produto encontrado.</div>')+'<div class="module-footer"><span>'+a.length+' produtos exibidos</span><span>Catálogo</span></div>'+registerTools('Produtos e SKUs')+'</section>')}
 
 function renderCustomerModeration(){
  const customers=fakeCustomers.filter(x=>x.type==='Pessoa jurídica');
@@ -1426,7 +1453,7 @@ function bindModeration(target){
  }));
 }
 
-function renderCustomers(){const a=rowsFiltered(fakeCustomers,'customers');let rows=vnextListApply('Clientes',a).map(p=>'<tr><td><button class="cell-link" data-customer="'+p.id+'">'+p.id+'</button></td><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.email)+'</td><td>'+p.type+'</td><td>'+p.orders+'</td><td>'+fmtMoney(p.spent)+'</td><td>'+pill(p.status)+'</td><td><button class="icon-button" data-customer="'+esc(p.id)+'">Detalhes</button><button class="icon-button" data-register-edit="'+esc(p.id)+'">Editar</button><button class="icon-button" data-register-delete="'+esc(p.id)+'">Excluir</button></td></tr>');return moduleShell('Gestão de Clientes','Visão de pessoas físicas, jurídicas e histórico de compras.',cards([['Clientes cadastrados','8.920','Base demonstrativa'],['Novos no período','127','Últimos 30 dias'],['Clientes recorrentes','36,8%','Indicador fictício'],['Contas B2B','84','Pessoas jurídicas']])+'<section class="panel module-panel"><h2>Base de clientes</h2><p class="hint">Consulte os clientes cadastrados e seus vínculos comerciais.</p>'+filters('customers',fakeCustomers)+vnextListToolbar('Clientes',a.length)+(rows.length?table(['Código','Cliente','E-mail','Tipo','Pedidos','Valor comprado','Status','Ações'],rows):'<div class="module-empty">Nenhum cliente encontrado.</div>')+'<div class="module-footer"><span>'+a.length+' clientes exibidos</span><span>Base de clientes</span></div>'+registerTools('Clientes')+'</section>')}
+function renderCustomers(){fakeCustomers.forEach(x=>ensureRegisterIdentity(x,registerModels['Clientes']));const a=rowsFiltered(fakeCustomers,'customers');let rows=vnextListApply('Clientes',a).map(p=>'<tr>'+registerIdentifierCells(p,registerModels['Clientes'])+'<td><b>'+esc(p.name)+'</b></td><td>'+esc(p.email)+'</td><td>'+p.type+'</td><td>'+p.orders+'</td><td>'+fmtMoney(p.spent)+'</td><td>'+pill(p.status)+'</td><td><button class="icon-button" data-customer="'+esc(p.id)+'">Detalhes</button><button class="icon-button" data-register-edit="'+esc(p.id)+'">Editar</button><button class="icon-button" data-register-delete="'+esc(p.id)+'">Excluir</button></td></tr>');return moduleShell('Gestão de Clientes','Visão de pessoas físicas, jurídicas e histórico de compras.',cards([['Clientes cadastrados','8.920','Base demonstrativa'],['Novos no período','127','Últimos 30 dias'],['Clientes recorrentes','36,8%','Indicador fictício'],['Contas B2B','84','Pessoas jurídicas']])+'<section class="panel module-panel"><h2>Base de clientes</h2><p class="hint">Consulte os clientes cadastrados e seus vínculos comerciais.</p>'+filters('customers',fakeCustomers)+vnextListToolbar('Clientes',a.length)+(rows.length?table(['ID','Código de cadastro','ID de integração','Cliente','E-mail','Tipo','Pedidos','Valor comprado','Status','Ações'],rows):'<div class="module-empty">Nenhum cliente encontrado.</div>')+'<div class="module-footer"><span>'+a.length+' clientes exibidos</span><span>Base de clientes</span></div>'+registerTools('Clientes')+'</section>')}
 function renderReports(){let arr=[['Loja virtual',51],['Mercado Livre',22],['Shopee',13],['Amazon',9],['B2B / Outros',5]];return moduleShell('Relatórios Gerenciais','Indicadores de receita, conversão e participação dos canais.',cards([['Receita bruta',fmtMoney(14820.5),'Período demonstrativo'],['Pedidos','156','Todos os canais'],['Ticket médio',fmtMoney(95),'Receita / pedidos'],['Itens por pedido','4,37','Média por pedido']])+'<div class="module-intro"><section class="panel module-panel"><h2>Participação por canal</h2><p class="hint">Percentual do faturamento consolidado.</p><div class="module-rank">'+arr.map(([name,pct])=>'<div class="module-rank-row"><b>'+name+'</b><div class="bar"><i style="width:'+pct+'%"></i></div><span>'+pct+'%</span></div>').join('')+'</div></section><section class="panel module-panel"><h2>Análises disponíveis</h2><div class="module-tiles" style="grid-template-columns:1fr"><button class="module-tile" data-report="Vendas por período"><b>Vendas por período</b><span>Receita e quantidade de pedidos</span></button><button class="module-tile" data-report="Vendas por região"><b>Vendas por região</b><span>Distribuição geográfica no Brasil</span></button><button class="module-tile" data-report="Performance por canal"><b>Performance por canal</b><span>Participação no faturamento</span></button></div></section></div>')}
 function renderFinance(){let rows=[['#105842','Pix','Autorizado',359.90],['#105841','Cartão','Capturado',899],['#105839','Boleto','Pendente',179.50],['#105837','Cartão','Cancelado',449.90]].map(x=>'<tr><td>'+x[0]+'</td><td>'+x[1]+'</td><td>'+pill(x[2])+'</td><td>'+fmtMoney(x[3])+'</td></tr>');return moduleShell('Visão Financeira','Pagamentos e conciliação (demonstração).',cards([['Pagamentos aprovados','142','Período atual'],['Transações pendentes','9','Acompanhar'],['Receita aprovada',fmtMoney(13370.2),'Montante ilustrativo'],['Cancelamentos','5','Revisar ocorrências']])+'<section class="panel module-panel"><h2>Últimas transações</h2>'+table(['Pedido','Meio de pagamento','Situação','Valor'],rows)+'</section>')}
 function renderChannelsPage(){return moduleShell('Canais de Venda','Performance de vendas e operação multicanal.',cards([['Canais monitorados','5','Canais demonstrativos'],['Receita multicanal',fmtMoney(14820.5),'Somatório'],['Maior participação','51%','Loja virtual'],['Pedidos','156','Consolidado']])+'<section class="panel module-panel"><h2>Comparativo por canal</h2>'+table(['Canal','Participação','Faturamento','Pedidos'],channels.map(c=>'<tr><td><b>'+esc(c.name)+'</b></td><td>'+Math.round(c.revenue*100)+'%</td><td>'+fmtMoney(14820.5*c.revenue)+'</td><td>'+Math.round(156*c.orders)+'</td></tr>'))+'</section>')}
@@ -1622,8 +1649,8 @@ function renderWorkflows(){
  const active=flows.filter(f=>f.status==='Ativo').length;
  const lastRuns=runs.filter(r=>r.status==='Concluído').length;
  const tabs='<div class="workflow-main-tabs" role="tablist"><button type="button" data-wf-tab="flows" class="'+(workflowUI.tab==='flows'?'active':'')+'">Fluxos</button><button type="button" data-wf-tab="runs" class="'+(workflowUI.tab==='runs'?'active':'')+'">Histórico de testes <span>'+runs.length+'</span></button></div>';
- const table=shown.length?'<div class="workflow-table-scroll"><table class="workflow-table"><thead><tr><th>Código / nome</th><th>Contexto</th><th>Tipo</th><th>Acionamento</th><th>Situação</th><th>Versão</th><th>Ações</th></tr></thead><tbody>'+
- shown.map(f=>'<tr><td><strong>'+esc(f.name)+'</strong><small>'+esc(f.code)+(f.integrationId?' · '+esc(f.integrationId):'')+'</small></td><td>'+esc(f.entity||'—')+'</td><td>'+esc(workflowKind(f))+'</td><td><span class="workflow-truncate">'+esc(workflowEvent(f))+'</span></td><td>'+workflowBadge(f.status)+'</td><td>v'+Math.max(1,workflowVersionNumber(f.code))+'</td><td><div class="workflow-row-actions"><button type="button" data-wf-edit="'+esc(f.code)+'" aria-label="Editar '+esc(f.name)+'">Editar</button><details class="wf-table-actions"><summary>Ações</summary><div class="wf-table-actions-list"><button type="button" data-wf-action="Duplicar" data-wf-code="'+esc(f.code)+'">Duplicar</button><button type="button" data-wf-action="Testar configuração" data-wf-code="'+esc(f.code)+'">Testar configuração</button><button type="button" data-wf-action="'+(f.status==='Ativo'?'Pausar':'Ativar')+'" data-wf-code="'+esc(f.code)+'">'+(f.status==='Ativo'?'Pausar':'Ativar')+'</button><button type="button" data-wf-action="Excluir" data-wf-code="'+esc(f.code)+'">Excluir</button></div></details></div></td></tr>').join('')+'</tbody></table></div>':'<div class="workflow-empty">Nenhum fluxo encontrado para os filtros selecionados.</div>';
+ const table=shown.length?'<div class="workflow-table-scroll"><table class="workflow-table"><thead><tr><th>ID</th><th>Código de cadastro</th><th>ID de integração</th><th>Nome</th><th>Contexto</th><th>Tipo</th><th>Acionamento</th><th>Situação</th><th>Versão</th><th>Ações</th></tr></thead><tbody>'+
+ shown.map(f=>'<tr>'+registerIdentifierCells(f,registerModels['Fluxos (workflows)'])+'<td><strong>'+esc(f.name)+'</strong></td><td>'+esc(f.entity||'—')+'</td><td>'+esc(workflowKind(f))+'</td><td><span class="workflow-truncate">'+esc(workflowEvent(f))+'</span></td><td>'+workflowBadge(f.status)+'</td><td>v'+Math.max(1,workflowVersionNumber(f.code))+'</td><td><div class="workflow-row-actions"><button type="button" data-wf-edit="'+esc(f.code)+'" aria-label="Editar '+esc(f.name)+'">Editar</button><details class="wf-table-actions"><summary>Ações</summary><div class="wf-table-actions-list"><button type="button" data-wf-action="Duplicar" data-wf-code="'+esc(f.code)+'">Duplicar</button><button type="button" data-wf-action="Testar configuração" data-wf-code="'+esc(f.code)+'">Testar configuração</button><button type="button" data-wf-action="'+(f.status==='Ativo'?'Pausar':'Ativar')+'" data-wf-code="'+esc(f.code)+'">'+(f.status==='Ativo'?'Pausar':'Ativar')+'</button><button type="button" data-wf-action="Excluir" data-wf-code="'+esc(f.code)+'">Excluir</button></div></details></div></td></tr>').join('')+'</tbody></table></div>':'<div class="workflow-empty">Nenhum fluxo encontrado para os filtros selecionados.</div>';
  const filters='<div class="workflow-filters"><label class="workflow-search"><span>Pesquisar fluxo</span><input id="wfSearch" type="search" placeholder="Nome, código ou integração…" value="'+esc(workflowUI.query)+'"></label>'+
  '<label><span>Contexto</span><select id="wfContext">'+workflowSelectOptions(['Todos',...Object.keys(workflowEventMap)],workflowUI.context)+'</select></label>'+
  '<label><span>Tipo</span><select id="wfType">'+workflowSelectOptions(['Todos','Sequencial','Máquina de Estados'],workflowUI.type)+'</select></label>'+
