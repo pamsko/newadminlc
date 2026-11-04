@@ -2181,38 +2181,108 @@ function catalogTypeIcon(p){
  if(kind==='kits')return '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13M7.5 8a3 3 0 0 1 0-6C10 2 12 8 12 8s2-6 4.5-6a3 3 0 0 1 0 6"/></svg>';
  return '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7l9-5Z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>';
 }
-function renderLayerProducts(){
- const data=layerData;
- const filtered=layerFilteredRows();
- const maxPages=Math.max(1,Math.ceil(filtered.length/layerPageSize));
- if(layerPage>maxPages)layerPage=maxPages;
- const pageRows=filtered.slice((layerPage-1)*layerPageSize,layerPage*layerPageSize);
- const available=data?.items?.length??0;
- const allLoaded=data&&((Number(data.totalCount)||0)<=available);
- const statusList=data?.items?.map(layerStatusValue)||[];
- const brandList=data?.items?.map(p=>p.brand)||[];
- const scopedNote=!data?'':allLoaded?'Filtros e ordenação aplicados a todos os produtos carregados.':'Filtros aplicados somente aos '+available+' registros carregados; o total da API pode ser maior.';
- let content='';
- if(layerLoading)content='<div class="catalog-state" role="status"><span class="catalog-spinner"></span><div><strong>Carregando catálogo…</strong><p>Consultando os produtos do ambiente de testes.</p></div></div>';
- else if(layerError)content='<div class="catalog-state catalog-error" role="alert"><div><strong>Não foi possível carregar os produtos</strong><p>'+esc(layerError)+'</p><button id="layerRetry" type="button">Tentar novamente</button></div></div>';
- else if(!data)content='<div class="catalog-state">Selecione Atualizar para consultar os produtos.</div>';
- else if(!pageRows.length)content='<div class="catalog-state"><div><strong>Nenhum produto encontrado</strong><p>Revise os filtros e tente novamente.</p><button type="button" id="layerClearInline">Limpar filtros</button></div></div>';
- else content='<div class="catalog-table-scroll"><table class="catalog-products-table"><thead><tr><th>ID</th><th>SKU</th><th>ID de integração</th><th>Imagem</th><th>Nome</th><th>Tipo</th><th>Visibilidade</th><th>Marca</th><th class="catalog-actions-head">Ações</th></tr></thead><tbody>'+pageRows.map(p=>'<tr><td class="catalog-id">'+layerEsc(p.id)+'</td><td>'+layerEsc(p.sku)+'</td><td>'+layerEsc(p.integrationId)+'</td><td><div class="catalog-thumb" data-layer-thumbnail="'+esc(String(p.id))+'">'+layerThumb(p)+'</div></td><td><strong>'+layerEsc(p.name)+'</strong></td><td><span class="catalog-tooltip-icon" tabindex="0" aria-label="'+esc(layerTypeLabel(p))+'" data-tooltip="'+esc(layerTypeLabel(p))+'">'+catalogTypeIcon(p)+'</span></td><td><span class="catalog-tooltip-icon" tabindex="0" aria-label="'+esc(layerVisibilityLabel(p))+'" data-tooltip="'+esc(layerVisibilityLabel(p))+'">'+catalogVisibilityIcon(p)+'</span></td><td>'+layerEsc(p.brand)+'</td><td class="catalog-table-actions">'+(p.id!==null&&p.id!==undefined?'<button type="button" data-layer-detail="'+esc(String(p.id))+'" data-layer-kind="'+esc(p.entityType||'products')+'">Visualizar</button> <button type="button" data-layer-edit="'+esc(String(p.id))+'" data-layer-kind="'+esc(p.entityType||'products')+'">Editar</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
- return '<section class="panel module-panel catalog-list-panel">'+
- '<div class="catalog-list-head"><div><h2>Lista de produtos</h2><p>'+(data?layerEsc(data.totalCount??available)+' registros · '+available+' carregados':'Catálogo do ambiente de testes')+'</p></div><div class="catalog-list-actions"><button type="button" class="primary" id="layerNew">+ Novo cadastro</button><button type="button" id="layerExport" '+(!data||layerLoading?'disabled':'')+'>Exportar CSV</button><button type="button" id="layerRefresh" class="primary" '+(layerLoading?'disabled':'')+'>↻ Atualizar</button></div></div>'+
- '<div class="catalog-filter-panel">'+
- '<div class="catalog-search-row"><label class="catalog-search-control"><span>Buscar produtos</span><input id="layerSearch" type="search" value="'+esc(layerSearch)+'" placeholder="Nome, SKU, ID ou integração" autocomplete="off" aria-label="Pesquisar produtos"></label>'+
- '<label><span>Buscar em</span><select id="layerField"><option value="all" '+(layerField==='all'?'selected':'')+'>Todos os campos</option>'+[['name','Nome'],['sku','SKU'],['id','ID'],['integrationId','ID de integração']].map(([k,v])=>'<option value="'+k+'" '+(layerField===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label></div>'+
- '<div class="catalog-filter-row"><label><span>Tipo</span><select id="layerEntityType">'+[['products','Produtos'],['skus','SKUs'],['kits','Kits'],['all','Todos']].map(([key,label])=>'<option value="'+key+'" '+(layerEntityType===key?'selected':'')+'>'+label+'</option>').join('')+'</select></label><label><span>Visibilidade</span><select id="layerStatus">'+layerOptions(statusList,layerStatus,'Todas')+'</select></label>'+
- '<label><span>Marca</span><select id="layerBrand">'+layerOptions(brandList,layerBrand,'Todas as marcas')+'</select></label>'+
- '<label><span>Ordenação</span><select id="layerOrder">'+[['name-asc','Nome: A–Z'],['name-desc','Nome: Z–A'],['id-desc','ID: maior primeiro'],['id-asc','ID: menor primeiro'],['sku-asc','SKU: A–Z'],['sku-desc','SKU: Z–A']].map(([k,v])=>'<option value="'+k+'" '+(layerOrder===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
- '<button type="button" class="catalog-clear" id="layerClear">Limpar filtros</button></div></div>'+
- '<div class="catalog-result-bar"><strong>'+filtered.length+' resultado'+(filtered.length===1?'':'s')+'</strong><span>'+esc(scopedNote)+'</span></div>'+
- content+
- '<div class="catalog-pagination"><div>Exibindo '+(pageRows.length?((layerPage-1)*layerPageSize+1):0)+'–'+Math.min(filtered.length,layerPage*layerPageSize)+' de '+filtered.length+'</div>'+
- '<div class="catalog-page-controls"><label for="layerPageSize">Por página</label><select id="layerPageSize">'+[10,20,50,100].map(v=>'<option value="'+v+'" '+(layerPageSize===v?'selected':'')+'>'+v+'</option>').join('')+'</select><button type="button" id="layerPrev" '+(layerLoading||layerPage<=1?'disabled':'')+' aria-label="Página anterior">Anterior</button><span>Página '+layerPage+' de '+maxPages+'</span><button type="button" id="layerNext" '+(layerLoading||layerPage>=maxPages?'disabled':'')+' aria-label="Próxima página">Próxima</button></div></div>'+
- '</section>';
+/* Lista única: Demonstração e Layer usam a mesma estrutura e as mesmas ações. */
+const catalogRowDetails=new Map();
+function demoCatalogRows(){
+ let changed=false;
+ const records=fakeProducts.map((p,index)=>{
+  ensureRegisterIdentity(p,registerModels['Produtos e SKUs']);
+  let id=Number(p.id);
+  if(!Number.isSafeInteger(id)||id<1){
+   id=Number(String(p.internalId??'').match(/[0-9]+$/)?.[0])||100001+index;
+   p.id=id;p.internalId=String(id);changed=true;
+  }else if(String(p.internalId)!==String(id)){p.internalId=String(id);changed=true}
+  const rawKind=String(p.kind||'Produto').toLocaleLowerCase('pt-BR');
+  const entityType=rawKind.includes('kit')?'kits':rawKind.includes('sku')||rawKind.includes('varia')?'skus':'products';
+  const visible=typeof p.isVisible==='boolean'?p.isVisible:
+   String(p.visibility||'').toLocaleLowerCase('pt-BR').includes('oculto')?false:
+   String(p.visibility||'').toLocaleLowerCase('pt-BR').includes('publicado')?true:
+   p.status==='Inativo'||p.status==='Esgotado'?false:p.status==='Ativo'?true:null;
+  return {
+   id,sku:p.sku??null,integrationId:p.integrationId??null,name:p.name??null,
+   entityType,isVisible:visible,brand:p.brand??null,category:p.category??null,
+   stock:p.stock??null,price:p.price??null,raw:p
+  };
+ });
+ if(changed)persistRegisters('Produtos e SKUs');
+ return records;
 }
+function catalogRows(){
+ return catalogSource==='layer'?(layerData?.items||[]):demoCatalogRows();
+}
+function catalogFilteredRows(){
+ let rows=catalogRows();
+ if(catalogSource==='demo'&&layerEntityType!=='all')rows=rows.filter(p=>p.entityType===layerEntityType);
+ const q=layerText(layerSearch.trim());
+ if(q){
+  const keys=layerField==='all'?['id','sku','integrationId','name','category','brand']:[layerField];
+  rows=rows.filter(p=>keys.some(key=>layerText(p[key]).includes(q)));
+ }
+ if(layerStatus!=='all')rows=rows.filter(p=>String(layerStatusValue(p))===layerStatus);
+ if(layerBrand!=='all')rows=rows.filter(p=>String(p.brand??'')===layerBrand);
+ return [...rows].sort((a,b)=>{
+  const neg=layerOrder.endsWith('desc')?-1:1;
+  if(layerOrder.startsWith('id-'))return neg*((Number(a.id)||0)-(Number(b.id)||0));
+  const key=layerOrder.startsWith('sku-')?'sku':'name';
+  return neg*String(a[key]??'').localeCompare(String(b[key]??''),'pt-BR',{numeric:true});
+ });
+}
+function catalogCategoryName(p){
+ if(p.category!==null&&p.category!==undefined&&p.category!=='')return String(p.category);
+ const info=catalogRowDetails.get((p.entityType||'products')+':'+p.id);
+ return info?.category??'';
+}
+function catalogPriceText(p){
+ let value=p.price;
+ if(value===null||value===undefined)value=catalogRowDetails.get((p.entityType||'products')+':'+p.id)?.price;
+ return value===null||value===undefined||value===''?'—':fmtMoney(Number(value));
+}
+function catalogStockText(p){
+ let value=p.stock;
+ if(value===null||value===undefined)value=catalogRowDetails.get((p.entityType||'products')+':'+p.id)?.stock;
+ return value===null||value===undefined||value===''?'—':esc(String(value));
+}
+function renderLayerProducts(){
+ const isLayer=catalogSource==='layer';
+ const data=isLayer?layerData:{items:demoCatalogRows(),totalCount:fakeProducts.length};
+ const filtered=catalogFilteredRows();
+ const pageCount=Math.max(1,Math.ceil(filtered.length/layerPageSize));
+ layerPage=Math.min(pageCount,Math.max(1,layerPage));
+ const visible=filtered.slice((layerPage-1)*layerPageSize,layerPage*layerPageSize);
+ const statusList=data?.items?.map(layerStatusValue)||[],brands=data?.items?.map(p=>p.brand)||[];
+ let content='';
+ if(isLayer&&layerLoading)content='<div class="catalog-state" role="status"><span class="catalog-spinner"></span><strong>Consultando catálogo…</strong></div>';
+ else if(isLayer&&layerError)content='<div class="catalog-state catalog-error" role="alert"><div><strong>Não foi possível consultar os dados</strong><p>'+esc(layerError)+'</p><button id="layerRetry" type="button">Tentar novamente</button></div></div>';
+ else if(isLayer&&!data)content='<div class="catalog-state"><button id="layerRetry" type="button">Consultar produtos</button></div>';
+ else if(!visible.length)content='<div class="catalog-state"><div><strong>Nenhum registro encontrado</strong><p>Confira os filtros aplicados.</p><button id="layerClearInline" type="button">Limpar filtros</button></div></div>';
+ else content='<div class="catalog-table-scroll"><table class="catalog-products-table"><thead><tr>'+
+ '<th>ID</th><th>SKU / Código</th><th>ID de integração</th><th>Imagem</th><th>Nome</th><th>Tipo</th><th>Categoria</th><th>Visibilidade</th><th>Marca</th><th>Preço</th><th>Estoque</th><th class="catalog-actions-head">Ações</th>'+
+ '</tr></thead><tbody>'+visible.map(p=>'<tr><td class="catalog-id">'+layerEsc(p.id)+'</td><td>'+layerEsc(p.sku)+'</td><td>'+layerEsc(p.integrationId)+'</td>'+
+ '<td><div class="catalog-thumb" '+(isLayer?'data-layer-thumbnail="'+esc(String(p.id))+'"':'')+'>'+layerThumb(p)+'</div></td>'+
+ '<td><strong>'+layerEsc(p.name)+'</strong></td>'+
+ '<td><span class="catalog-tooltip-icon" tabindex="0" aria-label="'+esc(layerTypeLabel(p))+'" data-tooltip="'+esc(layerTypeLabel(p))+'">'+catalogTypeIcon(p)+'</span></td>'+
+ '<td>'+layerEsc(catalogCategoryName(p))+'</td>'+
+ '<td><span class="catalog-tooltip-icon" tabindex="0" aria-label="'+esc(layerVisibilityLabel(p))+'" data-tooltip="'+esc(layerVisibilityLabel(p))+'">'+catalogVisibilityIcon(p)+'</span></td>'+
+ '<td>'+layerEsc(p.brand)+'</td><td>'+catalogPriceText(p)+'</td><td>'+catalogStockText(p)+'</td>'+
+ '<td class="catalog-table-actions"><button type="button" data-catalog-action="view" data-catalog-id="'+esc(String(p.id))+'" data-catalog-kind="'+esc(p.entityType||'products')+'">Visualizar</button> '+
+ '<button type="button" data-catalog-action="edit" data-catalog-id="'+esc(String(p.id))+'" data-catalog-kind="'+esc(p.entityType||'products')+'">Editar</button> '+
+ '<button type="button" data-catalog-action="delete" data-catalog-id="'+esc(String(p.id))+'" data-catalog-kind="'+esc(p.entityType||'products')+'">Excluir</button></td></tr>').join('')+'</tbody></table></div>';
+ return '<section class="panel module-panel catalog-list-panel">'+
+ '<div class="catalog-list-head"><div><h2>Lista de produtos</h2><p>'+(data?filtered.length+' registros encontrados':'Selecione Atualizar para carregar os registros')+'</p></div>'+
+ '<div class="catalog-list-actions"><button type="button" class="primary" id="layerNew">+ Novo cadastro</button><button type="button" id="layerExport" '+(!data||layerLoading?'disabled':'')+'>Exportar CSV</button><button type="button" id="layerRefresh" '+(isLayer&&layerLoading?'disabled':'')+'>↻ Atualizar</button></div></div>'+
+ '<div class="catalog-filter-panel"><div class="catalog-search-row"><label class="catalog-search-control"><span>Buscar</span><input id="layerSearch" type="search" value="'+esc(layerSearch)+'" placeholder="Nome, SKU, ID, categoria..." autocomplete="off"></label>'+
+ '<label><span>Buscar em</span><select id="layerField">'+[['all','Todos os campos'],['name','Nome'],['sku','SKU'],['id','ID'],['integrationId','ID de integração'],['category','Categoria']].map(([key,label])=>'<option value="'+key+'" '+(layerField===key?'selected':'')+'>'+label+'</option>').join('')+'</select></label></div>'+
+ '<div class="catalog-filter-row"><label><span>Tipo</span><select id="layerEntityType">'+[['products','Produtos'],['skus','SKUs'],['kits','Kits'],['all','Todos']].map(([key,label])=>'<option value="'+key+'" '+(layerEntityType===key?'selected':'')+'>'+label+'</option>').join('')+'</select></label>'+
+ '<label><span>Visibilidade</span><select id="layerStatus">'+layerOptions(statusList,layerStatus,'Todas')+'</select></label>'+
+ '<label><span>Marca</span><select id="layerBrand">'+layerOptions(brands,layerBrand,'Todas as marcas')+'</select></label>'+
+ '<label><span>Ordenação</span><select id="layerOrder">'+[['name-asc','Nome: A–Z'],['name-desc','Nome: Z–A'],['id-desc','ID: maior primeiro'],['id-asc','ID: menor primeiro'],['sku-asc','SKU: A–Z'],['sku-desc','SKU: Z–A']].map(([key,label])=>'<option value="'+key+'" '+(layerOrder===key?'selected':'')+'>'+label+'</option>').join('')+'</select></label>'+
+ '<button type="button" class="catalog-clear" id="layerClear">Limpar filtros</button></div></div>'+
+ '<div class="catalog-result-bar"><strong>'+filtered.length+' resultado'+(filtered.length===1?'':'s')+'</strong><span>'+(isLayer?'Layer · Consulta somente leitura':'Demonstração · Dados locais')+'</span></div>'+content+
+ '<div class="catalog-pagination"><div>Exibindo '+(visible.length?(layerPage-1)*layerPageSize+1:0)+'–'+Math.min(layerPage*layerPageSize,filtered.length)+' de '+filtered.length+'</div>'+
+ '<div class="catalog-page-controls"><label for="layerPageSize">Por página</label><select id="layerPageSize">'+[10,20,50,100].map(n=>'<option '+(layerPageSize===n?'selected':'')+'>'+n+'</option>').join('')+'</select>'+
+ '<button type="button" id="layerPrev" '+(layerPage===1?'disabled':'')+'>Anterior</button><span>Página '+layerPage+' de '+pageCount+'</span><button type="button" id="layerNext" '+(layerPage>=pageCount?'disabled':'')+'>Próxima</button></div></div></section>';
+}
+
 async function loadLayerProducts(){
  if(layerLoading||catalogSource!=='layer')return;
  const requestId=++layerRequestId;
@@ -2251,8 +2321,8 @@ async function loadLayerProducts(){
  }
 }
 function exportLayerCSV(){
- if(!layerData?.items?.length)return;
- const rows=layerFilteredRows();
+ if(!catalogRows().length)return;
+ const rows=catalogFilteredRows();
  if(!rows.length){toast('Nenhum produto encontrado para exportar.');return}
  const entries=[['ID','SKU','ID de integração','Nome','Situação','Marca'],...rows.map(p=>[p.id,p.sku,p.integrationId,p.name,layerStatusValue(p),p.brand])];
  function csvCell(value){
@@ -2627,7 +2697,7 @@ async function showLayerProductDetails(id,kind='products',mode='view'){
 
 
 function renderCatalogDetails(){
- return catalogSourcePicker()+(catalogSource==='layer'?renderLayerProducts():renderProducts());
+ return catalogSourcePicker()+renderLayerProducts();
 }
 
 
