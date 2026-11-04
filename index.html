@@ -707,6 +707,9 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-products-table .catalog-table-actions button[data-catalog-action="delete"]{color:#bd3f4b;border-color:#bd3f4b45;background:transparent}
 .catalog-products-table .catalog-table-actions button[data-catalog-action="edit"]{background:var(--navy);color:#fff;border-color:var(--navy)}
 .catalog-products-table .catalog-table-actions{min-width:238px}
+
+.catalog-products-table th:nth-child(10){cursor:help}
+.catalog-products-table th:nth-child(11){cursor:help}
 </style>
 </head>
 <body>
@@ -2215,7 +2218,7 @@ async function loadCatalogSummaries(){
      for(const value of payload.items||[]){
       catalogRowDetails.set(kind+':'+value.id,{category:value.category,price:value.price,stock:value.stock});
      }
-    }catch{}
+    }catch{for(const id of group)catalogRowDetails.set(kind+':'+id,{category:null,price:null,stock:null})}
     finally{for(const id of group)catalogSummaryLoading.delete(kind+':'+id)}
    })());
   }
@@ -2342,6 +2345,7 @@ function renderLayerProducts(){
 }
 
 async function loadLayerProducts(){
+ catalogRowDetails.clear();
  if(layerLoading||catalogSource!=='layer')return;
  const requestId=++layerRequestId;
  layerLoading=true;layerError='';
@@ -2366,6 +2370,7 @@ async function loadLayerProducts(){
   }
   if(requestId!==layerRequestId)return;
   layerData={items:combined,totalCount:total??combined.length,pageSize:100,pagesLoaded:lastPage,truncated};
+  loadCatalogReferences().then(()=>{if(catalogSource==='layer'&&vnextPage==='Produtos e SKUs')refreshCatalogSummaryCells()});
   layerPage=1;
  }catch(error){
   if(requestId!==layerRequestId)return;
@@ -2608,7 +2613,7 @@ function catalogRelationsPanel(kind,item={}){
   '</div></section>';
 }
 const CATALOG_FIELD_LABELS={
- id:'ID',sku:'Código / SKU',integrationId:'ID de integração',name:'Nome',brandId:'Marca (ID)',brandName:'Marca',
+ id:'ID',sku:'Código / SKU',integrationId:'ID de integração',name:'Nome',price:'Preço (R$)',stock:'Estoque disponível',brandId:'Marca (ID)',brandName:'Marca',
  productDefinitionId:'Definição de produto (ID)',mainCategoryId:'Categoria principal (ID)',productStatusId:'Situação do produto (ID)',
  categories:'Categorias',flags:'Flags',tags:'Tags',skuIds:'SKUs vinculados',productIds:'Produtos vinculados',
  behavior:'Tipo de kit',itemCount:'Quantidade de itens',upc:'EAN / UPC',isVisible:'Visível na loja',isSearchable:'Pesquisável',
@@ -2632,6 +2637,7 @@ const CATALOG_ENTITY_GROUPS={
   ['Conteúdo e SEO',['descriptions','seo']],
   ['Categorias e classificações',['categories','flags','tags','propertyValues']],
   ['SKUs e relacionamentos',['skuIds','skus','associations','associationDataSources']],
+  ['Preço e estoque',['pricing','inventorySettings','price','stock']],
   ['Mídias',['media']],
   ['Entrega',['shipping']],
   ['Referências e programas',['references','loyaltyPrograms']],
@@ -2641,7 +2647,8 @@ const CATALOG_ENTITY_GROUPS={
   ['Identificação',['id','sku','integrationId','name','upc','productIds','productDefinitionId']],
   ['Variações',['variationProperties']],
   ['Exibição',['display']],
-  ['Estoque e dimensões',['inventorySettings','dimensions']],
+  ['Preço e estoque',['pricing','inventorySettings','price','stock']],
+  ['Dimensões',['dimensions']],
   ['Fornecedores',['suppliers']],
   ['Outros dados',['misc']],
   ['Relacionamentos',['__relations']]
@@ -2652,7 +2659,7 @@ const CATALOG_ENTITY_GROUPS={
   ['Categorias',['categories']],
   ['Regras e composição',['rules','composition','items']],
   ['Mídias',['media']],
-  ['Preços e disponibilidade',['pricing','availability']],
+  ['Preços e disponibilidade',['pricing','availability','price','stock']],
   ['Entrega',['shipping']],
   ['Conteúdo',['seo','descriptions','display']],
   ['Relacionamentos',['__relations']]
@@ -2741,7 +2748,7 @@ function showDemoCatalogDetails(record,mode='view'){
  const raw=record.raw||{};
  const item={
   id:record.id,sku:record.sku,integrationId:record.integrationId,name:record.name,
-  brandName:record.brand,categories:record.category?[{name:record.category}]:[],
+  brandName:record.brand,categories:record.category?[{id:record.category,name:record.category}]:[],
   display:{isVisible:record.isVisible,isSearchable:raw.searchable??null},
   descriptions:{shortDescription:raw.shortDescription??'',longDescription:raw.longDescription??''},
   seo:{pageTitle:raw.seoTitle??'',urlFriendly:raw.slug??'',metaDescription:raw.metaDescription??''},
