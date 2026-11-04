@@ -448,8 +448,7 @@ function navMarkup(){
  '</div></div>';
  }).join('')+'</div>').join('');
 }
-function renderAdminNav(){
- const selected=typeof vnextPage==='string'?vnextPage:'Área de trabalho';
+function renderAdminNav(selected='Área de trabalho'){
  nav.innerHTML=navMarkup();
  const link=[...nav.querySelectorAll('[data-page]')].find(el=>el.dataset.page===selected);
  if(link){
@@ -478,7 +477,7 @@ function setAdminVersion(version){
  adminVersion=version;
  try{localStorage.setItem(ADMIN_VERSION_KEY,version)}catch(e){}
  updateAdminVersionUI();
- renderAdminNav();
+ renderAdminNav(vnextPage);
  setProfile(false);
  auditEvent('Alterar versão','Admin',version==='new'?'New':'New Old');
  toast('Admin '+(version==='new'?'New':'New Old')+' selecionado.');
