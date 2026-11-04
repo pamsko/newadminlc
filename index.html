@@ -566,7 +566,8 @@ function openRegister(page,key){
  let restored=null;try{restored=JSON.parse(localStorage.getItem(draftKey)||'null')}catch(e){}
  if(restored&&!window.confirm('Existe um rascunho local deste cadastro. Deseja recuperá-lo?'))restored=null;
  const initial={...(existing||{}),...(restored||{})};
- let active=0,dirty=!!restored;
+ const originalSnapshot=existing?JSON.stringify(existing):null;
+ let active=0,dirty=!!restored,autosaveTimer=null,externalChange=false;
  const backdrop=document.createElement('div');backdrop.className='demo-register-overlay expanded-register-overlay';backdrop.setAttribute('role','presentation');
  const fieldControl=([name,label,type,required,options])=>{
   const val=initial[name]??'';
@@ -581,7 +582,7 @@ function openRegister(page,key){
   return '<label class="expanded-field '+(type==='checkbox'?'is-check':'')+'" for="register-'+esc(name)+'"><span>'+esc(label)+(required?' <strong>*</strong>':'')+'</span>'+input+'</label>';
  };
  backdrop.innerHTML='<div class="demo-register-dialog expanded-register-dialog" role="dialog" aria-modal="true" aria-labelledby="demoRegisterTitle">'+
- '<header class="expanded-register-header"><div><div class="eyebrow">vNext Commerce · cadastro demonstrativo</div><h2 id="demoRegisterTitle">'+(existing?'Editar ':'Cadastrar ')+esc(model.label.toLowerCase())+'</h2><p>Preencha as seções; os dados ficam armazenados somente neste navegador.</p></div><button type="button" class="demo-register-x" data-close-register aria-label="Fechar cadastro">×</button></header>'+
+ '<header class="expanded-register-header"><div><div class="eyebrow">vNext Commerce · cadastro demonstrativo</div><h2 id="demoRegisterTitle">'+(existing?'Editar ':'Cadastrar ')+esc(model.label.toLowerCase())+'</h2><p>Preencha as seções; os dados ficam armazenados somente neste navegador.</p><span id="registerAutosaveStatus" class="vnext-chip" role="status">Rascunho local disponível</span></div><button type="button" class="demo-register-x" data-close-register aria-label="Fechar cadastro">×</button></header>'+
  '<div class="expanded-register-layout"><nav class="expanded-register-tabs" aria-label="Seções do cadastro">'+sections.map((s,i)=>'<button type="button" data-editor-tab="'+i+'" class="'+(i===0?'active':'')+'"><span>'+String(i+1).padStart(2,'0')+'</span> '+esc(s.title)+'</button>').join('')+'</nav>'+
  '<form id="demoRegisterForm" novalidate><div class="expanded-register-content">'+sections.map((s,i)=>'<section class="expanded-register-section" data-editor-section="'+i+'" '+(i?'hidden':'')+'><div class="expanded-section-title"><small>Etapa '+(i+1)+' de '+sections.length+'</small><h3>'+esc(s.title)+'</h3><p>Campos de demonstração, sujeitos a validação funcional antes de integração real.</p></div><div class="expanded-register-fields">'+s.fields.map(fieldControl).join('')+'</div></section>').join('')+'</div>'+
  '<div class="expanded-register-footer"><div id="demoRegisterError" class="demo-register-error" role="alert"></div><div class="expanded-register-actions"><button type="button" id="registerDraft">Salvar rascunho</button><button type="button" id="registerPrevious">Anterior</button><button type="button" id="registerNext">Próximo</button><button type="submit" class="expanded-register-save">Salvar cadastro</button></div></div></form></div></div>';
@@ -591,19 +592,50 @@ function openRegister(page,key){
  const readValues=()=>{const out={...initial};for(const f of allFields){const el=form.elements.namedItem(f[0]);if(!el)continue;out[f[0]]=f[2]==='checkbox'?el.checked:el.value;if(['money','number','decimal'].includes(f[2]))out[f[0]]=el.value===''?'':Number(el.value);if(['text','email','textarea'].includes(f[2]))out[f[0]]=String(out[f[0]]).trim()}return out};
  const navigateTab=i=>{active=Math.max(0,Math.min(parts.length-1,i));parts.forEach((p,j)=>p.hidden=j!==active);tabs.forEach((t,j)=>{t.classList.toggle('active',j===active);t.setAttribute('aria-current',j===active?'step':'false')});backdrop.querySelector('#registerPrevious').disabled=active===0;backdrop.querySelector('#registerNext').disabled=active===parts.length-1;error.textContent='';backdrop.querySelector('.expanded-register-content').scrollTop=0};
  const showIssue=(message,field)=>{error.textContent=message;if(field){const el=form.elements.namedItem(field);if(el){const section=parts.findIndex(x=>x.contains(el));if(section>=0)navigateTab(section);error.textContent=message;el.focus()}}};
- const close=force=>{if(!force&&dirty&&!window.confirm('Há alterações não salvas. Sair do cadastro? Você pode salvar um rascunho antes.'))return;backdrop.remove();document.body.style.overflow=oldScroll;document.removeEventListener('keydown',keys)};
+ const close=force=>{if(!force&&dirty&&!window.confirm('Há alterações não salvas. Sair do cadastro? Você pode salvar um rascunho antes.'))return;clearTimeout(autosaveTimer);backdrop.remove();document.body.style.overflow=oldScroll;document.removeEventListener('keydown',keys);window.removeEventListener('storage',onStorage)};
  const keys=e=>{if(e.key==='Escape'){e.preventDefault();close(false)}};
  document.addEventListener('keydown',keys);
  backdrop.querySelectorAll('[data-close-register]').forEach(b=>b.addEventListener('click',()=>close(false)));
  backdrop.addEventListener('click',e=>{if(e.target===backdrop)close(false)});
- form.addEventListener('input',()=>{dirty=true});
- form.addEventListener('change',()=>{dirty=true});
+ const conditional=()=>{
+  const values=readValues();
+  const hidden=new Set();
+  if(page==='Produtos e SKUs'){
+   if(values.kind!=='SKU / Variação')hidden.add('parent');
+   if(values.kind==='SKU / Variação')['seoTitle','slug','metaDescription','metaKeywords','shortDescription','longDescription','warranty','searchTerms','crossSell','relatedSkus'].forEach(x=>hidden.add(x));
+   if(values.kind!=='SKU / Variação')['ean','minimumStock','replenishment','backorder','restockDate','weight','width','height','depth'].forEach(x=>hidden.add(x));
+   if(!values.preorder)hidden.add('restockDate');
+  }
+  if(page==='Clientes'&&values.type==='Pessoa física')['group','companyTradeName','parentCompany','linkedCompanies'].forEach(x=>hidden.add(x));
+  if(page==='Contratos'){
+   if(values.creditMode!=='Limitado')hidden.add('creditLimit');
+   if(values.catalogMode!=='Lista específica')hidden.add('productList');
+   if(values.paymentMode!=='Seleção explícita')hidden.add('paymentMethods');
+   if(values.deliveryMode!=='Seleção explícita')hidden.add('deliveryMethods');
+  }
+  if(page==='Promoções'&&values.kind!=='Cupom')hidden.add('couponCode');
+  allFields.forEach(([name])=>{const el=form.elements.namedItem(name);if(el){const label=el.closest('label');label?.classList.toggle('vnext-conditional-hidden',hidden.has(name))}});
+ };
+ const saveDraft=()=>{try{localStorage.setItem(draftKey,JSON.stringify(readValues()));dirty=false;backdrop.querySelector('#registerAutosaveStatus').textContent='Rascunho salvo automaticamente · '+new Date().toLocaleTimeString('pt-BR')}catch(e){backdrop.querySelector('#registerAutosaveStatus').textContent='Falha ao salvar rascunho'}};
+ const changed=()=>{dirty=true;backdrop.querySelector('#registerAutosaveStatus').textContent='Salvando rascunho…';conditional();clearTimeout(autosaveTimer);autosaveTimer=setTimeout(saveDraft,1400)};
+ form.addEventListener('input',changed);
+ form.addEventListener('change',changed);
+ const onStorage=e=>{if(e.key===REGISTER_PREFIX+(page==='Produtos e SKUs'?'products':page==='Clientes'?'customers':page))externalChange=true};
+ window.addEventListener('storage',onStorage);
+ conditional();
  tabs.forEach(t=>t.addEventListener('click',()=>navigateTab(Number(t.dataset.editorTab))));
  backdrop.querySelector('#registerNext').addEventListener('click',()=>navigateTab(active+1));
  backdrop.querySelector('#registerPrevious').addEventListener('click',()=>navigateTab(active-1));
- backdrop.querySelector('#registerDraft').addEventListener('click',()=>{try{localStorage.setItem(draftKey,JSON.stringify(readValues()));dirty=false;toast('Rascunho salvo neste navegador.')}catch(e){showIssue('Não foi possível armazenar o rascunho local.')}});
+ backdrop.querySelector('#registerDraft').addEventListener('click',()=>{clearTimeout(autosaveTimer);saveDraft();toast('Rascunho salvo neste navegador.')});
  form.addEventListener('submit',e=>{
-  e.preventDefault();const values=readValues();
+  e.preventDefault();clearTimeout(autosaveTimer);const values=readValues();
+  if(externalChange){showIssue('Outra aba alterou os registros deste módulo. Feche e reabra para revisar a versão atual.');return}
+  if(existing&&JSON.stringify(existing)!==originalSnapshot){showIssue('Este registro foi modificado desde a abertura. Reabra e compare antes de salvar.');return}
+  const changedFields=allFields.filter(f=>JSON.stringify(initial[f[0]]??'')!==JSON.stringify(values[f[0]]??''));
+  if(changedFields.length){
+   const summary=changedFields.slice(0,10).map(x=>'• '+x[1]).join('\n');
+   if(!window.confirm('Revisão das alterações ('+changedFields.length+' campos):\n'+summary+'\n\nEscopo demonstrativo: '+vnextContext.unit+' / '+vnextContext.channel+'\nConfirmar salvamento local?'))return
+  }
   for(const f of allFields){const value=values[f[0]];if(f[3]&&(value==null||String(value).trim()==='')){showIssue('Preencha o campo obrigatório: '+f[1]+'.',f[0]);return}}
   for(const f of allFields){const el=form.elements.namedItem(f[0]);if(el&&!el.checkValidity()){showIssue('Revise o valor informado em '+f[1]+'.',f[0]);return}}
   const id=String(values[model.id]||'').trim();
