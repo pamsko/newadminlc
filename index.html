@@ -426,7 +426,7 @@ if(document.getElementById('appShell').classList.contains('sidebar-collapsed'))s
 const open=b.getAttribute('aria-expanded')==='true';
 document.querySelectorAll('[data-folder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true;});
 b.setAttribute('aria-expanded',String(!open));b.nextElementSibling.hidden=open;
-}));document.getElementById('notifications').addEventListener('click',()=>modal('Notificações','Nenhuma notificação real. Este é um protótipo sem conexão com a plataforma.'));document.getElementById('closeModal').addEventListener('click',closeModal);document.getElementById('modalOK').addEventListener('click',closeModal);document.getElementById('modalLayer').addEventListener('click',e=>{if(e.target.id==='modalLayer')closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('globalSearch').focus()}});document.getElementById('globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){toast(`Busca demonstrativa: “${e.target.value.trim()||'sem termo'}”.`);e.target.blur()}});
+}));document.getElementById('notifications').addEventListener('click',()=>navigate('Tarefas e notificações'))document.getElementById('closeModal').addEventListener('click',closeModal);document.getElementById('modalOK').addEventListener('click',closeModal);document.getElementById('modalLayer').addEventListener('click',e=>{if(e.target.id==='modalLayer')closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('globalSearch').focus()}});
 
 const fakeOrders=[
 {id:'105842',client:'Mariana Oliveira',channel:'Loja virtual',payment:'Pix',status:'Pago',total:359.90,date:'03/11/2026 14:32',items:3},
@@ -1344,7 +1344,6 @@ loadRegisters();
 vnextContextInit();
 vnextSearchInit();
 document.getElementById('workQueue').addEventListener('click',()=>navigate('Tarefas e notificações'));
-document.getElementById('notifications').addEventListener('click',()=>navigate('Tarefas e notificações'));
 vnextTasksUpdate();
 sync();
 })();
