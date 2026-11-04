@@ -685,6 +685,15 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-media-options label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
 .catalog-media-options input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px;max-width:100%;color:var(--text);opacity:.65}
 @media(max-width:650px){.catalog-media-options{grid-template-columns:1fr}}
+
+.catalog-live-select select{height:42px;width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);color:var(--text);font:inherit}
+.catalog-live-select select:focus{outline:2px solid var(--cyan);outline-offset:1px}
+.catalog-live-select select:disabled{opacity:.6}
+.catalog-live-select small{font-size:11px;color:var(--muted);font-weight:400;line-height:1.4}
+.catalog-relation-panel{border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--bg)}
+.catalog-relation-panel h3{margin:0 0 5px;font-size:16px}
+.catalog-relation-panel p{margin:0 0 15px;color:var(--muted);font-size:12px}
+.catalog-ref-warning{color:#af5a14;font-size:12px;padding:10px;border:1px solid #af5a1460;border-radius:8px}
 </style>
 </head>
 <body>
@@ -2515,13 +2524,13 @@ function renderCatalogMedia(media){
  '</div></div>';
 }
 function openLayerNewRegistration(){
- const kind=layerEntityType==='all'?'products':layerEntityType;
- const labels={products:'Produto',skus:'SKU',kits:'Kit'};
- const previousFocus=document.activeElement;
+ const kind=['products','skus','kits'].includes(layerEntityType)?layerEntityType:'products';
+ catalogDraftSelections={};
+ const focus=document.activeElement;
  const overlay=document.createElement('div');overlay.className='catalog-detail-overlay';
- overlay.innerHTML='<section class="catalog-detail-drawer catalog-edit-drawer" role="dialog" aria-modal="true" aria-label="Novo cadastro"><header><div><h2>Novo cadastro</h2><span class="catalog-source-info">Simulação de cadastro · Somente visualização</span></div><button id="closeLayerNew" type="button">Fechar</button></header><div id="layerNewBody"></div></section>';
+ overlay.innerHTML='<section class="catalog-detail-drawer catalog-edit-drawer" role="dialog" aria-modal="true" aria-label="Novo cadastro"><header><div><h2>Novo cadastro</h2><span class="catalog-source-info">Simulação · Comboboxes exploráveis · Nenhuma gravação</span></div><button id="closeLayerNew" type="button">Fechar</button></header><div id="layerNewBody"></div></section>';
  document.body.appendChild(overlay);
- const close=()=>{overlay.remove();document.removeEventListener('keydown',onEscape);previousFocus?.focus?.()};
+ const close=()=>{overlay.remove();document.removeEventListener('keydown',onEscape);focus?.focus?.()};
  const onEscape=e=>{if(e.key==='Escape')close()};
  document.addEventListener('keydown',onEscape);
  overlay.querySelector('#closeLayerNew').addEventListener('click',close);
@@ -2531,19 +2540,31 @@ function openLayerNewRegistration(){
  function render(){
   const groups=CATALOG_ENTITY_GROUPS[current];
   if(!groups.some(([name])=>name===active))active=groups[0][0];
-  body.innerHTML='<div class="catalog-readonly-banner">Simulação visual: nenhum campo pode ser preenchido e nenhuma ação será enviada à Layer.</div>'+
+  const tabHtml=groups.map(([name])=>'<button type="button" data-new-tab="'+esc(name)+'" class="'+(name===active?'active':'')+'" role="tab" aria-selected="'+(name===active)+'">'+esc(name)+'</button>').join('');
+  const currentFields=groups.find(([name])=>name===active)?.[1]||[];
+  const fields=currentFields.map(key=>{
+   if(key==='__relations')return catalogRelationsPanel(current);
+   if(key==='media')return renderCatalogMedia({product:[],skus:[]});
+   const val=catalogMissingFormField(key);
+   return '<div class="catalog-section-block"><h3>'+esc(catalogRefLabel(key))+'</h3>'+catalogFormField(key,val,'create-'+current+'-'+key)+'</div>';
+  }).join('');
+  body.innerHTML='<div class="catalog-readonly-banner">Explore o cadastro com opções reais da Layer. Apenas comboboxes estão disponíveis; nenhum valor será salvo.</div>'+
    '<label class="catalog-new-kind">Tipo de cadastro<select id="layerNewKind">'+[['products','Produto'],['skus','SKU'],['kits','Kit']].map(([key,name])=>'<option value="'+key+'" '+(key===current?'selected':'')+'>'+name+'</option>').join('')+'</select></label>'+
-   '<div class="catalog-detail-tabs" role="tablist">'+groups.map(([name])=>'<button type="button" data-new-tab="'+esc(name)+'" class="'+(name===active?'active':'')+'" role="tab" aria-selected="'+(name===active)+'">'+esc(name)+'</button>').join('')+'</div>'+
-   '<div class="catalog-edit-content">'+groups.filter(([name])=>name===active).map(([,keys])=>keys.map(key=>key==='media'?renderCatalogMedia({product:[],skus:[]}):catalogInput(CATALOG_FIELD_LABELS[key]||key,'')).join('')).join('')+'</div>'+
-   '<div class="catalog-new-footer"><button type="button" disabled>Salvar cadastro</button><span>Cadastro desabilitado no ambiente de testes</span></div>';
-  body.querySelector('#layerNewKind').addEventListener('change',e=>{current=e.target.value;active='Identificação';render()});
+   (catalogReferenceError?'<p class="catalog-ref-warning">'+esc(catalogReferenceError)+'</p>':'')+
+   '<div class="catalog-detail-tabs" role="tablist">'+tabHtml+'</div>'+
+   '<div class="catalog-edit-content">'+fields+'</div>'+
+   '<div class="catalog-new-footer"><button type="button" disabled>Salvar cadastro</button><span>Simulação — nenhuma alteração enviada</span></div>';
+  body.querySelector('#layerNewKind').addEventListener('change',e=>{current=e.target.value;active='Identificação';catalogDraftSelections={};render()});
   body.querySelectorAll('[data-new-tab]').forEach(btn=>btn.addEventListener('click',()=>{active=btn.dataset.newTab;render()}));
+  catalogBindLiveSelects(body);
  }
  render();overlay.querySelector('#closeLayerNew').focus();
+ loadCatalogReferences().then(()=>{if(overlay.isConnected)render()});
 }
 async function showLayerProductDetails(id,kind='products',mode='view'){
  if(!/^[0-9]+$/.test(id))return;
  if(!['products','skus','kits'].includes(kind))kind='products';
+ catalogDraftSelections={};
  const previousFocus=document.activeElement,entityLabel={products:'Produto',skus:'SKU',kits:'Kit'}[kind];
  const overlay=document.createElement('div');overlay.className='catalog-detail-overlay';
  overlay.innerHTML='<section class="catalog-detail-drawer catalog-edit-drawer" role="dialog" aria-modal="true" aria-label="Cadastro de '+entityLabel+'"><header><div><h2>'+entityLabel+' #'+esc(id)+'</h2><span class="catalog-source-info">Cadastro completo · Consulta somente leitura</span></div><button type="button" id="closeLayerDetail">Fechar</button></header><div id="layerDetailBody" role="status">Carregando cadastro…</div></section>';
@@ -2572,16 +2593,19 @@ async function showLayerProductDetails(id,kind='products',mode='view'){
   if(!overlay.isConnected)return;
   const group=CATALOG_ENTITY_GROUPS[kind],extra=Object.keys(item).filter(k=>!group.some(([,keys])=>keys.includes(k)));
   const sections=extra.length?[...group,['Outros campos',extra]]:group;
-  const available=sections.filter(([title,keys])=>keys.some(k=>Object.prototype.hasOwnProperty.call(item,k)));
+  const available=sections.filter(([title,keys])=>keys.includes('__relations')||keys.some(k=>Object.prototype.hasOwnProperty.call(item,k)));
+  if(!available.some(([name])=>name==='Relacionamentos'))available.push(['Relacionamentos',['__relations']]);
   let active=available[0]?.[0]||'Identificação';
   const render=()=>{
    const tabs='<div class="catalog-detail-tabs" role="tablist" aria-label="Abas do cadastro">'+available.map(([name])=>'<button type="button" role="tab" aria-selected="'+(active===name)+'" class="'+(active===name?'active':'')+'" data-catalog-section="'+esc(name)+'">'+esc(name)+'</button>').join('')+'</div>';
    const section=available.find(([name])=>name===active);
-   const fields=section?section[1].filter(k=>Object.prototype.hasOwnProperty.call(item,k)).map(k=>{
+   const fields=section?section[1].filter(k=>k==='__relations'||Object.prototype.hasOwnProperty.call(item,k)).map(k=>{
+    if(k==='__relations')return catalogRelationsPanel(kind,item);
     const val=item[k],label=CATALOG_FIELD_LABELS[k]||k;
-    return '<div class="catalog-section-block"><h3>'+esc(label)+'</h3>'+(k==='media'?renderCatalogMedia(val):catalogNestedFields(val,label))+'</div>';
+    return '<div class="catalog-section-block"><h3>'+esc(label)+'</h3>'+(k==='media'?renderCatalogMedia(val):catalogFormField(k,val,'existing-'+kind+'-'+k))+'</div>';
    }).join(''):'';
    overlay.querySelector('#layerDetailBody').innerHTML='<div class="catalog-readonly-banner">Modo '+(mode==='edit'?'edição':'visualização')+' · Todos os campos bloqueados · Nenhuma alteração será enviada à Layer</div>'+tabs+'<div class="catalog-edit-content" role="tabpanel">'+(fields||'<p class="catalog-muted">Nenhuma informação disponível.</p>')+'</div>';
+   catalogBindLiveSelects(overlay);
    overlay.querySelectorAll('[data-catalog-section]').forEach(btn=>btn.addEventListener('click',()=>{
     active=btn.dataset.catalogSection;render();
     overlay.querySelectorAll('[data-catalog-section]').forEach(el=>{if(el.dataset.catalogSection===active)el.focus()});
@@ -2590,6 +2614,7 @@ async function showLayerProductDetails(id,kind='products',mode='view'){
   overlay.querySelector('header h2').textContent=item.name?String(item.name):entityLabel+' #'+id;
   overlay.querySelector('header .catalog-source-info').textContent=entityLabel+' · ID '+id+' · Layer API v3 · Somente leitura';
   render();
+  loadCatalogReferences().then(()=>{if(overlay.isConnected)render()});
  }catch(error){if(overlay.isConnected)overlay.querySelector('#layerDetailBody').textContent='Não foi possível consultar o cadastro: '+error.message;}
 }
 
