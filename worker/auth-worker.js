@@ -5,7 +5,7 @@
  * ADMIN_USERNAME, ADMIN_PASSWORD, ADMIN_SESSION_SECRET, ADMIN_ALLOWED_ORIGIN
  * ADMIN_ALLOWED_ORIGIN: origem exata do GitHub Pages (sem barra final).
  *
- * Não utilize credenciais da Layer como login do Admin.
+ * Não utilize credenciais da Layer como login do Admin.\n * Rotas: POST /auth/login, GET /auth/session, GET /api/products (autenticada, leitura apenas).\n * Secrets Layer: LAYER_API_USERNAME, LAYER_API_PASSWORD.
  */
 const encoder = new TextEncoder();
 const noStore = {"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
@@ -68,6 +68,44 @@ export default {
    const session=await checkToken(raw,env.ADMIN_SESSION_SECRET,env.ADMIN_USERNAME);
    if(!session)return output({authenticated:false},401,cors);
    return output({authenticated:true,username:session.sub,expiresAt:session.exp},200,cors);
+  }
+  if(url.pathname==="/api/products"&&request.method==="GET"){
+   const authorization=request.headers.get("Authorization")||"";
+   const raw=authorization.startsWith("Bearer ")?authorization.slice(7):"";
+   const session=await checkToken(raw,env.ADMIN_SESSION_SECRET,env.ADMIN_USERNAME);
+   if(!session)return output({error:"UNAUTHORIZED"},401,cors);
+   if(!env.LAYER_API_USERNAME||!env.LAYER_API_PASSWORD)return output({error:"LAYER_NOT_CONFIGURED"},503,cors);
+   const pageValue=url.searchParams.get("page")||"1";
+   const sizeValue=url.searchParams.get("pageSize")||"20";
+   if(!/^\\d+$/.test(pageValue)||!/^\\d+$/.test(sizeValue))return output({error:"INVALID_PAGINATION"},400,cors);
+   const page=Number(pageValue),pageSize=Number(sizeValue);
+   if(!Number.isSafeInteger(page)||page<1||page>100000||!Number.isSafeInteger(pageSize)||pageSize<1||pageSize>100)return output({error:"INVALID_PAGINATION"},400,cors);
+   const layerBase="https://projetos.layer.core.dcg.com.br";
+   try{
+    const authRes=await fetch(layerBase+"/api/v3/auth/token",{
+     method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+     body:JSON.stringify({username:env.LAYER_API_USERNAME,password:env.LAYER_API_PASSWORD}),
+     signal:AbortSignal.timeout(10000)
+    });
+    if(!authRes.ok)return output({error:"LAYER_AUTH_FAILED",upstreamStatus:authRes.status},502,cors);
+    const auth=await authRes.json();
+    if(!auth.accessToken)return output({error:"LAYER_TOKEN_MISSING"},502,cors);
+    const productsRes=await fetch(layerBase+"/api/v3/catalog/products?page="+page+"&pageSize="+pageSize,{
+     method:"GET",headers:{"Accept":"application/json","Authorization":"Bearer "+auth.accessToken},
+     signal:AbortSignal.timeout(12000)
+    });
+    if(!productsRes.ok)return output({error:"LAYER_PRODUCTS_FAILED",upstreamStatus:productsRes.status},502,cors);
+    const payload=await productsRes.json();
+    const items=Array.isArray(payload.items)?payload.items:Array.isArray(payload.data)?payload.data:Array.isArray(payload)?payload:[];
+    const mapped=items.map(item=>({
+     id:item.id??null,sku:item.sku??null,integrationId:item.integrationId??null,
+     name:item.name??null,status:item.status??null,
+     active:item.active??null,
+     brand:item.brand?.name??(typeof item.brand==="string"?item.brand:null)
+    }));
+    return output({source:"layer-test",page:payload.page??page,pageSize:payload.pageSize??pageSize,
+     totalCount:payload.totalCount??payload.total??null,totalPages:payload.totalPages??null,items:mapped},200,cors);
+   }catch{return output({error:"LAYER_REQUEST_FAILED"},502,cors);}
   }
   return output({error:"NOT_FOUND"},404,cors);
  }
