@@ -616,6 +616,12 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 @keyframes catalog-spin{to{transform:rotate(360deg)}}
 @media(max-width:850px){.catalog-filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-result-bar{align-items:flex-start;flex-direction:column}}
 @media(max-width:570px){.catalog-search-row,.catalog-filter-row{grid-template-columns:1fr}.catalog-pagination{flex-direction:column;align-items:flex-start}}
+
+.catalog-detail-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.catalog-detail-tabs button{flex-shrink:0;border:1px solid transparent;background:transparent;padding:10px 14px;border-radius:8px 8px 0 0;font-weight:650;font-size:13px}
+.catalog-detail-tabs button.active{color:var(--text);border-color:var(--line);border-bottom:2px solid var(--cyan);background:var(--bg)}
+.catalog-detail-section{min-height:180px}
+.catalog-detail-footer{color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:14px;margin-top:24px}
 </style>
 </head>
 <body>
@@ -1530,7 +1536,19 @@ let rows=vnextListApply('Pedidos',a).map(o=>'<tr><td><input type="checkbox" aria
 const tabs='<div class="order-tabs" role="group" aria-label="Visões de pedidos">'+orderTabs.map(([label,value])=>'<button type="button" data-ordertab="'+value+'" class="'+(orderView===value?'active':'')+'">'+label+'</button>').join('')+'</div>';
 const viewActions='<div class="saved-view-row"><span>Visões rápidas</span><button type="button" data-orderpreset="paid">Pagos</button><button type="button" data-orderpreset="market">Marketplace</button><button type="button" data-orderpreset="reset">Restaurar visão</button><button type="button" id="ordersExport">Exportar CSV</button></div>';
 return moduleShell('Gestão de Pedidos','Gerencie a operação de ponta a ponta, com consultas, filtros e ações contextuais.',cards([['Pedidos do período','156','+12,4% vs. anterior'],['Aguardando pagamento','18','Ação necessária'],['Em separação','32','Em processamento'],['Faturamento',fmtMoney(14820.5),'Visão simulada']])+'<section class="panel module-panel"><div class="panel-title"><div><h2>Todos os pedidos</h2><p>Consulte pedidos e acompanhe seus estados financeiro, comercial e logístico.</p></div><span class="status">Operação</span></div>'+tabs+filters('orders',fakeOrders)+advancedOrdersUI()+viewActions+vnextListToolbar('Pedidos',a.length)+(rows.length?table(['','Pedido','Cliente','Canal','Pagamento','Status','Criado em','Valor','Ações'],rows):'<div class="module-empty">Nenhum pedido encontrado para os filtros selecionados.</div>')+'<div class="module-footer"><span>'+a.length+' pedidos exibidos</span><span>Selecione pedidos para ações em lote</span></div></section>')}
-function renderProducts(){fakeProducts.forEach(x=>ensureRegisterIdentity(x,registerModels['Produtos e SKUs']));const a=rowsFiltered(fakeProducts,'products');let rows=vnextListApply('Produtos e SKUs',a).map(p=>'<tr>'+registerIdentifierCells(p,registerModels['Produtos e SKUs'])+'<td><b>'+esc(p.name)+'</b></td><td>'+p.category+'</td><td>'+p.stock+'</td><td>'+fmtMoney(p.price)+'</td><td>'+pill(p.status)+'</td><td><div class="module-actions"><button data-product="'+esc(p.sku)+'">Visualizar</button><button data-register-edit="'+esc(p.sku)+'">Editar</button><button data-register-delete="'+esc(p.sku)+'">Excluir</button></div></td></tr>');return moduleShell('Gestão de Produtos','Produtos, estoque e preços em um único lugar.',cards([['Produtos ativos','1.284','Catálogo publicado'],['SKUs totais','2.437','Variações incluídas'],['Estoque crítico','17','Requer atenção'],['Sem estoque','8','Reposição pendente']])+'<section class="panel module-panel"><h2>Produtos cadastrados</h2><p class="hint">Exemplos de SKUs e inventário para navegação.</p>'+filters('products',fakeProducts)+vnextListToolbar('Produtos e SKUs',a.length)+(rows.length?table(['ID','Código de cadastro','ID de integração','Produto','Categoria','Estoque','Preço','Status','Ações'],rows):'<div class="module-empty">Nenhum produto encontrado.</div>')+'<div class="module-footer"><span>'+a.length+' produtos exibidos</span><span>Catálogo</span></div>'+registerTools('Produtos e SKUs')+'</section>')}
+function renderProducts(){
+ fakeProducts.forEach(x=>ensureRegisterIdentity(x,registerModels['Produtos e SKUs']));
+ const a=rowsFiltered(fakeProducts,'products');
+ const rows=vnextListApply('Produtos e SKUs',a).map(p=>'<tr>'+registerIdentifierCells(p,registerModels['Produtos e SKUs'])+'<td><b>'+esc(p.name)+'</b></td><td>'+esc(p.category??'—')+'</td><td>'+esc(p.stock??'—')+'</td><td>'+fmtMoney(Number(p.price)||0)+'</td><td>'+pill(p.status)+'</td><td><div class="module-actions"><button data-product="'+esc(p.sku)+'">Visualizar</button><button data-register-edit="'+esc(p.sku)+'">Editar</button><button data-register-delete="'+esc(p.sku)+'">Excluir</button></div></td></tr>');
+ const stockLow=fakeProducts.filter(p=>Number(p.stock)>0&&Number(p.stock)<=20).length;
+ const out=fakeProducts.filter(p=>Number(p.stock)===0).length;
+ const active=fakeProducts.filter(p=>p.status==='Ativo').length;
+ return cards([['Produtos cadastrados',String(fakeProducts.length),'Dados deste navegador'],['Produtos ativos',String(active),'Amostra demonstrativa'],['Estoque baixo',String(stockLow),'Até 20 unidades'],['Sem estoque',String(out),'Produtos sem saldo']])+
+ '<section class="panel module-panel"><div class="panel-title"><div><h2>Lista de produtos</h2><p>Registros demonstrativos · As alterações são locais</p></div><button class="primary" type="button" data-register-create="Produtos e SKUs">+ Cadastrar produto</button></div>'+
+ filters('products',fakeProducts)+vnextListToolbar('Produtos e SKUs',a.length)+
+ (rows.length?table(['ID','Código de cadastro','ID de integração','Produto','Categoria','Estoque','Preço','Status','Ações'],rows):'<div class="module-empty">Nenhum produto encontrado.</div>')+
+ '<div class="module-footer"><span>'+a.length+' produtos encontrados</span><span>Ambiente demonstrativo</span></div>'+registerTools('Produtos e SKUs')+'</section>';
+}
 
 function renderCustomerModeration(){
  const customers=fakeCustomers.filter(x=>x.type==='Pessoa jurídica');
@@ -2176,22 +2194,38 @@ function renderCatalogRelated(key,value){
 }
 async function showLayerProductDetails(id){
  if(!/^[0-9]+$/.test(id))return;
+ const previousFocus=document.activeElement;
  const overlay=document.createElement('div');overlay.className='catalog-detail-overlay';
- overlay.innerHTML='<section class="catalog-detail-drawer" role="dialog" aria-modal="true" aria-label="Detalhes do produto"><header><div><h2>Produto #'+esc(id)+'</h2><span class="catalog-source-info">Layer API v3 · somente leitura</span></div><button type="button" id="closeLayerDetail">Fechar</button></header><div id="layerDetailBody" role="status">Carregando produto…</div></section>';
+ overlay.innerHTML='<section class="catalog-detail-drawer" role="dialog" aria-modal="true" aria-label="Detalhes do produto"><header><div><h2>Produto #'+esc(id)+'</h2><span class="catalog-source-info">Layer API v3 · somente leitura</span></div><button type="button" id="closeLayerDetail" aria-label="Fechar painel">Fechar</button></header><div id="layerDetailBody" role="status">Carregando produto…</div></section>';
  document.body.appendChild(overlay);
- const close=()=>overlay.remove();overlay.querySelector('#closeLayerDetail').addEventListener('click',close);
+ const close=()=>{overlay.remove();document.removeEventListener('keydown',onEscape);previousFocus?.focus?.()};
+ const onEscape=e=>{if(e.key==='Escape')close()};
+ document.addEventListener('keydown',onEscape);
+ overlay.querySelector('#closeLayerDetail').addEventListener('click',close);
  overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ overlay.querySelector('#closeLayerDetail').focus();
  try{
   const response=await fetch(AUTH_API+'/api/products/'+encodeURIComponent(id),{headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'});
   const payload=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(payload.error||'API_ERROR');
-  const product=payload.product||{};
-  const related=['categories','skus','images','seo','tags','attributes','productDefinition'].filter(k=>product[k]!==undefined&&product[k]!==null);
   if(!overlay.isConnected)return;
-  overlay.querySelector('#layerDetailBody').innerHTML='<div class="catalog-fields">'+catalogFields(product)+'</div>'+related.map(k=>renderCatalogRelated(k,product[k])).join('');
-  const name=product.name?String(product.name):'Produto #'+id;
-  overlay.querySelector('header h2').textContent=name;
-  overlay.querySelector('header .catalog-source-info').textContent='ID '+id+' · Layer API v3 · Somente leitura';
+  const product=payload.product||{};
+  const tabs=[['general','Dados gerais'],...[
+   ['categories','Categorias'],['skus','SKUs'],['images','Mídias'],['seo','SEO'],['tags','Tags'],['attributes','Atributos'],['productDefinition','Definição']
+  ].filter(([key])=>product[key]!==undefined&&product[key]!==null&&!(Array.isArray(product[key])&&product[key].length===0))];
+  let active='general';
+  const render=()=>{
+   const tabsHtml='<div class="catalog-detail-tabs" role="tablist" aria-label="Seções do produto">'+tabs.map(([key,label])=>'<button type="button" role="tab" aria-selected="'+(active===key)+'" class="'+(active===key?'active':'')+'" data-catalog-detail-tab="'+key+'">'+label+'</button>').join('')+'</div>';
+   const body=active==='general'?'<div class="catalog-fields">'+catalogFields(product)+'</div>':renderCatalogRelated(active,product[active]);
+   overlay.querySelector('#layerDetailBody').innerHTML=tabsHtml+'<div class="catalog-detail-section" role="tabpanel">'+body+'</div><div class="catalog-detail-footer">Dados consultados na Layer API v3 · Alterações desabilitadas</div>';
+   overlay.querySelectorAll('[data-catalog-detail-tab]').forEach(button=>button.addEventListener('click',()=>{
+    active=button.dataset.catalogDetailTab;render();
+    overlay.querySelector('[data-catalog-detail-tab="'+active+'"]')?.focus();
+   }));
+  };
+  overlay.querySelector('header h2').textContent=product.name?String(product.name):'Produto #'+id;
+  overlay.querySelector('header .catalog-source-info').textContent='ID '+id+' · Somente leitura · Layer API v3';
+  render();
  }catch(error){if(overlay.isConnected)overlay.querySelector('#layerDetailBody').textContent='Não foi possível consultar o produto: '+error.message;}
 }
 
