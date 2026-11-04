@@ -41,7 +41,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <main>
 <div class="topbar"><div class="crumb">vNext Commerce / Centro de ajuda / <b>Documentação do Admin</b></div><a href="./index.html">← Voltar ao painel</a></div>
 <div class="body">
-<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>vNext Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 2.7</span><span>Dados fictícios</span></div></header>
+<header class="hero"><div class="eyebrow">Product design · Arquitetura · Experiência</div><h1>Documentação do novo<br>vNext Commerce Admin</h1><p>Visão estruturada das decisões de produto, experiência do usuário, identidade visual, implementação técnica e proposta de evolução do painel administrativo.</p><div class="meta"><span>Protótipo conceitual</span><span>03 de novembro de 2026</span><span>Versão documental 2.8</span><span>Dados fictícios</span></div></header>
 <div class="notice"><b>Natureza desta documentação:</b> registra a versão demonstrativa do projeto <code>newadminlc</code> e apresenta sua direção de produto. Não é documentação oficial da plataforma Linx Commerce, não substitui a documentação funcional da Linx Commerce e não comprova que todas as funcionalidades do Admin legado já foram implementadas.</div>
 <section id="visao"><h2>01. Visão geral e propósito</h2><p>O projeto propõe uma nova experiência administrativa para o vNext Commerce, utilizando as capacidades e a organização operacional da Linx Commerce como referência. O objetivo é melhorar encontrabilidade, produtividade e clareza, <b>sem eliminar consultas, módulos, regras e jornadas existentes</b>.</p>
 <div class="grid"><article class="card"><div class="metric">01</div><h3>Encontrar</h3><p>Reduzir esforço de navegação com grupos orientados a tarefas, nomes claros e menu retrátil.</p></article><article class="card"><div class="metric">02</div><h3>Entender</h3><p>Apresentar indicadores e estados com hierarquia visual, contexto e linguagem consistente.</p></article><article class="card"><div class="metric">03</div><h3>Agir</h3><p>Conectar alertas e consultas às jornadas operacionais, com filtros, detalhes e atalhos.</p></article></div>
@@ -579,18 +579,37 @@ table{width:100%;border-collapse:collapse;font-size:12px;background:white;border
 <p>O Admin dispõe de <strong>duas estruturas de navegação</strong>, selecionadas no menu do usuário, dentro do campo <b>Versão do Admin</b>. A troca preserva os módulos, telas, cadastros, Manu IA, workflows e dados armazenados na mesma aplicação. Não são dois sistemas ou duas bases de dados.</p>
 <table><thead><tr><th>Versão</th><th>Arquitetura da informação</th><th>Experiência</th></tr></thead><tbody>
 <tr><td><b>New</b></td><td>Início; Operação; Crescimento e experiência; Gestão; Plataforma</td><td>Navegação orientada às jornadas, com agrupamentos de negócio e atalhos para Manu IA, B2B e saúde operacional</td></tr>
-<tr><td><b>New Old</b></td><td>Backoffice; Catálogo; Busca; Clientes; Marketing; Aparência; Configs; Canais; Recorrência; Integrações; Relatórios; Financeiro; Privacidade</td><td>Estrutura clássica de 13 menus com visual renovado, hierarquia de submenus, espaçamento e indicação da versão ativa</td></tr>
+<tr><td><b>New Old</b></td><td>Aplicativos; Backoffice; Catálogo; Busca; Clientes; Marketing; Aparência; Configs; Canais; Hub; Recorrência; Integrações; Relatórios; Financeiro</td><td>14 menus observados na segunda passada do relatório funcional de 04/11/2026 (Admin R.3.7.13), com visual renovado e hierarquia aninhada de submenus. Recursos exclusivos do vNext ficam em seção separada.</td></tr>
 </tbody></table>
 <h3>28.1 Regras de interação</h3>
 <p>A seleção fica em <b>avatar do usuário → Versão do Admin → New / New Old</b>. A escolha é persistida no armazenamento local e reaplicada após atualizar a página. A navegação da versão ativa conserva a mesma rota aberta, quando existente. Para evitar perda de contexto de formulário, não é possível mudar a versão enquanto um cadastro ampliado estiver aberto. O nome da versão aparece no cabeçalho.</p>
-<p>Os mesmos <b>87 destinos de navegação</b> da versão New são alcançáveis no menu New Old; a equivalência de destinos foi verificada por inspeção do código. Os menus não representam, por si só, paridade funcional com todos os módulos do Admin de produção.</p>
+<p>Os mesmos <b>87 destinos de navegação</b> da versão New são alcançáveis no menu New Old; a equivalência de destinos foi verificada por inspeção do código. Além deles, o menu New Old incorpora os destinos adicionais encontrados no levantamento do Admin atual, agrupados de acordo com sua área de origem. Os menus não representam, por si só, paridade funcional com todos os módulos do Admin de produção.</p>
+<h3>28.1.1 Hierarquia do New Old baseada na descoberta</h3>
+<p>A referência primária é o relatório funcional mais recente de <b>04/11/2026</b>, especialmente a seção <b>3.13 – Segunda passada: inventário menu a menu</b>. A navegação reproduz os 14 menus principais identificados nessa passagem, com agrupamentos aninhados para <b>Backoffice → Representantes de venda</b>, <b>Backoffice → Mais</b>, <b>Clientes → Listas de desejo</b> e <b>Hub → Mercado Livre</b>. Os submenus usam o mesmo conteúdo da aplicação, inclusive formulários e consultas já implementados.</p>
+<table><thead><tr><th>Menu clássico</th><th>Organização no New Old</th></tr></thead><tbody>
+<tr><td>Aplicativos</td><td>Soluções e Meus aplicativos</td></tr>
+<tr><td>Backoffice</td><td>Pedidos, entregas, contratos, preços, carrinhos, estoque, tracking, representantes com subitens e Mais com operações auxiliares</td></tr>
+<tr><td>Catálogo</td><td>Produtos, categorias, definições, marcas, fornecedores, filtros/facetas, associações, indexação, formulários e políticas</td></tr>
+<tr><td>Busca</td><td>Configurações básicas, avançadas, por grupo e sinônimos</td></tr>
+<tr><td>Clientes</td><td>Clientes, grupos, cenários, importação/exportação, endereços, status e listas de desejo aninhadas</td></tr>
+<tr><td>Marketing</td><td>Cupons, promoções, vales, feeds, newsletters, origem de acesso, pontos e Analytics</td></tr>
+<tr><td>Aparência</td><td>Banners, temas, páginas, templates, publicações de arquivos, widgets e recursos</td></tr>
+<tr><td>Configs</td><td>Fluxos, usuários, grupos, meios de pagamento/entrega, frete, termos, URL, cache, metadados e tarefas</td></tr>
+<tr><td>Canais</td><td>Unidades de negócio, módulos, canais, pontos de venda e sellers</td></tr>
+<tr><td>Hub</td><td>Catálogo, Marketplaces, Integrações e Mercado Livre com criar, gerenciar e importar anúncios</td></tr>
+<tr><td>Recorrência</td><td>Gestão de planos, assinaturas e Meus Planos e Assinaturas</td></tr>
+<tr><td>Integrações</td><td>Filas, logs, replicações, webhooks e integrações de parceiros observados</td></tr>
+<tr><td>Relatórios</td><td>Customizados, Gerais e Transações</td></tr>
+<tr><td>Financeiro</td><td>Portal financeiro e Transações</td></tr>
+</tbody></table>
+<p><b>Distinção importante:</b> a estrutura reproduz o inventário observado, não comprova paridade funcional das telas. Os destinos que ainda não possuem cadastros ou fluxos completos permanecem acessíveis como telas exploratórias. Para não confundir a organização do legado com funcionalidades novas, recursos como Manu IA, Commerce Studio e o Simulador B2B aparecem também na seção de <b>Recursos vNext</b>.</p>
 <h3>28.2 Simplificação do cabeçalho</h3>
 <p>O seletor global de <b>Unidade, Canal e Conta principal</b> foi retirado do cabeçalho, conforme a direção de UX atual. Os campos próprios de módulos, formulários e relatórios permanecem onde são necessários. Como o projeto utiliza dados locais, <b>não há isolamento real de unidades, canais ou tenants</b>. O contexto interno padrão é mantido por compatibilidade dos registros existentes e não deve ser interpretado como configuração operacional efetiva.</p>
 <p>A opção anterior <b>Perfil de acesso</b> foi substituída por <b>Versão do Admin</b> no menu de usuário. As ações <b>Modo escuro</b>, <b>Alterar senha</b> e <b>Sair</b> continuam disponíveis. A simulação de autorização não substitui gestão de identidades e privilégios em um servidor.</p>
 <h3>28.3 Critérios de aceite e regressão</h3>
 <ol>
 <li>Entrar no Admin, abrir o avatar e alternar entre New e New Old.</li>
-<li>Na New, localizar Workflows em Operação → Pedidos. Na New Old, localizar em Backoffice → Workflows.</li>
+<li>Na New, localizar Workflows em Operação → Pedidos. Na New Old, localizar em Configs → Fluxos.</li>
 <li>Confirmar acesso, nas duas versões, a Produtos e SKUs, Clientes, Contratos B2B, Manu IA, Smart Finder, Commerce Studio, Webhooks, Pedidos e cadastros adicionais.</li>
 <li>Salvar um registro, mudar a versão e conferir que o mesmo registro continua disponível, sem reiniciar o formulário ou duplicar os dados.</li>
 <li>Atualizar a página e confirmar que a versão escolhida persiste. Repetir com modo escuro e em tela estreita.</li>
