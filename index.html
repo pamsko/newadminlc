@@ -1984,8 +1984,8 @@ function renderCatalogDetails(){
  'Publicação':[['Pré-condições','Produto associado a SKU, preço e estoque válidos, categoria, visibilidade e atributos exigidos'],['Estados independentes','Publicação, indexação, replicação e sincronismo por canal; não colapsar em um status único']]
  };
  if(!copy[catalogTab])catalogTab='Dados gerais';
- return domainHeader('Produto e SKU: estrutura documentada','Mapa das abas identificadas no relatório de navegação aprofundada — campos e ações reais ainda dependem de implementação e permissões.')+
- '<section class="panel module-panel"><div class="domain-tabs" role="group" aria-label="Áreas de produto e SKU">'+tabs.map(t=>'<button class="'+(catalogTab===t?'active':'')+'" data-catalogtab="'+t+'">'+t+'</button>').join('')+'</div><div class="domain-list">'+copy[catalogTab].map(x=>'<article><b>'+x[0]+'</b><p>'+x[1]+'</p></article>').join('')+'</div><div class="domain-info">Conteúdo orientado pelo último relatório. Ações de mídia, importação, precificação, estoque e publicação são documentadas, mas <b>não estão conectadas a um backend</b>.</div></section>'+catalogSourcePicker()+(catalogSource==='layer'?renderLayerProducts():renderProducts());
+ return catalogSourcePicker()+domainHeader('Produto e SKU: estrutura documentada','Mapa das abas identificadas no relatório de navegação aprofundada — campos e ações reais ainda dependem de implementação e permissões.')+
+ '<section class="panel module-panel"><div class="domain-tabs" role="group" aria-label="Áreas de produto e SKU">'+tabs.map(t=>'<button class="'+(catalogTab===t?'active':'')+'" data-catalogtab="'+t+'">'+t+'</button>').join('')+'</div><div class="domain-list">'+copy[catalogTab].map(x=>'<article><b>'+x[0]+'</b><p>'+x[1]+'</p></article>').join('')+'</div><div class="domain-info">Conteúdo orientado pelo último relatório. Ações de mídia, importação, precificação, estoque e publicação são documentadas, mas <b>não estão conectadas a um backend</b>.</div></section>'+(catalogSource==='layer'?renderLayerProducts():renderProducts());
 }
 
 
