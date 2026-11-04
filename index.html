@@ -383,6 +383,16 @@ body.admin-new-old .nav-child{font-size:12px}
 .online-visitors-foot small{font-size:10px}
 .dark-mode .online-visitors-icon{background:#21465a;color:#7ad5e8}
 .dark-mode .online-visitors-track{background:#2a4757}
+
+/* New Old · submenus aninhados da navegação do Admin observado */
+body.admin-new-old .nav-subfolder{display:block}
+body.admin-new-old .nav-subparent{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;font-weight:650}
+body.admin-new-old .nav-subparent .nav-caret{margin-left:auto;transition:transform .17s ease}
+body.admin-new-old .nav-subparent[aria-expanded="true"] .nav-caret{transform:rotate(180deg)}
+body.admin-new-old .nav-subparent[aria-expanded="true"]{background:rgba(98,199,233,.12)}
+body.admin-new-old .nav-subchildren{padding:3px 0 7px 15px;border-left:1px solid rgba(98,199,233,.24);margin-left:12px}
+body.admin-new-old .nav-subchildren .nav-child{font-size:11.5px;padding-left:10px;white-space:normal;line-height:1.4}
+body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65cbec}
 </style>
 </head>
 <body>
@@ -437,43 +447,150 @@ const originalRouteNames=['Backoffice','Catálogo','Busca','Clientes','Marketing
 const ADMIN_VERSION_KEY='vnext-admin-layout-version';
 let adminVersion='new';
 try{if(localStorage.getItem(ADMIN_VERSION_KEY)==='new-old')adminVersion='new-old'}catch(e){}
+
+/*
+ * New Old: árvore baseada no Relatório Funcional de 04/11/2026, seção 3.13,
+ * segunda passada no Admin R.3.7.13. Áreas não validadas permanecem sem operação real.
+ * Os recursos exclusivos de New são agrupados à parte para não distorcer o legado.
+ */
 function newOldMenuGroups(){
- const folders=menuGroups.flatMap(g=>g.items);
- const byName=name=>folders.find(i=>i.name===name)?.children||[];
- const root=(name,icon,children)=>({name,icon,children});
- const unique=arr=>{const seen=new Set();return arr.filter(x=>{if(seen.has(x[1]))return false;seen.add(x[1]);return true})};
- const main=[
- root('Backoffice','▤',[['Área de trabalho','Área de trabalho'],...byName('Pedidos'),['Tarefas e notificações','Tarefas e notificações'],['Saúde operacional','Saúde operacional']]),
- root('Catálogo','◇',byName('Catálogo')),
- root('Busca','⌕',[['Smart Finder','Smart Finder'],['Configurações básicas','Smart Finder — Básicas'],['Configurações avançadas','Smart Finder — Avançadas'],['Configurações por grupo','Smart Finder — Grupos'],['Sinônimos','Smart Finder — Sinônimos']]),
- root('Clientes','♙',byName('Clientes e B2B')),
- root('Marketing','◈',byName('Marketing').filter(x=>x[1]!=='Recorrência')),
- root('Aparência','▥',byName('Experiência da loja').filter(x=>!x[1].startsWith('Smart Finder'))),
- root('Configs','⚙',byName('Configurações').filter(x=>!['Segurança e privacidade','Auditoria e logs','Meios de pagamento'].includes(x[1]))),
- root('Canais','▧',byName('Canais')),
- root('Recorrência','↻',[['Recorrência','Recorrência']]),
- root('Integrações','⇄',byName('Integrações')),
- root('Relatórios','▦',[['Manu IA','Manu IA'],...byName('Relatórios'),['Simulador B2B','Simulador B2B']]),
- root('Financeiro','◉',byName('Financeiro')),
- root('Privacidade','♧',[['Segurança e privacidade','Segurança e privacidade'],['Auditoria e logs','Auditoria e logs'],['Auditoria','Auditoria demonstrativa']])
+ const item=(label,route)=>[label,route||label];
+ const branch=(label,children)=>({label,children});
+ const legacy=[
+ {name:'Aplicativos',icon:'▦',children:[
+  item('Soluções','Loja de aplicativos'),item('Meus aplicativos','Meus aplicativos')]},
+ {name:'Backoffice',icon:'▤',children:[
+  item('Carrinhos abandonados','Carrinhos'),item('Contratos','Contratos'),
+  item('Entregas','Logística'),item('Estoques','Estoque'),item('Itens de estoque','Itens de estoque'),
+  item('Listas de preços','Listas de preços'),item('Pedidos','Pedidos'),item('Preços','Preços'),
+  item('Produtos sob consulta','Produtos sob consulta'),item('Regras de preços','Regras de preços'),
+  branch('Representantes de venda',[
+   item('Associações de carteira pendentes','Associações de carteira pendentes'),
+   item('Gerenciar representantes','Representantes comerciais'),
+   item('Orçamentos','Orçamentos de representantes')]),
+  item('Tracking do pedido','Tracking do pedido'),item('Trocas e devoluções','Trocas e devoluções'),
+  branch('Mais',[
+   item('Importador de pedidos legados','Importador de pedidos legados'),
+   item('Motivos de troca/devolução','Motivos de troca e devolução'),
+   item('Recuperador de carrinho','Recuperador de carrinho'),
+   item('Status e tags de pedido','Status e tags de pedido'),
+   item('Tipos de movimentação','Tipos de movimentação'),
+   item('Tipos de pedido','Tipos de pedido'),
+   item('Pedidos legados','Pedidos legados')])]},
+ {name:'Catálogo',icon:'◇',children:[
+  item('Avaliações de produto','Avaliações'),item('Catálogos','Catálogos'),
+  item('Categorias','Categorias'),item('Definições de produto','Definições de produto'),
+  item('Facetas','Facetas'),item('Filtros de catálogo','Filtros e atributos'),
+  item('Flags','Flags e tags'),item('Fornecedores','Fornecedores'),
+  item('Formulários de compra','Formulários de compra'),item('Grupos de avaliação','Grupos de avaliação'),
+  item('Grupos de categoria','Grupos de categorias'),
+  item('Importar/exportar produtos','Importadores'),item('Indexação','Indexação de produtos'),
+  item('Leilões','Leilões'),item('Listas de associação','Listas de associação'),
+  item('Listas de produtos','Listas de produtos'),item('Marcas','Marcas'),
+  item('Políticas de compra','Políticas de compra'),item('Produtos','Produtos e SKUs'),
+  item('Serviços adicionais','Serviços adicionais'),item('Status de produto','Status de produto'),
+  item('Tags','Tags')]},
+ {name:'Busca',icon:'⌕',children:[
+  item('Configurações básicas','Smart Finder — Básicas'),
+  item('Configurações avançadas','Smart Finder — Avançadas'),
+  item('Configurações por grupo','Smart Finder — Grupos'),
+  item('Sinônimos','Smart Finder — Sinônimos')]},
+ {name:'Clientes',icon:'♙',children:[
+  item('Cenários de compra','Cenários de compra'),
+  item('Clientes','Clientes'),item('Endereços de filial','Endereços de filial'),
+  item('Grupos de cliente','Grupos de clientes'),
+  item('Importar/exportar clientes','Importação e exportação de clientes'),
+  branch('Listas de desejo',[
+   item('Definições de lista de desejo','Definições de lista de desejo'),
+   item('Importar/exportar listas','Importar/exportar listas de desejo'),
+   item('Listas de desejo','Listas de desejo')]),
+  item('Status do cliente','Status do cliente')]},
+ {name:'Marketing',icon:'◈',children:[
+  item('Cupons','Cupons'),item('Feeds de produtos','Feeds de produtos'),
+  item('Formatos de feed','Formatos de feed'),
+  item('Importar/exportar vales-compra','Importar/exportar vales-compra'),
+  item('Newsletters','Newsletters'),item('Origens de acesso','Origens de acesso'),
+  item('Programa de pontos','Programa de pontos'),item('Promoções','Promoções'),
+  item('Vales-compra','Vales'),item('Ads e Analytics','Ads e Analytics')]},
+ {name:'Aparência',icon:'▥',children:[
+  item('Banners','Banners'),item('Configurar design e recursos','Aparência'),
+  item('Gerenciador de arquivos e widgets','Gerenciador de arquivos e widgets'),
+  item('SiteMap Custom','SiteMap Custom'),item('Páginas','Páginas'),
+  item('Posições de banner','Posições de banner'),
+  item('Publicação de arquivos (Git)','Publicação de arquivos'),
+  item('Recursos','Recursos de aparência'),item('Temas','Temas'),
+  item('Templates do sistema','Templates do sistema')]},
+ {name:'Configs',icon:'⚙',children:[
+  item('Configurações gerais','Configurações'),item('Feriados','Feriados'),
+  item('Fluxos','Fluxos (workflows)'),item('Grupos de configuração','Grupos de configuração'),
+  item('Grupos de entrega','Grupos de entrega'),item('Grupos de usuários','Grupos de usuários'),
+  item('Importar/exportar redirecionamentos','Importar/exportar redirecionamentos'),
+  item('Invalidação de cache','Invalidação de cache'),
+  item('Mapeamentos de URL','Mapeamentos de URL'),
+  item('Meios de entrega','Meios de entrega'),item('Meios de pagamento','Meios de pagamento'),
+  item('Metadados','Metadados'),item('Otimizador de frete','Otimizador de frete'),
+  item('Pacotes','Pacotes'),item('Regiões e rotas','Regiões e rotas'),
+  item('Tarefas agendadas','Tarefas agendadas'),item('Termos','Termos'),
+  item('Unidades de medida','Unidades de medida'),item('Usuários','Usuários e permissões')]},
+ {name:'Canais',icon:'▧',children:[
+  item('Unidades de negócio','Unidades de negócio'),item('Módulos','Módulos de canal'),
+  item('Canais','Lojas e canais'),item('Pontos de venda','PDV e vendedores'),
+  item('Sellers','Sellers')]},
+ {name:'Hub',icon:'⬡',children:[
+  item('Catálogo de produtos','Catálogo do Hub'),item('Marketplaces','Marketplaces'),
+  item('Integrações','Integrações'),
+  branch('Mercado Livre',[
+   item('Criar anúncios','Criar anúncios Mercado Livre'),
+   item('Gerenciar anúncios','Gerenciar anúncios Mercado Livre'),
+   item('Importação de anúncios','Importação de anúncios Mercado Livre')])]},
+ {name:'Recorrência',icon:'↻',children:[
+  item('Gestão de Planos','Gestão de Planos'),
+  item('Gestão de Assinaturas','Gestão de Assinaturas'),
+  item('Meus Planos e Assinaturas','Meus Planos e Assinaturas')]},
+ {name:'Integrações',icon:'⇄',children:[
+  item('Gerenciamento de filas','Gerenciamento de filas'),
+  item('Monitoramento de filas','Filas e replicação'),
+  item('Monitoramento de logs','Monitoramento de logs'),
+  item('Gerenciamento de replicações','Gerenciamento de replicações'),
+  item('Webhooks','Webhooks'),item('Logs Octopus','Logs Octopus'),
+  item('Linx.IO','Linx.IO'),item('ClearSale','ClearSale'),
+  item('Buscapé','Buscapé'),item('TrustVox','TrustVox'),
+  item('Intelipost','Intelipost'),item('ExactTarget','ExactTarget')]},
+ {name:'Relatórios',icon:'▦',children:[
+  item('Customizados','Relatórios customizados'),
+  item('Gerais','Relatórios de vendas'),
+  item('Transações','Relatórios de transações')]},
+ {name:'Financeiro',icon:'◉',children:[
+  item('Portal financeiro','Portal financeiro'),
+  item('Transações','Transações')]}
  ];
- // Todas as rotas da versão New devem continuar alcançáveis na estrutura clássica.
- const originalRoutes=new Set(folders.flatMap(i=>i.children?i.children.map(x=>x[1]):[i.route]));
- const classicRoutes=new Set(main.flatMap(i=>i.children.map(x=>x[1])));
- const missing=[...originalRoutes].filter(x=>!classicRoutes.has(x));
- if(missing.length)main[6].children.push(...missing.map(x=>[x,x]));
- main.forEach(group=>group.children=unique(group.children));
- return [{title:'Admin · Navegação clássica',items:main}];
+ const allNew=menuGroups.flatMap(g=>g.items.flatMap(i=>i.children?i.children.map(x=>[x[0],x[1]]):[[i.name,i.route]]));
+ const flatten=children=>children.flatMap(x=>Array.isArray(x)?[x[1]]:flatten(x.children));
+ const visited=new Set(legacy.flatMap(g=>flatten(g.children)));
+ const extras=allNew.filter(([label,route])=>!visited.has(route));
+ // Roteiros não observados no Admin antigo ficam visivelmente separados.
+ const exclusive=extras.filter(x=>['Área de trabalho','Manu IA','Tarefas e notificações','Saúde operacional','Auditoria demonstrativa','Simulador B2B','Commerce Studio','Contratos','Grupos econômicos','Cotações e compras','Moderação de clientes','Checkout','Conversacional','Live Commerce','Omnicanalidade','Monitoramento de logs','APIs e webhooks','Integrações'].includes(x[1]));
+ const remaining=extras.filter(x=>!exclusive.some(y=>y[1]===x[1]));
+ return [
+  {title:'Admin atual · menus',items:legacy},
+  {title:'Recursos vNext',items:[
+    {name:'Visão e inteligência',icon:'✦',children:exclusive},
+    ...(remaining.length?[{name:'Outros recursos',icon:'▧',children:remaining}]:[])
+  ]}
+ ];
 }
 function navMarkup(){
  const groups=adminVersion==='new'?menuGroups:newOldMenuGroups();
- return groups.map(group=>'<div class="nav-group"><div class="nav-label">'+group.title+'</div>'+
+ const renderChild=x=>{
+  if(Array.isArray(x))return '<button class="nav-child" type="button" data-page="'+esc(x[1])+'">'+esc(x[0])+'</button>';
+  return '<div class="nav-subfolder"><button type="button" class="nav-child nav-subparent" data-subfolder="'+esc(x.label)+'" aria-expanded="false"><span>'+esc(x.label)+'</span><span class="nav-caret">⌄</span></button><div class="nav-subchildren" hidden>'+x.children.map(renderChild).join('')+'</div></div>';
+ };
+ return groups.map(group=>'<div class="nav-group"><div class="nav-label">'+esc(group.title)+'</div>'+
  group.items.map(item=>{
  const children=item.children||[];
- if(!children.length)return '<button class="nav-item" title="'+item.name+'" data-page="'+item.route+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span></button>';
- return '<div class="nav-folder"><button class="nav-item nav-parent" type="button" title="'+item.name+'" aria-expanded="false" data-folder="'+item.name+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span><span class="nav-caret">⌄</span></button><div class="nav-children" hidden>'+
- children.map(([name,route])=>'<button class="nav-child" type="button" data-page="'+route+'">'+name+'</button>').join('')+
- '</div></div>';
+ if(!children.length)return '<button class="nav-item" title="'+esc(item.name)+'" data-page="'+esc(item.route)+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+esc(item.name)+'</span></button>';
+ return '<div class="nav-folder"><button class="nav-item nav-parent" type="button" title="'+esc(item.name)+'" aria-expanded="false" data-folder="'+esc(item.name)+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+esc(item.name)+'</span><span class="nav-caret">⌄</span></button><div class="nav-children" hidden>'+
+ children.map(renderChild).join('')+'</div></div>';
  }).join('')+'</div>').join('');
 }
 function renderAdminNav(selected='Área de trabalho'){
@@ -481,7 +598,7 @@ function renderAdminNav(selected='Área de trabalho'){
  const link=[...nav.querySelectorAll('[data-page]')].find(el=>el.dataset.page===selected);
  if(link){
   link.classList.add('active');const folder=link.closest('.nav-folder');
-  if(folder){const trigger=folder.querySelector('[data-folder]');if(trigger){trigger.setAttribute('aria-expanded','true');trigger.nextElementSibling.hidden=false}}
+  if(folder){const trigger=folder.querySelector('[data-folder]');if(trigger){trigger.setAttribute('aria-expanded','true');trigger.nextElementSibling.hidden=false}const nested=link.closest('.nav-subfolder');if(nested){const sub=nested.querySelector('[data-subfolder]');if(sub){sub.setAttribute('aria-expanded','true');sub.nextElementSibling.hidden=false}}}
  }
 }
 function updateAdminVersionUI(){
@@ -571,7 +688,7 @@ let toastTimer;function toast(msg){const t=document.getElementById('toast');t.te
 function modal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalText').textContent=body;document.getElementById('modalLayer').classList.add('open')}
 function closeModal(){document.getElementById('modalLayer').classList.remove('open')}
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.mode;sync()}));document.querySelectorAll('[data-period]').forEach(b=>b.addEventListener('click',()=>{state.period=b.dataset.period;sync()}));document.querySelectorAll('[data-geo]').forEach(b=>b.addEventListener('click',()=>{state.geo=b.dataset.geo;sync()}));document.querySelectorAll('[data-channelmetric]').forEach(b=>b.addEventListener('click',()=>{state.channelMetric=b.dataset.channelmetric;sync()}));document.getElementById('channel').addEventListener('change',e=>{state.channel=e.target.value;sync()});document.getElementById('period').addEventListener('change',e=>{state.period=e.target.value;sync()});document.getElementById('reset').addEventListener('click',()=>{state.mode='captados';state.period='today';state.channel='all';state.geo='state';state.channelMetric='revenue';state.selectedUF='';sync();toast('Filtros restaurados.')});document.querySelectorAll('[data-banner]').forEach(b=>b.addEventListener('click',()=>b.dataset.banner==='Manu IA'?navigate('Manu IA'):modal(b.dataset.banner,'Conheça as novidades e funcionalidades disponíveis para sua operação.')));
-nav.addEventListener('click',e=>{const b=e.target.closest('[data-page],[data-folder]');if(!b||!nav.contains(b))return;if(b.dataset.page){navigate(b.dataset.page);return}if(b.dataset.folder){if(document.getElementById('appShell').classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);const expanded=b.getAttribute('aria-expanded')==='true';nav.querySelectorAll('[data-folder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true});b.setAttribute('aria-expanded',String(!expanded));b.nextElementSibling.hidden=expanded}});
+nav.addEventListener('click',e=>{const b=e.target.closest('[data-page],[data-folder],[data-subfolder]');if(!b||!nav.contains(b))return;if(b.dataset.page){navigate(b.dataset.page);return}if(b.dataset.subfolder){const expanded=b.getAttribute('aria-expanded')==='true';nav.querySelectorAll('[data-subfolder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true});b.setAttribute('aria-expanded',String(!expanded));b.nextElementSibling.hidden=expanded;return}if(b.dataset.folder){if(document.getElementById('appShell').classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);const expanded=b.getAttribute('aria-expanded')==='true';nav.querySelectorAll('[data-folder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true});b.setAttribute('aria-expanded',String(!expanded));b.nextElementSibling.hidden=expanded}});
 document.querySelectorAll('[data-quick]').forEach(b=>b.addEventListener('click',()=>{const route=b.dataset.quick;if(route==='Pedidos'){orderView='Todos';moduleFilters={query:'',status:b.dataset.quickstatus||'Todos',channel:'Todos'};}navigate(route);if(route==='Pedidos'&&b.dataset.quickstatus){moduleFilters.status=b.dataset.quickstatus;renderActiveModule(route)}}));
 
 document.getElementById('notifications').addEventListener('click',()=>navigate('Tarefas e notificações'));document.getElementById('closeModal').addEventListener('click',closeModal);document.getElementById('modalOK').addEventListener('click',closeModal);document.getElementById('modalLayer').addEventListener('click',e=>{if(e.target.id==='modalLayer')closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('globalSearch').focus()}});
