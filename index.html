@@ -1055,7 +1055,33 @@ function orderDetailBody(o){
 }
 function openOrderDetail(key){selectedOrderId=key;selectedOrderTab='overview';renderActiveModule('Pedidos');window.scrollTo({top:0,behavior:'instant'})}
 
-function showDetail(type,key){let item=type==='order'?fakeOrders.find(x=>x.id===key):type==='product'?fakeProducts.find(x=>x.sku===key):fakeCustomers.find(x=>x.id===key);if(!item)return;const label=type==='order'?'Pedido #'+key:type==='product'?'Produto '+key:'Cliente '+key;const content=Object.entries(item).map(([k,v])=>'<div><small>'+esc(({id:'Código',client:'Cliente',total:'Valor',date:'Data',status:'Status',stock:'Estoque',sku:'SKU',price:'Preço',spent:'Valor comprado',orders:'Pedidos'}[k]||k))+'</small><b>'+esc(['total','price','spent'].includes(k)?fmtMoney(v):v)+'</b></div>').join('');document.getElementById('modalTitle').textContent=label;document.getElementById('modalText').innerHTML='<div class="module-detail-grid">'+content+'</div><p style="margin-top:14px">Dados fictícios — nenhuma operação foi executada.</p>';document.getElementById('modalLayer').classList.add('open')}
+
+function showDetail(type,key){
+ const item=type==='order'?fakeOrders.find(x=>x.id===key):type==='product'?fakeProducts.find(x=>x.sku===key):fakeCustomers.find(x=>x.id===key);
+ if(!item)return;
+ const label=type==='order'?'Pedido #'+key:type==='product'?'Produto '+key:'Cliente '+key;
+ const visible=Object.entries(item).filter(([k])=>!/password|secret|token|credential|keyprivate/i.test(k));
+ const mask=v=>{const s=String(v??'');return s.length<5?'•••':s.slice(0,2)+'••••'+s.slice(-2)};
+ const content=visible.map(([k,v])=>{
+  const restricted=type==='customer'&&vnextRole==='Consulta'&&/email|companyId|phone|mobile|address|postalCode/i.test(k);
+  const display=restricted?mask(v):['total','price','spent'].includes(k)?fmtMoney(v):typeof v==='object'?JSON.stringify(v):String(v??'—');
+  return '<div><small>'+esc(({id:'Código',client:'Cliente',total:'Valor',date:'Data',status:'Status',stock:'Estoque',sku:'SKU',price:'Preço',spent:'Valor comprado',orders:'Pedidos',group:'Grupo econômico',source:'Origem',channel:'Canal'}[k]||k))+'</small><b>'+esc(display)+'</b></div>'
+ }).join('');
+ const links=type==='customer'?'<button data-detailgo="orders">Ver pedidos relacionados</button><button data-detailgo="contracts">Consultar contratos</button>':
+ type==='product'?'<button data-detailgo="skus">Ver produtos/SKUs relacionados</button><button data-detailgo="inventory">Consultar estoque</button>':'';
+ document.getElementById('modalTitle').textContent=label;
+ document.getElementById('modalText').innerHTML='<p class="hint">Dados fictícios · '+esc(vnextContext.unit+' / '+vnextContext.channel)+'</p><div class="module-detail-grid">'+content+'</div>'+
+ '<div class="vnext-toolbar">'+links+'</div><p style="margin-top:14px">Consulta demonstrativa. Nenhuma operação externa foi executada.</p>';
+ document.getElementById('modalLayer').classList.add('open');
+ document.getElementById('modalText').querySelectorAll('[data-detailgo]').forEach(b=>b.addEventListener('click',()=>{
+  const route=b.dataset.detailgo;closeModal();
+  if(route==='orders'){navigate('Pedidos');moduleFilters.query=item.name;renderActiveModule('Pedidos')}
+  if(route==='contracts')navigate('Contratos');
+  if(route==='skus'){navigate('Produtos e SKUs');moduleFilters.query=item.sku;renderActiveModule('Produtos e SKUs')}
+  if(route==='inventory')navigate('Estoque');
+ }));
+}
+
 
 /* Domínios transversais: estado local por usuário/escopo — nenhum serviço externo é acessado. */
 const VNEXT_CONTEXT_KEY='vnext-demo-context-v1',VNEXT_AUDIT_KEY='vnext-demo-audit-v1',VNEXT_VIEW_KEY='vnext-demo-views-v1';
