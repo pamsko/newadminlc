@@ -729,6 +729,7 @@ function resetRegister(page){
 const initialProducts=fakeProducts.map(x=>({...x}));
 const initialCustomers=fakeCustomers.map(x=>({...x}));
 const moduleMeta={
+'Manu IA':['Manu IA','Explore indicadores e oportunidades com análises assistidas da sua operação.','Inteligência'],
 'Backoffice':['Gestão de Pedidos','Acompanhe o processamento e o status dos pedidos em todos os canais.','Operação / Pedidos'],
 'Catálogo':['Gestão de Produtos','Administre produtos, SKUs, preços e disponibilidade.','Operação / Catálogo'],
 'Clientes':['Gestão de Clientes','Consulte compradores, histórico de compras e perfis B2B.','Relacionamento'],
@@ -1320,20 +1321,20 @@ const manuSuggestions=[
 'O que precisa ser resolvido nas integrações?'
 ];
 let manuHistory=[];
-function manuSnapshot(){
+function manuSnapshot(allChannels=false){
  const normalized=vnextContext.channel;
  const allOrders=[...fakeOrders];
- const orders=allOrders.filter(o=>normalized==='Marketplace'?['Mercado Livre','Shopee','Amazon'].includes(o.channel):normalized==='Hub'||normalized==='Integrações'?true:o.channel===normalized);
+ const orders=allOrders.filter(o=>allChannels?true:normalized==='Marketplace'?['Mercado Livre','Shopee','Amazon'].includes(o.channel):normalized==='Hub'||normalized==='Integrações'?true:o.channel===normalized);
  const products=[...fakeProducts],customers=[...fakeCustomers],integrations=[...mockIntegrations];
  const total=orders.reduce((s,o)=>s+Number(o.total||0),0);
  const byChannel={};
  orders.forEach(o=>{const item=byChannel[o.channel]||{count:0,total:0};item.count++;item.total+=Number(o.total)||0;byChannel[o.channel]=item});
- return {orders,products,customers,integrations,total,byChannel,context:vnextContext.unit+' / '+vnextContext.channel};
+ return {orders,products,customers,integrations,total,byChannel,context:allChannels?'todos os canais':vnextContext.unit+' / '+vnextContext.channel};
 }
 function manuCurrency(value){return fmtMoney(Number(value)||0)}
 function manuAnswer(query){
  const q=String(query||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- const d=manuSnapshot();
+ const d=manuSnapshot(/por canal|canais|marketplaces|participac/.test(q));
  const number=x=>Number(x).toLocaleString('pt-BR');
  const result=(heading,paragraph,metrics=[],details=[],routes=[])=>({heading,paragraph,metrics,details,routes});
  if(/canal|marketplace|origem|participac|venda|receita|faturamento|ticket/.test(q)){
