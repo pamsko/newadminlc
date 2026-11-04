@@ -151,6 +151,19 @@ export default {
      ["id","behavior","sku","integrationId","name","brandId","categories","isVisible","visibleFrom","visibleTo","isSearchable","rules","pricing","availability","shipping","itemCount","sendToMarketplace","seo","descriptions","display","composition","items"]:
      ["id","sku","integrationId","name","brandId","productDefinitionId","mainCategoryId","categories","flags","tags","display","seo","descriptions","shipping","references","availability","propertyValues","associations","associationDataSources","loyaltyPrograms","skuIds","ratingAverage","productStatusId"];
     const record={};for(const key of allow)if(obj&&Object.prototype.hasOwnProperty.call(obj,key))record[key]=obj[key];
+    // Recursos complementares de leitura: se indisponíveis, o cadastro principal continua abrindo.
+    const extraPaths=kind==="products"?
+     {skus:"/catalog/products/"+id+"/skus",media:"/catalog/products/"+id+"/media"}:
+     kind==="kits"?
+     {composition:"/catalog/products/"+id+"/composition",media:"/catalog/products/"+id+"/media"}:{};
+    const results=await Promise.all(Object.entries(extraPaths).map(async([key,path])=>{
+     try{
+      const response=await layerGet(path);
+      if(response.error)return [key,null];
+      return [key,Array.isArray(response.data)?response.data:Array.isArray(response.data?.items)?response.data.items:response.data];
+     }catch{return [key,null]}
+    }));
+    for(const [key,value] of results)if(value!==null&&value!==undefined)record[key]=value;
     return output({source:"layer-test",entityType:kind,item:record,product:record},200,cors);
    }catch{return output({error:"LAYER_REQUEST_FAILED"},502,cors);}
   }
