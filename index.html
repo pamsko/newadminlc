@@ -1049,7 +1049,7 @@ function orderDetailBody(o){
  return '<button class="detail-back" id="ordersBack">← Voltar à lista de pedidos</button>'+
  '<div class="detail-heading"><div><div class="eyebrow">Pedidos / Detalhamento</div><h2>Pedido #'+o.id+'</h2><p>'+esc(o.client)+' · '+esc(o.channel)+' · '+esc(o.date)+'</p></div><div class="detail-tags">'+pill(o.status)+'<span class="demo-chip">Dados fictícios</span></div></div>'+
  '<div class="detail-info"><article class="panel"><small>Total do pedido</small><strong>'+fmtMoney(o.total)+'</strong><span>Valor ilustrativo</span></article><article class="panel"><small>Comercial</small><strong>'+esc(o.status)+'</strong><span>Situação do pedido</span></article><article class="panel"><small>Financeiro</small><strong>'+paymentState+'</strong><span>Estado simulado</span></article><article class="panel"><small>Entrega</small><strong>'+esc(ship.status)+'</strong><span>Operação logística</span></article></div>'+
- '<div class="detail-tabs" role="tablist" aria-label="Seções do pedido">'+orderTabsDetail.map(([key,label])=>'<button role="tab" aria-selected="'+String(selectedOrderTab===key)+'" class="'+(selectedOrderTab===key?'active':'')+'" data-orderdetailtab="'+key+'">'+label+'</button>').join('')+'</div>'+
+ vnextOrderLinks(o)+'<div class="detail-tabs" role="tablist" aria-label="Seções do pedido">'+orderTabsDetail.map(([key,label])=>'<button role="tab" aria-selected="'+String(selectedOrderTab===key)+'" class="'+(selectedOrderTab===key?'active':'')+'" data-orderdetailtab="'+key+'">'+label+'</button>').join('')+'</div>'+
  '<div class="detail-layout"><div>'+left+'</div><aside class="panel detail-section"><h3>Resumo e ações</h3>'+detailRows([['Pedido','#'+o.id],['Cliente',o.client],['Pagamento',o.payment],['Canal',o.channel]])+'<div class="detail-actions"><button data-detailaction="Atualizar situação">Atualizar situação</button><button data-detailaction="Consultar ERP">Consultar ERP</button><button data-detailaction="Consultar histórico">Consultar histórico</button></div><div class="detail-warning"><b>Ambiente demonstrativo.</b> Os botões não executam operações reais. Ações em produção dependem do estado do pedido, permissão e integração.</div></aside></div>';
 }
 function openOrderDetail(key){selectedOrderId=key;selectedOrderTab='overview';renderActiveModule('Pedidos');window.scrollTo({top:0,behavior:'instant'})}
@@ -1195,7 +1195,59 @@ function bindVnextDomain(target,page){
 }
 function vnextTasksUpdate(){const count=vnextTaskItems().reduce((sum,x)=>sum+x.count,0);const el=document.getElementById('taskCount');if(el)el.textContent=count}
 
-function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent=titles?titles[1]:'Visualização conceitual e interativa do módulo '+page.toLowerCase()+'.';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=page==='Tarefas e notificações'?renderVnextTasks():page==='Saúde operacional'?renderVnextHealth():page==='Auditoria demonstrativa'?renderVnextAudit():page==='Simulador B2B'?renderVnextB2B():selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():page==='Moderação de clientes'?renderCustomerModeration():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():page==='Commerce Studio'?renderStudio():discoveryScreens[page]?renderDiscoveryScreen(page):['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):page==='Webhooks'?renderWebhooks():['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.insertAdjacentHTML('afterbegin',renderVnextHelp(page));bindVnextDomain(target,page);vnextBindList(target,page);vnextTasksUpdate();bindStudio(target);bindModeration(target);target.querySelectorAll('[data-register-create]').forEach(b=>b.addEventListener('click',()=>openRegister(b.dataset.registerCreate)));
+
+/* Listas: colunas configuráveis e prévia segura de operações em lote */
+const VNEXT_COLUMNS_KEY='vnext-demo-columns-v1';
+function vnextColumnPanel(target,page){
+ if(!['Pedidos','Produtos e SKUs','Clientes'].includes(page)||selectedOrderId)return;
+ const table=target.querySelector('.module-table-wrap table');if(!table)return;
+ const wrap=table.closest('.module-table-wrap'),heads=[...table.querySelectorAll('thead th')];
+ const all=vnextRead(VNEXT_COLUMNS_KEY,{}),stored=all[page];
+ const hidden=Array.isArray(stored)?stored:[];
+ const toolbar=document.createElement('details');toolbar.className='vnext-panel';toolbar.style.padding='10px 14px';
+ toolbar.innerHTML='<summary style="cursor:pointer;font-weight:700;font-size:12px">Personalizar colunas da listagem</summary><div class="vnext-toolbar">'+heads.map((h,i)=>'<label class="vnext-chip"><input type="checkbox" data-vnext-column="'+i+'" '+(!hidden.includes(i)?'checked':'')+'> '+esc(h.textContent.trim()||'Selecionar')+'</label>').join('')+'</div>';
+ wrap.parentNode.insertBefore(toolbar,wrap);
+ function apply(){
+  for(let i=0;i<heads.length;i++){
+   const hide=hidden.includes(i);
+   for(const row of table.rows){const cell=row.cells[i];if(cell){cell.style.display=hide?'none':'';cell.setAttribute('aria-hidden',String(hide))}}
+  }
+ }
+ apply();
+ toolbar.querySelectorAll('[data-vnext-column]').forEach(el=>el.addEventListener('change',()=>{
+  const index=Number(el.dataset.vnextColumn);
+  if(!el.checked&&heads.length-hidden.length<=2){el.checked=true;toast('Mantenha pelo menos duas colunas visíveis.');return}
+  const next=el.checked?hidden.filter(x=>x!==index):[...hidden,index];
+  hidden.splice(0,hidden.length,...next);all[page]=[...hidden];vnextStore(VNEXT_COLUMNS_KEY,all);apply()
+ }));
+ if(page==='Pedidos'){
+  const button=document.createElement('button');button.textContent='Prévia da seleção em lote';button.className='ghost';button.style.margin='8px 0';button.type='button';wrap.parentNode.insertBefore(button,wrap);
+  button.addEventListener('click',()=>{
+   const ids=[...target.querySelectorAll('.order-check:checked')].map(x=>x.dataset.checkorder);
+   if(!ids.length){toast('Selecione um ou mais pedidos para visualizar o impacto.');return}
+   modal('Prévia de seleção — '+ids.length+' pedidos','Selecionados: '+ids.join(', ')+'. Nenhuma operação será executada. Ações reais exigem permissão, limite e resposta item a item.');
+   auditEvent('Prévia em lote','Pedidos',ids.length+' pedidos fictícios');
+  });
+ }
+}
+function vnextOrderLinks(o){
+ const sku=orderMetadata[o.id]?.[1];
+ const customer=fakeCustomers.find(x=>x.name===o.client);
+ return '<section class="vnext-panel"><h3>Relações do pedido · visão 360°</h3><div class="vnext-toolbar">'+
+ (customer?'<button data-vnext-linked="customer" data-vnext-key="'+esc(customer.id)+'">Cliente: '+esc(customer.id)+'</button>':'<span class="vnext-chip">Cliente sem cadastro correspondente na amostra</span>')+
+ (sku?'<button data-vnext-linked="product" data-vnext-key="'+esc(sku)+'">SKU: '+esc(sku)+'</button>':'')+
+ '<button data-vnext-route="Pagamentos">Pagamentos</button><button data-vnext-route="Webhooks">Webhooks</button><button data-vnext-route="Saúde operacional">Diagnóstico</button></div>'+
+ '<p class="hint">Pedido: '+esc(o.status)+' · Pagamento: '+esc(o.payment)+' · Entrega: '+esc(mockShipping[o.id]?.status||'Não disponível')+' · Integração: não conectada.</p></section>';
+}
+function vnextLinkBind(target){
+ target.querySelectorAll('[data-vnext-linked]').forEach(b=>b.addEventListener('click',()=>{
+  const type=b.dataset.vnextLinked,key=b.dataset.vnextKey;
+  navigate(type==='customer'?'Clientes':'Produtos e SKUs');
+  showDetail(type,key);
+ }));
+}
+
+function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent=titles?titles[1]:'Visualização conceitual e interativa do módulo '+page.toLowerCase()+'.';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=page==='Tarefas e notificações'?renderVnextTasks():page==='Saúde operacional'?renderVnextHealth():page==='Auditoria demonstrativa'?renderVnextAudit():page==='Simulador B2B'?renderVnextB2B():selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():page==='Moderação de clientes'?renderCustomerModeration():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():page==='Commerce Studio'?renderStudio():discoveryScreens[page]?renderDiscoveryScreen(page):['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):page==='Webhooks'?renderWebhooks():['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.insertAdjacentHTML('afterbegin',renderVnextHelp(page));bindVnextDomain(target,page);vnextBindList(target,page);vnextColumnPanel(target,page);vnextLinkBind(target);vnextTasksUpdate();bindStudio(target);bindModeration(target);target.querySelectorAll('[data-register-create]').forEach(b=>b.addEventListener('click',()=>openRegister(b.dataset.registerCreate)));
 target.querySelectorAll('[data-register-edit]').forEach(b=>b.addEventListener('click',()=>openRegister(page,b.dataset.registerEdit)));
 target.querySelectorAll('[data-register-delete]').forEach(b=>b.addEventListener('click',()=>confirmRegisterDelete(page,b.dataset.registerDelete)));
 target.querySelectorAll('[data-register-reset]').forEach(b=>b.addEventListener('click',()=>resetRegister(b.dataset.registerReset)));
