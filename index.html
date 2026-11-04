@@ -694,6 +694,11 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-relation-panel h3{margin:0 0 5px;font-size:16px}
 .catalog-relation-panel p{margin:0 0 15px;color:var(--muted);font-size:12px}
 .catalog-ref-warning{color:#af5a14;font-size:12px;padding:10px;border:1px solid #af5a1460;border-radius:8px}
+
+.catalog-live-select select{cursor:pointer}
+.catalog-relation-panel .catalog-live-select{min-height:75px}
+.catalog-relation-panel .catalog-edit-grid{margin-top:12px}
+.catalog-new-footer{position:sticky;bottom:-24px;background:var(--card);padding:14px 0;border-top:1px solid var(--line);z-index:2}
 </style>
 </head>
 <body>
@@ -2362,12 +2367,14 @@ const CATALOG_REFERENCE_FIELDS={
  brandId:'brands',mainCategoryId:'categories',productDefinitionId:'definitions',
  productStatusId:'statuses',categories:'categories',tags:'tags',
  skuIds:'skus',skus:'skus',productIds:'products',items:'products',
- composition:'products',products:'products'
+ composition:'products',products:'products',supplierId:'suppliers',suppliers:'suppliers',propertyMetadataId:'properties',propertyValues:'properties',variationProperties:'properties'
 };
 const CATALOG_SELECT_ENUMS={
  isVisible:[['true','Sim'],['false','Não']],
  isSearchable:[['true','Sim'],['false','Não']],
  sendToMarketplace:[['true','Sim'],['false','Não']],
+ showPrice:[['true','Sim'],['false','Não']],
+ isEnabled:[['true','Sim'],['false','Não']],
  behavior:[['bundle','Kit fixo'],['mix','Kit configurável']]
 };
 function catalogRefLabel(key){return CATALOG_FIELD_LABELS[key]||key}
@@ -2423,10 +2430,10 @@ function catalogMissingFormField(key){
 }
 function catalogRelationsPanel(kind,item={}){
  const relations=kind==='skus'?
-  [['productIds','Produtos associados'],['productDefinitionId','Definição de produto']]:
+  [['productIds','Produtos associados'],['productDefinitionId','Definição de produto'],['suppliers','Fornecedores'],['variationProperties','Propriedades de variação']]:
   kind==='kits'?
-  [['categories','Categorias'],['brandId','Marca'],['composition','Produtos da composição'],['productDefinitionId','Definição de produto']]:
-  [['brandId','Marca'],['mainCategoryId','Categoria principal'],['categories','Categorias vinculadas'],['productDefinitionId','Definição de produto'],['productStatusId','Situação do cadastro'],['tags','Tags'],['skuIds','SKUs associados']];
+  [['categories','Categorias'],['brandId','Marca'],['composition','Produtos da composição'],['productDefinitionId','Definição de produto'],['tags','Tags']]:
+  [['brandId','Marca'],['mainCategoryId','Categoria principal'],['categories','Categorias vinculadas'],['productDefinitionId','Definição de produto'],['productStatusId','Situação do cadastro'],['tags','Tags'],['skuIds','SKUs associados'],['propertyValues','Propriedades do produto']];
  return '<section class="catalog-relation-panel"><div><h3>Relacionamentos do catálogo</h3><p>Selecione opções reais para simular vínculos. As seleções não serão gravadas.</p></div><div class="catalog-edit-grid">'+
   relations.map(([key,label])=>catalogRefPicker(key,item[key]??null,'relation-'+key)||catalogInput(label,item[key]??'')).join('')+
   '</div></section>';
