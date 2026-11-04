@@ -2650,7 +2650,7 @@ function openLayerNewRegistration(){
   const groups=CATALOG_ENTITY_GROUPS[current];
   if(!groups.some(([name])=>name===active))active=groups[0][0];
   const tabHtml=groups.map(([name])=>'<button type="button" data-new-tab="'+esc(name)+'" class="'+(name===active?'active':'')+'" role="tab" aria-selected="'+(name===active)+'">'+esc(name)+'</button>').join('');
-  const currentFields=groups.find(([name])=>name===active)?.[1]||[];
+  const currentFields=(groups.find(([name])=>name===active)?.[1]||[]).filter(key=>!['id','productStatusName','ratingAverage'].includes(key));
   const fields=currentFields.map(key=>{
    if(key==='__relations')return catalogRelationsPanel(current);
    if(key==='media')return renderCatalogMedia({product:[],skus:[]});
@@ -2670,7 +2670,22 @@ function openLayerNewRegistration(){
  render();overlay.querySelector('#closeLayerNew').focus();
  loadCatalogReferences().then(()=>{if(overlay.isConnected)render()});
 }
-async function showLayerProductDetails(id,kind='products',mode='view'){
+function showDemoCatalogDetails(record,mode='view'){
+ const raw=record.raw||{};
+ const item={
+  id:record.id,sku:record.sku,integrationId:record.integrationId,name:record.name,
+  brandName:record.brand,categories:record.category?[{name:record.category}]:[],
+  display:{isVisible:record.isVisible,isSearchable:raw.searchable??null},
+  descriptions:{shortDescription:raw.shortDescription??'',longDescription:raw.longDescription??''},
+  seo:{pageTitle:raw.seoTitle??'',urlFriendly:raw.slug??'',metaDescription:raw.metaDescription??''},
+  pricing:{price:record.price},inventorySettings:{stock:record.stock},
+  shipping:{width:raw.width??'',height:raw.height??'',depth:raw.depth??'',weight:raw.weight??''},
+  media:raw.mainImage?{product:[{type:'image',title:'Imagem principal',relativePath:raw.mainImage}],skus:[]}:{product:[],skus:[]},
+  productStatusName:raw.status??'',category:raw.category??'',price:record.price,stock:record.stock
+ };
+ showLayerProductDetails(String(record.id),record.entityType,mode,item);
+}
+async function showLayerProductDetails(id,kind='products',mode='view',demoItem=null){
  if(!/^[0-9]+$/.test(id))return;
  if(!['products','skus','kits'].includes(kind))kind='products';
  catalogDraftSelections={};
@@ -2685,15 +2700,19 @@ async function showLayerProductDetails(id,kind='products',mode='view'){
  overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
  overlay.querySelector('#closeLayerDetail').focus();
  try{
-  const response=await fetch(AUTH_API+'/api/items/'+kind+'/'+encodeURIComponent(id),{
-   headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'
-  });
-  const payload=await response.json().catch(()=>({}));
-  if(!response.ok)throw new Error(payload.error||'API_ERROR');
+  let item;
+  if(demoItem){item=demoItem}
+  else {
+   const response=await fetch(AUTH_API+'/api/items/'+kind+'/'+encodeURIComponent(id),{
+    headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'
+   });
+   const payload=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(payload.error||'API_ERROR');
+   item=payload.item||payload.product||{};
+  }
   if(!overlay.isConnected)return;
-  const item=payload.item||payload.product||{};
   // Situação é cadastro próprio, não corresponde à visibilidade.
-  if(kind==='products'&&item.productStatusId!==undefined){
+  if(!demoItem&&kind==='products'&&item.productStatusId!==undefined){
    try{
     const statuses=await fetch(AUTH_API+'/api/product-statuses',{headers:{Authorization:'Bearer '+authSessionToken},cache:'no-store'});
     if(statuses.ok){const values=await statuses.json();item.productStatusName=(values.items||[]).find(x=>x.id===item.productStatusId)?.status??null}
@@ -2713,7 +2732,7 @@ async function showLayerProductDetails(id,kind='products',mode='view'){
     const val=item[k],label=CATALOG_FIELD_LABELS[k]||k;
     return '<div class="catalog-section-block"><h3>'+esc(label)+'</h3>'+(k==='media'?renderCatalogMedia(val):catalogFormField(k,val,'existing-'+kind+'-'+k))+'</div>';
    }).join(''):'';
-   overlay.querySelector('#layerDetailBody').innerHTML='<div class="catalog-readonly-banner">Modo '+(mode==='edit'?'edição':'visualização')+' · Todos os campos bloqueados · Nenhuma alteração será enviada à Layer</div>'+tabs+'<div class="catalog-edit-content" role="tabpanel">'+(fields||'<p class="catalog-muted">Nenhuma informação disponível.</p>')+'</div>';
+   overlay.querySelector('#layerDetailBody').innerHTML='<div class="catalog-readonly-banner">Modo '+(mode==='edit'?'edição':'visualização')+' · Todos os campos bloqueados · Nenhuma alteração será gravada</div>'+tabs+'<div class="catalog-edit-content" role="tabpanel">'+(fields||'<p class="catalog-muted">Nenhuma informação disponível.</p>')+'</div>';
    catalogBindLiveSelects(overlay);
    overlay.querySelectorAll('[data-catalog-section]').forEach(btn=>btn.addEventListener('click',()=>{
     active=btn.dataset.catalogSection;render();
@@ -2721,7 +2740,7 @@ async function showLayerProductDetails(id,kind='products',mode='view'){
    }));
   };
   overlay.querySelector('header h2').textContent=item.name?String(item.name):entityLabel+' #'+id;
-  overlay.querySelector('header .catalog-source-info').textContent=entityLabel+' · ID '+id+' · Layer API v3 · Somente leitura';
+  overlay.querySelector('header .catalog-source-info').textContent=entityLabel+' · ID '+id+' · '+(demoItem?'Demonstração':'Layer API v3')+' · Somente leitura';
   render();
   loadCatalogReferences().then(()=>{if(overlay.isConnected)render()});
  }catch(error){if(overlay.isConnected)overlay.querySelector('#layerDetailBody').textContent='Não foi possível consultar o cadastro: '+error.message;}
