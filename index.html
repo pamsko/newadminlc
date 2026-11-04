@@ -699,6 +699,14 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-relation-panel .catalog-live-select{min-height:75px}
 .catalog-relation-panel .catalog-edit-grid{margin-top:12px}
 .catalog-new-footer{position:sticky;bottom:-24px;background:var(--card);padding:14px 0;border-top:1px solid var(--line);z-index:2}
+
+.catalog-products-table{min-width:1230px}
+.catalog-products-table th:nth-child(7),.catalog-products-table td:nth-child(7){max-width:190px;overflow-wrap:anywhere}
+.catalog-products-table td:nth-child(10),.catalog-products-table td:nth-child(11){white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.catalog-products-table th:nth-child(10),.catalog-products-table th:nth-child(11){text-align:right}
+.catalog-products-table .catalog-table-actions button[data-catalog-action="delete"]{color:#bd3f4b;border-color:#bd3f4b45;background:transparent}
+.catalog-products-table .catalog-table-actions button[data-catalog-action="edit"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.catalog-products-table .catalog-table-actions{min-width:238px}
 </style>
 </head>
 <body>
@@ -2115,7 +2123,7 @@ function layerMediaURL(raw){
 }
 function layerThumb(p){
  const key=String(p?.id??'');
- const src=layerThumbs.get(key);
+ const src=catalogSource==='layer'?layerThumbs.get(key):layerMediaURL(p?.raw?.mainImage??'');
  const placeholder='<span class="catalog-thumb-placeholder" aria-label="Sem imagem"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="2"/><path d="m4 18 6-6 4 4 3-3 4 4"/></svg></span>';
  return src?'<img loading="lazy" referrerpolicy="no-referrer" src="'+esc(src)+'" alt="Imagem de '+esc(p?.name??'produto')+'" onerror="this.replaceWith(this.nextElementSibling)" />'+placeholder:placeholder;
 }
@@ -2359,20 +2367,44 @@ function bindLayerCatalog(target,page){
    layerPage=1;render();
   });
  });
- target.querySelector('#layerEntityType')?.addEventListener('change',e=>{layerEntityType=e.target.value;layerData=null;layerSearch='';layerStatus='all';layerBrand='all';layerPage=1;render();loadLayerProducts()});
+ target.querySelector('#layerEntityType')?.addEventListener('change',e=>{
+  layerEntityType=e.target.value;layerSearch='';layerStatus='all';layerBrand='all';layerPage=1;
+  if(catalogSource==='layer'){layerRequestId++;layerLoading=false;layerData=null;layerError='';}
+  render();if(catalogSource==='layer')loadLayerProducts();
+ });
  target.querySelector('#layerPageSize')?.addEventListener('change',e=>{layerPageSize=Number(e.target.value)||20;layerPage=1;render()});
  target.querySelector('#layerClear')?.addEventListener('click',reset);
  target.querySelector('#layerClearInline')?.addEventListener('click',reset);
  target.querySelector('#layerNew')?.addEventListener('click',openLayerNewRegistration);
  target.querySelector('#layerExport')?.addEventListener('click',exportLayerCSV);
- target.querySelector('#layerRefresh')?.addEventListener('click',loadLayerProducts);
- target.querySelector('#layerRetry')?.addEventListener('click',loadLayerProducts);
+ target.querySelector('#layerRefresh')?.addEventListener('click',()=>catalogSource==='layer'?loadLayerProducts():render());
+ target.querySelector('#layerRetry')?.addEventListener('click',()=>catalogSource==='layer'?loadLayerProducts():render());
  target.querySelector('#layerPrev')?.addEventListener('click',()=>{if(layerPage>1){layerPage--;render()}});
  target.querySelector('#layerNext')?.addEventListener('click',()=>{layerPage++;render()});
- target.querySelectorAll('[data-layer-detail]').forEach(b=>b.addEventListener('click',()=>showLayerProductDetails(b.dataset.layerDetail,b.dataset.layerKind,'view')));
- target.querySelectorAll('[data-layer-edit]').forEach(b=>b.addEventListener('click',()=>showLayerProductDetails(b.dataset.layerEdit,b.dataset.layerKind,'edit')));
- if(layerData&&!layerLoading&&!layerError)fetchLayerThumbs();
+ target.querySelectorAll('[data-catalog-action]').forEach(b=>b.addEventListener('click',()=>{
+  const kind=b.dataset.catalogKind,id=b.dataset.catalogId,action=b.dataset.catalogAction;
+  if(catalogSource==='demo'){
+   const record=demoCatalogRows().find(p=>String(p.id)===id&&p.entityType===kind);
+   if(!record)return;
+   if(action==='delete'){
+    if(!window.confirm('Excluir este cadastro apenas do ambiente de demonstração?'))return;
+    const index=fakeProducts.findIndex(p=>String(p.id)===id);
+    if(index>=0){fakeProducts.splice(index,1);persistRegisters('Produtos e SKUs');render()}
+    return;
+   }
+   showDemoCatalogDetails(record,action);
+   return;
+  }
+  if(action==='delete'){
+   // Ação presente em ambas as fontes; nunca executa DELETE na Layer.
+   window.alert('Exclusão indisponível para dados da Layer. Nenhuma alteração foi realizada.');
+   return;
+  }
+  showLayerProductDetails(id,kind,action);
+ }));
+ if(catalogSource==='layer'&&layerData&&!layerLoading&&!layerError)fetchLayerThumbs();
 }
+
 function catalogValue(v){
  if(v===null||v===undefined||v==='')return '—';
  if(typeof v==='boolean')return v?'Sim':'Não';
