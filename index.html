@@ -1446,7 +1446,10 @@ const workflowEventMap={
  'Entrega':['DeliveryStatusUpdated','DeliveryCreated','DeliveryCancelled'],
  'Pedido Hub':['HubOrderImported','HubOrderUpdated'],
  'Pedido externo':['ExternalOrderCreated','ExternalOrderUpdated'],
- 'Pedido em compra':['PurchaseOrderCreated','PurchaseOrderUpdated']
+ 'Pedido em compra':['PurchaseOrderCreated','PurchaseOrderUpdated'],
+ 'Integração':['IntegrationFailed'],
+ 'Pagamento':['PaymentUpdated'],
+ 'Estoque':['StockUpdated']
 };
 const workflowTaskCatalog=[
  {group:'Controle e orquestração',id:'Executar workflow sequencial',risk:'medium',parameter:'Código do fluxo a executar'},
@@ -1482,6 +1485,23 @@ function workflowTaskRows(record){
  return workflowSteps(record.steps).map(line=>{const parts=line.split('|');const name=parts.shift()?.trim()||'';return {name,param:parts.join('|').trim()}}).filter(t=>t.name);
 }
 function workflowTaskMeta(task){return workflowTaskCatalog.find(x=>x.id===task.name)||{id:task.name,group:'Personalizado',risk:'medium',parameter:'Parâmetro'}}
+function workflowTaskAllowed(task,entity){
+ const group=workflowTaskMeta(task).group;
+ if(group==='Personalizado'||group==='Controle e orquestração')return true;
+ const entityGroups={
+  Pedido:['Pedido e status','Pagamento','Estoque e entrega','Integração e comunicação'],
+  'Pedido Hub':['Pedido e status','Pagamento','Estoque e entrega','Integração e comunicação'],
+  'Pedido externo':['Pedido e status','Pagamento','Estoque e entrega','Integração e comunicação'],
+  'Pedido em compra':['Pedido e status','Pagamento','Estoque e entrega','Integração e comunicação'],
+  Cliente:['Integração e comunicação'],
+  Produto:['Integração e comunicação'],
+  Entrega:['Estoque e entrega','Integração e comunicação'],
+  Integração:['Integração e comunicação'],
+  Pagamento:['Pagamento','Integração e comunicação'],
+  Estoque:['Estoque e entrega','Integração e comunicação']
+ };
+ return (entityGroups[entity]||[]).includes(group);
+}
 function workflowEvent(record){return record.event||record.trigger||'Execução manual'}
 function workflowKind(record){return record.kind||record.workflowType||'Sequencial'}
 function workflowVersions(){return vnextRead(WORKFLOW_VERSIONS,{})}
@@ -1500,6 +1520,7 @@ function workflowValidation(record,forActivation=false){
  if(forActivation&&!tasks.length)issues.push('Adicione pelo menos uma tarefa antes de ativar.');
  if(tasks.length>25)issues.push('Máximo de 25 tarefas por fluxo.');
  tasks.forEach((task,i)=>{
+  if(!workflowTaskAllowed(task,record.entity))issues.push('A tarefa '+(i+1)+' não é compatível com o contexto '+record.entity+'.');
   if(!task.name)issues.push('Selecione uma ação para a tarefa '+(i+1)+'.');
   if(!String(task.param||'').trim())issues.push('Informe o parâmetro da tarefa '+(i+1)+' ('+task.name+').');
   if(task.name==='Executar workflow sequencial'&&String(task.param||'').trim()===String(record.code||'').trim())issues.push('O fluxo não pode executar a si próprio diretamente.');
@@ -1592,7 +1613,7 @@ function openWorkflowEditor(code){
  const oldJSON=old?JSON.stringify(old):null;
  const now=()=>new Date().toLocaleString('pt-BR');
  let draft={code:'WF-'+String(Date.now()).slice(-8),name:'',entity:'Pedido',kind:'Sequencial',triggerMode:'Evento',event:'OrderPurchased',status:'Rascunho',conditionField:'',conditionOperator:'Igual a',conditionValue:'',description:'',integrationId:'',sourceState:'',targetState:'',delay:'',createdBy:loggedUser||'Usuário',createdAt:now(),...(old||{})};
- const eventAliases={'Pedido criado':'OrderPurchased','Pedido pago':'OrderPaid','Pedido cancelado':'OrderGlobalStatusCancelled','Produto atualizado':'ProductUpdated','Cliente aprovado':'CustomerUpdated'};
+ const eventAliases={'Pedido criado':'OrderPurchased','Pedido pago':'OrderPaid','Pedido cancelado':'OrderGlobalStatusCancelled','Produto atualizado':'ProductUpdated','Cliente aprovado':'CustomerUpdated','Falha de integração':'IntegrationFailed','Status alterado':'OrderShipped'};
  draft.event=draft.event||eventAliases[draft.trigger]||'OrderPurchased';
  draft.kind=draft.kind||'Sequencial';
  draft.triggerMode=draft.triggerMode||(draft.event==='Execução manual'?'Manual':'Evento');
@@ -1639,7 +1660,7 @@ function openWorkflowEditor(code){
   (mode==='advanced'?'<div class="wf-advanced-conditions"><h4>Condição de execução (opcional)</h4><div class="wf-editor-fields">'+sel('Campo','conditionField',['','status','payment.status','shipping.status','stock','channel','error.code'],draft.conditionField)+sel('Operador','conditionOperator',['Igual a','Diferente de','Contém','Maior que','Menor que'],draft.conditionOperator)+inp('Valor','conditionValue',draft.conditionValue)+(workflowKind(draft)==='Máquina de Estados'?inp('Estado de origem *','sourceState',draft.sourceState)+inp('Estado de destino *','targetState',draft.targetState):'')+'</div></div>':'')
  },
  ()=>{
-  const favorites=mode==='simple'?workflowTaskCatalog.filter(x=>['Alterar status','Adicionar tag','Enviar e-mail ao consumidor','Enviar pedido para fila de integração','Confirmar reserva','Exibir aviso'].includes(x.id)):workflowTaskCatalog.filter(x=>(taskCategory==='Todas'||x.group===taskCategory)&&x.id.toLowerCase().includes(taskQuery.toLowerCase()));
+  const favorites=mode==='simple'?workflowTaskCatalog.filter(x=>workflowTaskAllowed({name:x.id},draft.entity)&&['Alterar status','Adicionar tag','Enviar e-mail ao consumidor','Enviar pedido para fila de integração','Confirmar reserva','Exibir aviso'].includes(x.id)):workflowTaskCatalog.filter(x=>workflowTaskAllowed({name:x.id},draft.entity)&&(taskCategory==='Todas'||x.group===taskCategory)&&x.id.toLowerCase().includes(taskQuery.toLowerCase()));
   const catOptions=['Todas',...new Set(workflowTaskCatalog.map(x=>x.group))];
   const palette='<aside class="wf-library"><div class="wf-library-header"><h4>Biblioteca de ações</h4><p>'+(mode==='simple'?'Escolha uma ação para adicionar.':'Arraste uma ação para o fluxo ou clique para adicionar.')+'</p></div>'+
   (mode==='advanced'?'<input id="wfTaskQuery" type="search" placeholder="Buscar tarefa…" value="'+esc(taskQuery)+'" aria-label="Buscar tarefa"><select id="wfTaskCategory" aria-label="Categoria">'+option(catOptions,taskCategory)+'</select>':'')+
