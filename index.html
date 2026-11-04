@@ -668,6 +668,23 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-visibility-dot.unknown{background:#9ca3af}
 .catalog-products-table th:nth-child(4),.catalog-products-table td:nth-child(4){width:68px}
 .catalog-list-actions .primary{font-weight:700}
+
+.catalog-new-kind{display:flex;align-items:center;gap:12px;margin-top:16px;font-weight:700;font-size:13px}
+.catalog-new-kind select{border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);padding:9px 12px}
+.catalog-new-footer{border-top:1px solid var(--line);padding-top:16px;display:flex;align-items:center;gap:14px;color:var(--muted);font-size:12px}
+.catalog-new-footer button{opacity:.5;cursor:not-allowed}
+.catalog-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.catalog-media-card{border:1px solid var(--line);border-radius:10px;padding:9px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.catalog-media-card img,.catalog-media-empty{width:100%;height:110px;object-fit:cover;border-radius:7px;background:var(--bg)}
+.catalog-media-empty{display:grid;place-items:center;color:var(--muted);font-size:12px}
+.catalog-media-card b{display:block;font-size:12px;overflow-wrap:anywhere}
+.catalog-media-card small{display:block;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+.catalog-media-inputs{border-top:1px solid var(--line);padding-top:16px}
+.catalog-media-inputs h4{margin:0 0 12px}
+.catalog-media-options{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.catalog-media-options label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+.catalog-media-options input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px;max-width:100%;color:var(--text);opacity:.65}
+@media(max-width:650px){.catalog-media-options{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -2383,6 +2400,50 @@ function catalogNestedFields(value,prefix='',depth=0){
   return catalogInput(name,val);
  }).join('')+'</div>';
 }
+function renderCatalogMedia(media){
+ const product=Array.isArray(media)?media:Array.isArray(media?.product)?media.product:[];
+ const skuGroups=Array.isArray(media?.skus)?media.skus:[];
+ const mediaRow=item=>{
+  const path=layerMediaURL(item.relativePath);
+  const isImage=item.type==='image';
+  const thumb=isImage&&path?'<img src="'+esc(path)+'" alt="'+esc(item.title||'Imagem')+'" loading="lazy" referrerpolicy="no-referrer">':'<div class="catalog-media-empty">Sem prévia</div>';
+  return '<div class="catalog-media-card">'+thumb+'<div><b>'+esc(item.title||'Mídia')+'</b><small>'+esc(item.type||'Não informado')+' · '+esc(item.relativePath||item.videoUrl||'Sem endereço')+'</small></div></div>';
+ };
+ const summary=product.length?'<div class="catalog-media-grid">'+product.map(mediaRow).join('')+'</div>':'<p class="catalog-muted">Não há mídias vinculadas ao produto.</p>';
+ const variants=skuGroups.map(group=>'<div class="catalog-section-block"><h4>SKU '+esc(group.skuCode||group.name||group.skuId||'')+'</h4><div class="catalog-media-grid">'+(group.medias||[]).map(mediaRow).join('')+'</div></div>').join('');
+ return '<div class="catalog-media-area"><h4>Mídias cadastradas</h4>'+summary+variants+
+ '<div class="catalog-media-inputs"><h4>Adicionar imagem ou vídeo</h4>'+
+ '<div class="catalog-media-options"><label>Enviar arquivo<input type="file" accept="image/*,video/*" disabled></label><label>Adicionar por URL<input type="url" placeholder="https://..." disabled></label></div>'+
+ '<p class="catalog-muted">Pré-visualização, upload, URL e reordenação ficarão disponíveis quando a edição for habilitada.</p>'+
+ '</div></div>';
+}
+function openLayerNewRegistration(){
+ const kind=layerEntityType==='all'?'products':layerEntityType;
+ const labels={products:'Produto',skus:'SKU',kits:'Kit'};
+ const previousFocus=document.activeElement;
+ const overlay=document.createElement('div');overlay.className='catalog-detail-overlay';
+ overlay.innerHTML='<section class="catalog-detail-drawer catalog-edit-drawer" role="dialog" aria-modal="true" aria-label="Novo cadastro"><header><div><h2>Novo cadastro</h2><span class="catalog-source-info">Simulação de cadastro · Somente visualização</span></div><button id="closeLayerNew" type="button">Fechar</button></header><div id="layerNewBody"></div></section>';
+ document.body.appendChild(overlay);
+ const close=()=>{overlay.remove();document.removeEventListener('keydown',onEscape);previousFocus?.focus?.()};
+ const onEscape=e=>{if(e.key==='Escape')close()};
+ document.addEventListener('keydown',onEscape);
+ overlay.querySelector('#closeLayerNew').addEventListener('click',close);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ const body=overlay.querySelector('#layerNewBody');
+ let current=kind,active='Identificação';
+ function render(){
+  const groups=CATALOG_ENTITY_GROUPS[current];
+  if(!groups.some(([name])=>name===active))active=groups[0][0];
+  body.innerHTML='<div class="catalog-readonly-banner">Simulação visual: nenhum campo pode ser preenchido e nenhuma ação será enviada à Layer.</div>'+
+   '<label class="catalog-new-kind">Tipo de cadastro<select id="layerNewKind">'+[['products','Produto'],['skus','SKU'],['kits','Kit']].map(([key,name])=>'<option value="'+key+'" '+(key===current?'selected':'')+'>'+name+'</option>').join('')+'</select></label>'+
+   '<div class="catalog-detail-tabs" role="tablist">'+groups.map(([name])=>'<button type="button" data-new-tab="'+esc(name)+'" class="'+(name===active?'active':'')+'" role="tab" aria-selected="'+(name===active)+'">'+esc(name)+'</button>').join('')+'</div>'+
+   '<div class="catalog-edit-content">'+groups.filter(([name])=>name===active).map(([,keys])=>keys.map(key=>key==='media'?renderCatalogMedia({product:[],skus:[]}):catalogInput(CATALOG_FIELD_LABELS[key]||key,'')).join('')).join('')+'</div>'+
+   '<div class="catalog-new-footer"><button type="button" disabled>Salvar cadastro</button><span>Cadastro desabilitado no ambiente de testes</span></div>';
+  body.querySelector('#layerNewKind').addEventListener('change',e=>{current=e.target.value;active='Identificação';render()});
+  body.querySelectorAll('[data-new-tab]').forEach(btn=>btn.addEventListener('click',()=>{active=btn.dataset.newTab;render()}));
+ }
+ render();overlay.querySelector('#closeLayerNew').focus();
+}
 async function showLayerProductDetails(id,kind='products',mode='view'){
  if(!/^[0-9]+$/.test(id))return;
  if(!['products','skus','kits'].includes(kind))kind='products';
@@ -2421,7 +2482,7 @@ async function showLayerProductDetails(id,kind='products',mode='view'){
    const section=available.find(([name])=>name===active);
    const fields=section?section[1].filter(k=>Object.prototype.hasOwnProperty.call(item,k)).map(k=>{
     const val=item[k],label=CATALOG_FIELD_LABELS[k]||k;
-    return '<div class="catalog-section-block"><h3>'+esc(label)+'</h3>'+catalogNestedFields(val,label)+'</div>';
+    return '<div class="catalog-section-block"><h3>'+esc(label)+'</h3>'+(k==='media'?renderCatalogMedia(val):catalogNestedFields(val,label))+'</div>';
    }).join(''):'';
    overlay.querySelector('#layerDetailBody').innerHTML='<div class="catalog-readonly-banner">Modo '+(mode==='edit'?'edição':'visualização')+' · Todos os campos bloqueados · Nenhuma alteração será enviada à Layer</div>'+tabs+'<div class="catalog-edit-content" role="tabpanel">'+(fields||'<p class="catalog-muted">Nenhuma informação disponível.</p>')+'</div>';
    overlay.querySelectorAll('[data-catalog-section]').forEach(btn=>btn.addEventListener('click',()=>{
