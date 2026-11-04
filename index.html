@@ -335,6 +335,11 @@ body.dark-mode{--navy:#062638;--navy2:#073b51;--text:#e5f4fa;--muted:#a9c0cd;--l
 .vnext-workflow-steps{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:15px 0}
 .vnext-workflow-steps span{display:inline-flex;align-items:center;padding:10px 13px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text);font-size:12px}
 .vnext-workflow-steps span+span:before{content:'→';margin-right:10px;color:var(--muted)}
+
+.workflow-step-builder{grid-column:1/-1;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:16px}
+.workflow-builder-head{display:grid;gap:4px;font-size:12px}.workflow-builder-head small{color:var(--muted)}
+.workflow-step-builder .vnext-toolbar{margin:12px 0}.workflow-step-builder input{min-width:180px;flex:1}
+.workflow-step-builder button{cursor:pointer}
 </style>
 </head>
 <body>
@@ -529,7 +534,15 @@ function loadRegisters(){
  const products=safeRead('products',null),customers=safeRead('customers',null);
  if(products)fakeProducts.splice(0,fakeProducts.length,...products);
  if(customers)fakeCustomers.splice(0,fakeCustomers.length,...customers);
- for(const k of Object.keys(registerModels)){if(k!=='Produtos e SKUs'&&k!=='Clientes')registerExtras[k]=safeRead(k,[])}
+ for(const k of Object.keys(registerModels)){
+  if(k==='Produtos e SKUs'||k==='Clientes')continue;
+  const examples=k==='Fluxos (workflows)'?[
+   {code:'WF-001',name:'Processamento de pedido pago',entity:'Pedido',trigger:'Pedido pago',status:'Ativo',channel:'Loja virtual',description:'Atualização operacional após confirmação financeira',steps:'Registrar log | Pagamento confirmado\nAtualizar status | Em separação',errorPolicy:'Interromper fluxo',retryLimit:2},
+   {code:'WF-002',name:'Aprovação de cliente B2B',entity:'Cliente',trigger:'Cliente aprovado',status:'Ativo',channel:'B2B',description:'Tratamento da aprovação cadastral',steps:'Registrar log | Cliente aprovado\nEnviar notificação | Comercial',errorPolicy:'Continuar',retryLimit:0},
+   {code:'WF-003',name:'Tratamento de falhas de integração',entity:'Integração',trigger:'Falha de integração',status:'Pausado',channel:'Todos os canais',description:'Registro de ocorrência técnica',steps:'Registrar log | Falha recebida\nAdicionar tag | Revisar integração',errorPolicy:'Tentar novamente',retryLimit:3}
+  ]:[];
+  registerExtras[k]=safeRead(k,examples);
+}
 }
 function registerRows(page){return page==='Produtos e SKUs'?fakeProducts:page==='Clientes'?fakeCustomers:registerExtras[page]||[]}
 function persistRegisters(page){return safeSave(page==='Produtos e SKUs'?'products':page==='Clientes'?'customers':page,registerRows(page))}
@@ -664,6 +677,33 @@ function openRegister(page,key){
  '<div class="expanded-register-footer"><div id="demoRegisterError" class="demo-register-error" role="alert"></div><div class="expanded-register-actions"><button type="button" id="registerDraft">Salvar rascunho</button><button type="button" id="registerPrevious">Anterior</button><button type="button" id="registerNext">Próximo</button><button type="submit" class="expanded-register-save">Salvar cadastro</button></div></div></form></div></div>';
  document.body.appendChild(backdrop);
  const form=backdrop.querySelector('form'),parts=[...backdrop.querySelectorAll('[data-editor-section]')],tabs=[...backdrop.querySelectorAll('[data-editor-tab]')],error=backdrop.querySelector('#demoRegisterError');
+ if(page==='Fluxos (workflows)'){
+  const stepsInput=form.elements.namedItem('steps');
+  if(stepsInput){
+   const builder=document.createElement('div');builder.className='workflow-step-builder';
+   builder.innerHTML='<div class="workflow-builder-head"><strong>Adicionar etapa</strong><small>Selecione uma ação e informe seu parâmetro.</small></div>'+
+    '<div class="vnext-toolbar"><select id="workflowStepAction" aria-label="Ação da etapa">'+['Registrar log','Atualizar status','Adicionar tag','Enviar notificação','Acionar webhook'].map(a=>'<option>'+esc(a)+'</option>').join('')+'</select>'+
+    '<input type="text" id="workflowStepValue" maxlength="140" aria-label="Parâmetro da etapa" placeholder="Parâmetro da ação"><button type="button" id="workflowStepAdd">Adicionar etapa</button><button type="button" id="workflowStepRemove">Remover última</button></div>'+
+    '<div id="workflowStepPreview" class="vnext-workflow-steps" aria-live="polite"></div>';
+   stepsInput.closest('label').insertAdjacentElement('afterend',builder);
+   const preview=builder.querySelector('#workflowStepPreview');
+   const refresh=()=>{const values=workflowSteps(stepsInput.value);preview.innerHTML=values.length?values.map((x,i)=>'<span>'+(i+1)+'. '+esc(x)+'</span>').join(''):'<span>Adicione a primeira etapa para visualizar o fluxo</span>'};
+   builder.querySelector('#workflowStepAdd').addEventListener('click',()=>{
+    const action=builder.querySelector('#workflowStepAction').value,parameter=builder.querySelector('#workflowStepValue').value.trim();
+    if(!parameter){toast('Informe o parâmetro da ação.');builder.querySelector('#workflowStepValue').focus();return}
+    if(workflowSteps(stepsInput.value).length>=25){toast('Limite de 25 etapas por fluxo.');return}
+    stepsInput.value+=(stepsInput.value.trim()?'\n':'')+action+' | '+parameter;
+    builder.querySelector('#workflowStepValue').value='';
+    stepsInput.dispatchEvent(new Event('input',{bubbles:true}));refresh();
+   });
+   builder.querySelector('#workflowStepRemove').addEventListener('click',()=>{
+    const parts=workflowSteps(stepsInput.value);parts.pop();stepsInput.value=parts.join('\n');
+    stepsInput.dispatchEvent(new Event('input',{bubbles:true}));refresh();
+   });
+   stepsInput.addEventListener('input',refresh);refresh();
+  }
+ }
+
  const oldScroll=document.body.style.overflow;document.body.style.overflow='hidden';
  const readValues=()=>{const out={...initial};for(const f of allFields){const el=form.elements.namedItem(f[0]);if(!el)continue;out[f[0]]=f[2]==='checkbox'?el.checked:el.value;if(['money','number','decimal'].includes(f[2]))out[f[0]]=el.value===''?'':Number(el.value);if(['text','email','textarea'].includes(f[2]))out[f[0]]=String(out[f[0]]).trim()}return out};
  const navigateTab=i=>{active=Math.max(0,Math.min(parts.length-1,i));parts.forEach((p,j)=>p.hidden=j!==active);tabs.forEach((t,j)=>{t.classList.toggle('active',j===active);t.setAttribute('aria-current',j===active?'step':'false')});backdrop.querySelector('#registerPrevious').disabled=active===0;backdrop.querySelector('#registerNext').disabled=active===parts.length-1;error.textContent='';backdrop.querySelector('.expanded-register-content').scrollTop=0};
@@ -1092,7 +1132,7 @@ const configs={
 };
 const rows=configs[page]||[['Jornada principal','Revisar critérios e estados de interface'],['Consultas','Filtros, listagens e ações presentes no legado'],['Regras e exceções','Preservar sem inventar comportamento'],['Integrações','Validar contratos e dependências']];
 return domainHeader(page,'Estrutura funcional de referência. Os formulários e operações reais ainda dependem de inventário e homologação.')+
-'<section class="panel module-panel"><h2>Jornadas e responsabilidades</h2><div class="domain-list">'+rows.map(([name,desc])=>'<article><b>'+esc(name)+'</b><p>'+esc(desc)+'</p></article>').join('')+'</div><div class="detail-warning"><b>Requisito de equivalência:</b> manter todas as consultas, ações, permissões e exceções do Admin atual antes de substituí-lo por esta proposta.</div></section>';
+'<section class="panel module-panel"><h2>Jornadas e responsabilidades</h2><div class="domain-list">'+rows.map(([name,desc])=>'<article><b>'+esc(name)+'</b><p>'+esc(desc)+'</p></article>').join('')+'</div><div class="detail-warning"><b>Requisito de equivalência:</b> manter todas as consultas, ações, permissões e exceções do Admin atual antes de substituí-lo por esta proposta.</div></section>'+(registerModels[page]?renderRegisterList(page):'');
 }
 
 
