@@ -390,10 +390,10 @@ const fakeCustomers=[
 const REGISTER_PREFIX='totvs-admin-demo-v1:';
 const registerModels={
 'Produtos e SKUs':{label:'Produto',id:'sku',fields:[
-['sku','SKU','text',true],['name','Nome do produto','text',true],['category','Categoria','category',true],
+['sku','SKU','text',true],['name','Nome do produto','text',true],['kind','Tipo de cadastro','select',true,['Produto','SKU / Variação','Kit']],['parent','Produto pai / referência','text',false],['category','Categoria','category',true],['brand','Marca','text',false],['source','Origem do cadastro','select',true,['Admin (manual)','ERP','Importação','Integração']],['visibility','Visibilidade na loja','select',true,['Não publicado','Publicado','Em análise','Oculto']],
 ['stock','Estoque','number',true],['price','Preço (R$)','money',true],['status','Situação','select',true,['Ativo','Inativo','Estoque baixo','Esgotado']]]},
 'Clientes':{label:'Cliente',id:'id',fields:[
-['id','Código do cliente','text',true],['name','Nome / Razão social','text',true],['email','E-mail','email',true],
+['id','Código do cliente','text',true],['name','Nome / Razão social','text',true],['email','E-mail','email',true],['externalId','Identificador externo','text',false],['companyId','CPF / CNPJ fictício (não use dados reais)','text',false],['channel','Canal de acesso','select',true,['Loja virtual','B2B','Marketplace']],['group','Grupo econômico','relation-group-optional',false],['moderation','Moderação cadastral','select',true,['Em análise','Aprovado','Reprovado']],
 ['type','Tipo de pessoa','select',true,['Pessoa física','Pessoa jurídica']],['status','Situação','select',true,['Ativo','Inativo']]]},
 'Categorias':{label:'Categoria',id:'code',fields:[['code','Código','text',true],['name','Nome da categoria','text',true],['parent','Categoria pai','text',false],['status','Situação','select',true,['Ativa','Inativa']]]},
 'Contratos':{label:'Contrato B2B',id:'code',fields:[['code','Código do contrato','text',true],['name','Nome do contrato','text',true],['scope','Tipo de vínculo','select',true,['Canal B2B','Grupo econômico']],['origin','Origem da regra','relation-group',true],['status','Situação','select',true,['Ativo','Inativo']]]},
@@ -431,7 +431,7 @@ function openRegister(page,key){
  const fields=model.fields.map(([name,label,type,required,options])=>{
  const val=existing?.[name]??'';
  const common='name="'+esc(name)+'" id="register-'+esc(name)+'" '+(required?'required ':'')+(name===model.id&&existing?'readonly ':'');
- const relationOptions=type==='category'?[...new Set(['Vestuário','Calçados','Acessórios',...registerRows('Categorias').map(x=>x.name)])]:type==='relation-group'?[...new Set(['Padrão do canal',...registerRows('Grupos econômicos').map(x=>x.name)])]:null;
+ const relationOptions=type==='category'?[...new Set(['Vestuário','Calçados','Acessórios',...registerRows('Categorias').map(x=>x.name)])]:type==='relation-group'?[...new Set(['Padrão do canal',...registerRows('Grupos econômicos').map(x=>x.name)])]:type==='relation-group-optional'?['Sem vínculo',...registerRows('Grupos econômicos').map(x=>x.name)]:null;
  const control=(type==='select'||relationOptions)?'<select '+common+'><option value="" disabled '+(!val?'selected':'')+'>Selecione uma opção</option>'+(relationOptions||options).map(x=>'<option value="'+esc(x)+'" '+(val===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>':
  '<input '+common+' type="'+(type==='money'||type==='number'?'number':type)+'" '+(type==='money'?'step="0.01" min="0"':type==='number'?'step="1" min="0"':'maxlength="160"')+' value="'+esc(val)+'">';
  return '<label for="register-'+esc(name)+'">'+esc(label)+(required?' *':'')+control+'</label>';
@@ -456,8 +456,17 @@ function openRegister(page,key){
   if(!existing&&data.some(x=>String(x[model.id]).toLocaleLowerCase('pt-BR')===id.toLocaleLowerCase('pt-BR'))){error.textContent='Já existe um cadastro com este código.';return}
   if(page==='Contratos'&&values.scope==='Grupo econômico'&&values.origin==='Padrão do canal'){error.textContent='Selecione o grupo econômico do contrato.';return}
   if(page==='Promoções'&&values.end<values.start){error.textContent='O fim da vigência não pode ser anterior ao início.';return}
-  if(page==='Produtos e SKUs'&&!existing){values.status=values.stock===0?'Esgotado':values.status}
-  if(page==='Clientes'){values.orders=existing?.orders??0;values.spent=existing?.spent??0}
+  if(page==='Produtos e SKUs'){
+   if(values.kind==='SKU / Variação'&&!values.parent){error.textContent='Informe o produto pai para uma variação.';return}
+   if(values.kind==='SKU / Variação'&&values.parent===values.sku){error.textContent='O SKU não pode ser seu próprio produto pai.';return}
+   if(values.kind==='SKU / Variação'&&!data.some(x=>x.sku===values.parent&&x.sku!==values.sku)){error.textContent='O produto pai informado deve existir entre os cadastros locais.';return}
+   if(values.kind==='Kit'&&values.parent){error.textContent='Kits não usam o campo Produto pai nesta simulação.';return}
+   if(!existing&&values.stock===0)values.status='Esgotado';
+ }
+  if(page==='Clientes'){
+   values.orders=existing?.orders??0;values.spent=existing?.spent??0;
+   if(values.type==='Pessoa física'&&values.group!=='Sem vínculo'){error.textContent='Somente pessoa jurídica pode ser vinculada a grupo econômico nesta demonstração.';return}
+ }
   const before=existing?{...existing}:null;
   if(existing)Object.assign(existing,values);else data.unshift(values);
   if(!persistRegisters(page)){if(existing)Object.assign(existing,before);else data.shift();return}
@@ -467,7 +476,9 @@ function openRegister(page,key){
 function confirmRegisterDelete(page,key){
  const model=registerModels[page],data=registerRows(page);const idx=data.findIndex(x=>String(x[model.id])===String(key));if(idx<0)return;
  if(!window.confirm('Excluir o registro fictício '+key+' deste navegador? Esta ação não afeta a plataforma.'))return;
+ if(page==='Produtos e SKUs'&&fakeProducts.some(p=>p.parent===key)){modal('Produto pai em uso','Este produto está relacionado a uma variação. Reatribua os SKUs antes de excluir.');return}
  if(page==='Categorias'&&fakeProducts.some(p=>p.category===data[idx].name)){modal('Categoria em uso','Esta categoria está vinculada a produtos demonstrativos. Reatribua os produtos antes de excluir.');return}
+ if(page==='Grupos econômicos'&&fakeCustomers.some(x=>x.group===data[idx].name)){modal('Grupo econômico em uso','Este grupo está vinculado a clientes de demonstração. Altere os vínculos antes de excluir.');return}
  if(page==='Grupos econômicos'&&registerRows('Contratos').some(x=>x.origin===data[idx].name)){modal('Grupo econômico em uso','Este grupo está vinculado a contratos demonstrativos. Altere os contratos antes de excluir.');return}
  const [removed]=data.splice(idx,1);if(!persistRegisters(page)){data.splice(idx,0,removed);return}
  renderActiveModule(page);toast('Registro demonstrativo excluído.');
@@ -476,6 +487,7 @@ function resetRegister(page){
  if(!window.confirm('Restaurar os exemplos e apagar os cadastros locais deste módulo?'))return;
  const rows=registerRows(page);
  if(page==='Categorias'&&rows.some(x=>fakeProducts.some(p=>p.category===x.name))){modal('Categorias em uso','Não é possível limpar categorias que estejam vinculadas a produtos. Reatribua os produtos primeiro.');return}
+ if(page==='Grupos econômicos'&&rows.some(x=>fakeCustomers.some(k=>k.group===x.name))){modal('Grupos em uso','Existem clientes associados. Altere os vínculos antes de limpar a lista.');return}
  if(page==='Grupos econômicos'&&rows.some(x=>registerRows('Contratos').some(k=>k.origin===x.name))){modal('Grupos em uso','Não é possível limpar grupos associados a contratos. Altere os vínculos primeiro.');return}
  const key=page==='Produtos e SKUs'?'products':page==='Clientes'?'customers':page;
  try{localStorage.removeItem(REGISTER_PREFIX+key)}catch(e){}
