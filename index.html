@@ -2191,6 +2191,51 @@ function catalogTypeIcon(p){
 }
 /* Lista única: Demonstração e Layer usam a mesma estrutura e as mesmas ações. */
 const catalogRowDetails=new Map();
+const catalogSummaryLoading=new Set();
+async function loadCatalogSummaries(){
+ if(catalogSource!=='layer'||!layerData?.items?.length||layerLoading)return;
+ const candidates=catalogFilteredRows().slice((layerPage-1)*layerPageSize,layerPage*layerPageSize);
+ const batches={products:[],skus:[],kits:[]};
+ for(const p of candidates){
+  const kind=p.entityType||'products',key=kind+':'+p.id;
+  if(!batches[kind]||!p.id||catalogRowDetails.has(key)||catalogSummaryLoading.has(key))continue;
+  batches[kind].push(String(p.id));
+  catalogSummaryLoading.add(key);
+ }
+ const queries=[];
+ for(const [kind,ids] of Object.entries(batches)){
+  for(let i=0;i<ids.length;i+=8){
+   const group=ids.slice(i,i+8);
+   queries.push((async()=>{
+    try{
+     const url=AUTH_API+'/api/catalog-summaries?type='+kind+'&ids='+encodeURIComponent(group.join(','));
+     const response=await fetch(url,{headers:{Authorization:'Bearer '+authSessionToken,Accept:'application/json'},cache:'no-store'});
+     if(!response.ok)throw new Error('SUMMARY_FAILED');
+     const payload=await response.json();
+     for(const value of payload.items||[]){
+      catalogRowDetails.set(kind+':'+value.id,{category:value.category,price:value.price,stock:value.stock});
+     }
+    }catch{}
+    finally{for(const id of group)catalogSummaryLoading.delete(kind+':'+id)}
+   })());
+  }
+ }
+ if(queries.length){
+  await Promise.all(queries);
+  if(catalogSource==='layer'&&vnextPage==='Produtos e SKUs')refreshCatalogSummaryCells();
+ }
+}
+function refreshCatalogSummaryCells(){
+ document.querySelectorAll('[data-catalog-summary]').forEach(el=>{
+  const type=el.dataset.catalogType,id=el.dataset.catalogId;
+  const record=layerData?.items?.find(row=>String(row.id)===id&&(row.entityType||'products')===type);
+  if(!record)return;
+  const col=el.dataset.catalogSummary;
+  const value=col==='category'?catalogCategoryName(record):col==='price'?catalogPriceText(record):catalogStockText(record);
+  el.textContent=value;
+ });
+}
+
 function demoCatalogRows(){
  let changed=false;
  const records=fakeProducts.map((p,index)=>{
@@ -2269,9 +2314,9 @@ function renderLayerProducts(){
  '<td><div class="catalog-thumb" '+(isLayer?'data-layer-thumbnail="'+esc(String(p.id))+'"':'')+'>'+layerThumb(p)+'</div></td>'+
  '<td><strong>'+layerEsc(p.name)+'</strong></td>'+
  '<td><span class="catalog-tooltip-icon" tabindex="0" aria-label="'+esc(layerTypeLabel(p))+'" data-tooltip="'+esc(layerTypeLabel(p))+'">'+catalogTypeIcon(p)+'</span></td>'+
- '<td>'+layerEsc(catalogCategoryName(p))+'</td>'+
+ '<td data-catalog-summary="category" data-catalog-type="'+esc(p.entityType||'products')+'" data-catalog-id="'+esc(String(p.id))+'">'+layerEsc(catalogCategoryName(p))+'</td>'+
  '<td><span class="catalog-tooltip-icon" tabindex="0" aria-label="'+esc(layerVisibilityLabel(p))+'" data-tooltip="'+esc(layerVisibilityLabel(p))+'">'+catalogVisibilityIcon(p)+'</span></td>'+
- '<td>'+layerEsc(p.brand)+'</td><td>'+catalogPriceText(p)+'</td><td>'+catalogStockText(p)+'</td>'+
+ '<td>'+layerEsc(p.brand)+'</td><td data-catalog-summary="price" data-catalog-type="'+esc(p.entityType||'products')+'" data-catalog-id="'+esc(String(p.id))+'">'+catalogPriceText(p)+'</td><td data-catalog-summary="stock" data-catalog-type="'+esc(p.entityType||'products')+'" data-catalog-id="'+esc(String(p.id))+'">'+catalogStockText(p)+'</td>'+
  '<td class="catalog-table-actions"><button type="button" data-catalog-action="view" data-catalog-id="'+esc(String(p.id))+'" data-catalog-kind="'+esc(p.entityType||'products')+'">Visualizar</button> '+
  '<button type="button" data-catalog-action="edit" data-catalog-id="'+esc(String(p.id))+'" data-catalog-kind="'+esc(p.entityType||'products')+'">Editar</button> '+
  '<button type="button" data-catalog-action="delete" data-catalog-id="'+esc(String(p.id))+'" data-catalog-kind="'+esc(p.entityType||'products')+'">Excluir</button></td></tr>').join('')+'</tbody></table></div>';
@@ -2402,7 +2447,7 @@ function bindLayerCatalog(target,page){
   }
   showLayerProductDetails(id,kind,action);
  }));
- if(catalogSource==='layer'&&layerData&&!layerLoading&&!layerError)fetchLayerThumbs();
+ if(catalogSource==='layer'&&layerData&&!layerLoading&&!layerError){fetchLayerThumbs();loadCatalogSummaries();}
 }
 
 function catalogValue(v){
