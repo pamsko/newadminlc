@@ -340,6 +340,21 @@ body.dark-mode{--navy:#062638;--navy2:#073b51;--text:#e5f4fa;--muted:#a9c0cd;--l
 .workflow-builder-head{display:grid;gap:4px;font-size:12px}.workflow-builder-head small{color:var(--muted)}
 .workflow-step-builder .vnext-toolbar{margin:12px 0}.workflow-step-builder input{min-width:180px;flex:1}
 .workflow-step-builder button{cursor:pointer}
+
+/* New Old: navegação clássica, hierarquia renovada, mesmos componentes e funcionalidades. */
+body.admin-new-old{--cyan:#62c7e9;--navy:#123149;--navy2:#1b4058;--bg:#f5f7fb}
+body.admin-new-old .sidebar{background:linear-gradient(180deg,#16334a 0%,#092437 100%)}
+body.admin-new-old .nav-label{color:#a9c5d2}
+body.admin-new-old .nav-folder{margin-bottom:2px}
+body.admin-new-old .nav-parent{border-radius:8px}
+body.admin-new-old .nav-child{border-left-color:#295c75}
+body.admin-new-old .nav-child.active{background:rgba(98,199,233,.17);color:#fff}
+body.admin-new-old .brand-type b{letter-spacing:.02em}
+body.admin-new-old .topbar{border-bottom:2px solid #b8e7f1}
+body.admin-new-old .version{border-color:#a6d7e2;background:#e5f6fa;color:#07566c}
+body.dark-mode.admin-new-old{--bg:#0b1c27;--card:#142d3a;--text:#e5f4fa;--line:#2a4654}
+body.dark-mode.admin-new-old .topbar{border-bottom-color:#315d6d}
+body.dark-mode.admin-new-old .version{background:#183d4a;color:#b6e9f5;border-color:#355d6c}
 </style>
 </head>
 <body>
@@ -349,7 +364,7 @@ body.dark-mode{--navy:#062638;--navy2:#073b51;--text:#e5f4fa;--muted:#a9c0cd;--l
 <div class="shell" id="appShell">
 <aside class="sidebar" aria-label="Navegação principal"><div class="brand"><div class="brand-type"><b>vNext</b><small>COMMERCE</small></div></div><button id="sidebarToggle" class="sidebar-toggle" type="button" aria-controls="nav" aria-expanded="true" aria-label="Recolher menu lateral" title="Recolher menu lateral"><span aria-hidden="true">☰</span><span class="toggle-label">Recolher menu</span></button>
 <div id="nav"></div><div class="nav-bottom"><button class="nav-item" data-page="Ajuda" title="Central de ajuda"><span class="ico">ⓘ</span><span class="nav-text">Central de ajuda</span></button><a class="nav-item nav-doc-link" href="./documentacao.html" title="Documentação do Admin"><span class="ico">▤</span><span class="nav-text">Documentação do Admin</span></a><div class="sandbox-note">vNext Commerce · Admin</div></div></aside>
-<div class="workspace"><header class="topbar"><div class="top-left"><div class="breadcrumb">vNext Commerce <span style="margin:0 7px">/</span> <b id="crumb">Área de trabalho</b></div></div><div class="vnext-context" id="vnextContext" aria-label="Contexto operacional"><label>Unidade<select id="ctxUnit"><option>B2C</option><option>B2B</option><option>Hub</option></select></label><label>Canal<select id="ctxChannel"></select></label><span id="ctxScope" class="vnext-context-scope">Contexto ativo</span></div><div class="top-search"><span>⌕</span><input id="globalSearch" aria-label="Buscar na plataforma" placeholder="Pesquisar na plataforma..."><span style="color:#94a8b1;font-size:11px">Ctrl K</span></div><div class="top-right"><button class="manu-top-trigger" id="manuTopTrigger" type="button" title="Abrir Manu IA"><span>✦</span> Manu IA</button><button class="icon-button" id="workQueue" title="Central de tarefas">☷ <span id="taskCount">0</span></button><span class="version"><i></i> vNext Commerce</span><button class="icon-button" id="notifications" title="Notificações">♧</button><div class="profile-wrap" id="profileWrap"><button class="profile-trigger" type="button" id="profileTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" title="Opções do usuário"><span class="profile-name" id="profileName">Usuário</span><span class="avatar" id="profileAvatar" aria-hidden="true">DE</span><span aria-hidden="true">⌄</span></button><div class="profile-menu" id="profileMenu" hidden><div class="profile-menu-head"><b id="menuUsername">Demonstração</b><small>Conta de acesso</small></div><label class="vnext-role">Perfil de acesso<select id="demoRole"><option value="Administrador">Administrador</option><option value="Operação">Operação</option><option value="Consulta">Consulta</option></select></label><button type="button" id="themeToggle">☾ <span id="themeLabel">Ativar modo escuro</span></button><button type="button" id="changePassword">⚿ Alterar senha</button><button type="button" id="signOut" class="signout">↪ Sair</button></div></div></div></header>
+<div class="workspace"><header class="topbar"><div class="top-left"><div class="breadcrumb">vNext Commerce <span style="margin:0 7px">/</span> <b id="crumb">Área de trabalho</b></div></div><div class="top-search"><span>⌕</span><input id="globalSearch" aria-label="Buscar na plataforma" placeholder="Pesquisar na plataforma..."><span style="color:#94a8b1;font-size:11px">Ctrl K</span></div><div class="top-right"><button class="manu-top-trigger" id="manuTopTrigger" type="button" title="Abrir Manu IA"><span>✦</span> Manu IA</button><button class="icon-button" id="workQueue" title="Central de tarefas">☷ <span id="taskCount">0</span></button><span class="version" id="adminVersionBadge"><i></i> New</span><button class="icon-button" id="notifications" title="Notificações">♧</button><div class="profile-wrap" id="profileWrap"><button class="profile-trigger" type="button" id="profileTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" title="Opções do usuário"><span class="profile-name" id="profileName">Usuário</span><span class="avatar" id="profileAvatar" aria-hidden="true">DE</span><span aria-hidden="true">⌄</span></button><div class="profile-menu" id="profileMenu" hidden><div class="profile-menu-head"><b id="menuUsername">Demonstração</b><small>Conta de acesso</small></div><label class="vnext-role" for="adminVersionSelect">Versão do Admin<select id="adminVersionSelect" aria-label="Selecionar versão do Admin"><option value="new">New</option><option value="new-old">New Old</option></select></label><button type="button" id="themeToggle">☾ <span id="themeLabel">Ativar modo escuro</span></button><button type="button" id="changePassword">⚿ Alterar senha</button><button type="button" id="signOut" class="signout">↪ Sair</button></div></div></div></header>
 <main class="content"><div class="heading"><div><div class="eyebrow">Visão geral da operação</div><h1 id="pageTitle">Área de trabalho</h1><div class="sub" id="pageSub">Acompanhe os resultados e identifique onde seu e-commerce mais vende.</div></div><span class="demo-chip">● Ambiente de avaliação</span></div>
 <div class="layout" id="adminLayout"><div class="main"><div id="moduleView" class="module-view" aria-live="polite"></div><div id="dashboardView" class="dashboard-view">
 <div class="control-row"><div class="segmented" role="group" aria-label="Tipo de pedido"><button class="active" data-mode="captados">Captados</button><button data-mode="adquiridos">Adquiridos</button></div><div class="filters"><label class="filter">Canal <select id="channel"><option value="all">Todos os canais</option><option value="loja">Loja virtual</option><option value="market">Marketplace</option><option value="b2b">B2B</option></select></label><label class="filter">Período <select id="period"><option value="today">Hoje</option><option value="7d">Últimos 7 dias</option><option value="30d">Últimos 30 dias</option></select></label><button class="refresh" id="reset" title="Restaurar filtros">↻</button></div></div>
@@ -389,18 +404,86 @@ const menuGroups=[
 {name:'Configurações',icon:'⚙',children:[['Configurações gerais','Configurações'],['Meios de entrega','Meios de entrega'],['Meios de pagamento','Meios de pagamento'],['Tarefas e cache','Tarefas e cache'],['Usuários e permissões','Usuários e permissões'],['Segurança e privacidade','Segurança e privacidade'],['Auditoria e logs','Auditoria e logs'],['Suporte','Suporte']]}]}
 ];
 const nav=document.getElementById('nav');
+
 const originalRouteNames=['Backoffice','Catálogo','Busca','Clientes','Marketing','Aparência','Configs','Canais','Recorrência','Integrações','Relatórios','Financeiro','Privacidade'];
-function navMarkup(){
-return menuGroups.map(group=>'<div class="nav-group"><div class="nav-label">'+group.title+'</div>'+
-group.items.map(item=>{
-const children=item.children||[];
-if(!children.length)return '<button class="nav-item active" title="'+item.name+'" data-page="'+item.route+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span></button>';
-return '<div class="nav-folder"><button class="nav-item nav-parent" type="button" title="'+item.name+'" aria-expanded="false" data-folder="'+item.name+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span><span class="nav-caret">⌄</span></button><div class="nav-children" hidden>'+
-children.map(([name,route])=>'<button class="nav-child" type="button" data-page="'+route+'">'+name+'</button>').join('')+
-'</div></div>';
-}).join('')+'</div>').join('');
+const ADMIN_VERSION_KEY='vnext-admin-layout-version';
+let adminVersion='new';
+try{if(localStorage.getItem(ADMIN_VERSION_KEY)==='new-old')adminVersion='new-old'}catch(e){}
+function newOldMenuGroups(){
+ const folders=menuGroups.flatMap(g=>g.items);
+ const byName=name=>folders.find(i=>i.name===name)?.children||[];
+ const root=(name,icon,children)=>({name,icon,children});
+ const unique=arr=>{const seen=new Set();return arr.filter(x=>{if(seen.has(x[1]))return false;seen.add(x[1]);return true})};
+ const main=[
+ root('Backoffice','▤',[['Área de trabalho','Área de trabalho'],...byName('Pedidos'),['Tarefas e notificações','Tarefas e notificações'],['Saúde operacional','Saúde operacional']]),
+ root('Catálogo','◇',byName('Catálogo')),
+ root('Busca','⌕',[['Smart Finder','Smart Finder'],['Configurações básicas','Smart Finder — Básicas'],['Configurações avançadas','Smart Finder — Avançadas'],['Configurações por grupo','Smart Finder — Grupos'],['Sinônimos','Smart Finder — Sinônimos']]),
+ root('Clientes','♙',byName('Clientes e B2B')),
+ root('Marketing','◈',byName('Marketing').filter(x=>x[1]!=='Recorrência')),
+ root('Aparência','▥',byName('Experiência da loja').filter(x=>!x[1].startsWith('Smart Finder'))),
+ root('Configs','⚙',byName('Configurações').filter(x=>!['Segurança e privacidade','Auditoria e logs'].includes(x[1]))),
+ root('Canais','▧',byName('Canais')),
+ root('Recorrência','↻',[['Recorrência','Recorrência']]),
+ root('Integrações','⇄',byName('Integrações')),
+ root('Relatórios','▦',[['Manu IA','Manu IA'],...byName('Relatórios'),['Simulador B2B','Simulador B2B']]),
+ root('Financeiro','◉',byName('Financeiro')),
+ root('Privacidade','♧',[['Segurança e privacidade','Segurança e privacidade'],['Auditoria e logs','Auditoria e logs'],['Auditoria','Auditoria demonstrativa']])
+ ];
+ // Todas as rotas da versão New devem continuar alcançáveis na estrutura clássica.
+ const originalRoutes=new Set(folders.flatMap(i=>i.children?i.children.map(x=>x[1]):[i.route]));
+ const classicRoutes=new Set(main.flatMap(i=>i.children.map(x=>x[1])));
+ const missing=[...originalRoutes].filter(x=>!classicRoutes.has(x));
+ if(missing.length)main[6].children.push(...missing.map(x=>[x,x]));
+ main.forEach(group=>group.children=unique(group.children));
+ return [{title:'Admin · Navegação clássica',items:main}];
 }
-nav.innerHTML=navMarkup();
+function navMarkup(){
+ const groups=adminVersion==='new'?menuGroups:newOldMenuGroups();
+ return groups.map(group=>'<div class="nav-group"><div class="nav-label">'+group.title+'</div>'+
+ group.items.map(item=>{
+ const children=item.children||[];
+ if(!children.length)return '<button class="nav-item" title="'+item.name+'" data-page="'+item.route+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span></button>';
+ return '<div class="nav-folder"><button class="nav-item nav-parent" type="button" title="'+item.name+'" aria-expanded="false" data-folder="'+item.name+'"><span class="ico">'+item.icon+'</span><span class="nav-text">'+item.name+'</span><span class="nav-caret">⌄</span></button><div class="nav-children" hidden>'+
+ children.map(([name,route])=>'<button class="nav-child" type="button" data-page="'+route+'">'+name+'</button>').join('')+
+ '</div></div>';
+ }).join('')+'</div>').join('');
+}
+function renderAdminNav(){
+ const selected=typeof vnextPage==='string'?vnextPage:'Área de trabalho';
+ nav.innerHTML=navMarkup();
+ const link=[...nav.querySelectorAll('[data-page]')].find(el=>el.dataset.page===selected);
+ if(link){
+  link.classList.add('active');const folder=link.closest('.nav-folder');
+  if(folder){const trigger=folder.querySelector('[data-folder]');if(trigger){trigger.setAttribute('aria-expanded','true');trigger.nextElementSibling.hidden=false}}
+ }
+}
+function updateAdminVersionUI(){
+ document.body.classList.toggle('admin-new-old',adminVersion==='new-old');
+ const badge=document.getElementById('adminVersionBadge');
+ if(badge)badge.innerHTML='<i></i> '+(adminVersion==='new'?'New':'New Old');
+ const select=document.getElementById('adminVersionSelect');
+ if(select)select.value=adminVersion;
+ const aside=document.querySelector('.brand-type small');
+ if(aside)aside.textContent=adminVersion==='new'?'COMMERCE · NEW':'COMMERCE · NEW OLD';
+}
+function setAdminVersion(version){
+ if(!['new','new-old'].includes(version))return;
+ if(version===adminVersion)return;
+ if(document.querySelector('.expanded-register-overlay')){
+  const select=document.getElementById('adminVersionSelect');
+  if(select)select.value=adminVersion;
+  toast('Conclua ou feche o cadastro antes de mudar a versão.');
+  return;
+ }
+ adminVersion=version;
+ try{localStorage.setItem(ADMIN_VERSION_KEY,version)}catch(e){}
+ updateAdminVersionUI();
+ renderAdminNav();
+ setProfile(false);
+ auditEvent('Alterar versão','Admin',version==='new'?'New':'New Old');
+ toast('Admin '+(version==='new'?'New':'New Old')+' selecionado.');
+}
+renderAdminNav();
 const shell=document.getElementById('appShell');
 const toggle=document.getElementById('sidebarToggle');
 function setSidebarCollapsed(collapsed){
@@ -461,15 +544,10 @@ let toastTimer;function toast(msg){const t=document.getElementById('toast');t.te
 function modal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalText').textContent=body;document.getElementById('modalLayer').classList.add('open')}
 function closeModal(){document.getElementById('modalLayer').classList.remove('open')}
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.mode;sync()}));document.querySelectorAll('[data-period]').forEach(b=>b.addEventListener('click',()=>{state.period=b.dataset.period;sync()}));document.querySelectorAll('[data-geo]').forEach(b=>b.addEventListener('click',()=>{state.geo=b.dataset.geo;sync()}));document.querySelectorAll('[data-channelmetric]').forEach(b=>b.addEventListener('click',()=>{state.channelMetric=b.dataset.channelmetric;sync()}));document.getElementById('channel').addEventListener('change',e=>{state.channel=e.target.value;sync()});document.getElementById('period').addEventListener('change',e=>{state.period=e.target.value;sync()});document.getElementById('reset').addEventListener('click',()=>{state.mode='captados';state.period='today';state.channel='all';state.geo='state';state.channelMetric='revenue';state.selectedUF='';sync();toast('Filtros restaurados.')});document.querySelectorAll('[data-banner]').forEach(b=>b.addEventListener('click',()=>b.dataset.banner==='Manu IA'?navigate('Manu IA'):modal(b.dataset.banner,'Conheça as novidades e funcionalidades disponíveis para sua operação.')));
-document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));
+nav.addEventListener('click',e=>{const b=e.target.closest('[data-page],[data-folder]');if(!b||!nav.contains(b))return;if(b.dataset.page){navigate(b.dataset.page);return}if(b.dataset.folder){if(document.getElementById('appShell').classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);const expanded=b.getAttribute('aria-expanded')==='true';nav.querySelectorAll('[data-folder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true});b.setAttribute('aria-expanded',String(!expanded));b.nextElementSibling.hidden=expanded}});
 document.querySelectorAll('[data-quick]').forEach(b=>b.addEventListener('click',()=>{const route=b.dataset.quick;if(route==='Pedidos'){orderView='Todos';moduleFilters={query:'',status:b.dataset.quickstatus||'Todos',channel:'Todos'};}navigate(route);if(route==='Pedidos'&&b.dataset.quickstatus){moduleFilters.status=b.dataset.quickstatus;renderActiveModule(route)}}));
 
-document.querySelectorAll('[data-folder]').forEach(b=>b.addEventListener('click',()=>{
-if(document.getElementById('appShell').classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);
-const open=b.getAttribute('aria-expanded')==='true';
-document.querySelectorAll('[data-folder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true;});
-b.setAttribute('aria-expanded',String(!open));b.nextElementSibling.hidden=open;
-}));document.getElementById('notifications').addEventListener('click',()=>navigate('Tarefas e notificações'));document.getElementById('closeModal').addEventListener('click',closeModal);document.getElementById('modalOK').addEventListener('click',closeModal);document.getElementById('modalLayer').addEventListener('click',e=>{if(e.target.id==='modalLayer')closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('globalSearch').focus()}});
+document.getElementById('notifications').addEventListener('click',()=>navigate('Tarefas e notificações'));document.getElementById('closeModal').addEventListener('click',closeModal);document.getElementById('modalOK').addEventListener('click',closeModal);document.getElementById('modalLayer').addEventListener('click',e=>{if(e.target.id==='modalLayer')closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('globalSearch').focus()}});
 
 const fakeOrders=[
 {id:'105842',client:'Mariana Oliveira',channel:'Loja virtual',payment:'Pix',status:'Pago',total:359.90,date:'03/11/2026 14:32',items:3},
@@ -1261,31 +1339,9 @@ function auditEvent(action,entity,details){
 function demoCan(action){return vnextRole==='Administrador'||(vnextRole==='Operação'&&action!=='delete'&&action!=='export'&&action!=='publish')}
 function demoGuard(action,feature){if(demoCan(action))return true;toast('Perfil '+vnextRole+': ação '+feature+' indisponível nesta simulação.');auditEvent('Acesso bloqueado','Permissões',feature);return false}
 function vnextContextInit(){
- const restored=vnextRead(VNEXT_CONTEXT_KEY,{unit:'B2C',channel:'Loja virtual'});
- if(VNEXT_CHANNELS[restored.unit])vnextContext.unit=restored.unit;
- vnextContext.channel=VNEXT_CHANNELS[vnextContext.unit].includes(restored.channel)?restored.channel:VNEXT_CHANNELS[vnextContext.unit][0];
- const unit=document.getElementById('ctxUnit'),channel=document.getElementById('ctxChannel');
- const syncContext=()=>{
-  unit.value=vnextContext.unit;
-  channel.innerHTML=VNEXT_CHANNELS[vnextContext.unit].map(x=>'<option '+(x===vnextContext.channel?'selected':'')+'>'+esc(x)+'</option>').join('');
-  document.getElementById('ctxScope').textContent='Conta principal';
-  document.getElementById('vnextContext').title='Unidade e canal selecionados: '+vnextContext.unit+' / '+vnextContext.channel;
- };
- syncContext();
- const changeScope=(nextUnit,nextChannel)=>{
-  if(document.querySelector('.expanded-register-overlay')&&!window.confirm('Existe um cadastro aberto. Deseja mudar o contexto?'))return syncContext();
-  const previous=vnextContext.unit+'/'+vnextContext.channel;
-  vnextContext={unit:nextUnit,channel:nextChannel};
-  vnextStore(VNEXT_CONTEXT_KEY,vnextContext);syncContext();auditEvent('Alterar contexto','Ambiente',previous+' → '+nextUnit+'/'+nextChannel);
-  if(vnextPage==='Área de trabalho')sync();else renderActiveModule(vnextPage);
- };
- unit.addEventListener('change',()=>changeScope(unit.value,VNEXT_CHANNELS[unit.value][0]));
- channel.addEventListener('change',()=>changeScope(unit.value,channel.value));
- const role=document.getElementById('demoRole');role.value=vnextRole;role.addEventListener('change',()=>{
-  vnextRole=role.value;setProfile(false);auditEvent('Alterar perfil demonstrativo','Perfil',vnextRole);
-  if(vnextPage!=='Área de trabalho')renderActiveModule(vnextPage);
-  toast('Perfil ativo: '+vnextRole);
- });
+ // Compatibilidade com cadastros existentes; a seleção global saiu da interface.
+ vnextContext={unit:'B2C',channel:'Loja virtual'};
+ vnextRole='Administrador';
 }
 function vnextSearchData(query){
  const q=query.trim().toLocaleLowerCase('pt-BR');if(q.length<2)return [];
@@ -1637,6 +1693,7 @@ document.getElementById('demoLoginForm').addEventListener('submit',e=>{
 });
 document.getElementById('profileTrigger').addEventListener('click',()=>setProfile(document.getElementById('profileMenu').hidden));
 document.getElementById('themeToggle').addEventListener('click',()=>{setDarkMode(!document.body.classList.contains('dark-mode'));setProfile(false)});
+document.getElementById('adminVersionSelect').addEventListener('change',e=>setAdminVersion(e.target.value));
 document.getElementById('signOut').addEventListener('click',signOutDemo);
 document.getElementById('changePassword').addEventListener('click',()=>{
  setProfile(false);document.getElementById('passwordError').textContent='';
@@ -1665,6 +1722,8 @@ const persistedUser=storedSession();if(persistedUser)showAdmin(persistedUser);
 
 loadRegisters();
 vnextContextInit();
+updateAdminVersionUI();
+renderAdminNav();
 vnextSearchInit();
 document.getElementById('manuTopTrigger').addEventListener('click',()=>navigate('Manu IA'));
 document.getElementById('workQueue').addEventListener('click',()=>navigate('Tarefas e notificações'));
