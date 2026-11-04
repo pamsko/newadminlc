@@ -831,6 +831,7 @@ function bindSmartDemo(target,page){
  target.querySelectorAll('.smart-setting select').forEach((el,i)=>{const v=smartPending[page]||current.draft.fields;el.value=v[i]||el.value;el.addEventListener('change',()=>{smartPending[page]=smartFormValues(target);const status=target.querySelector('.smart-actions .status');if(status)status.textContent='Alterações ainda não salvas neste navegador.'})});
  target.querySelectorAll('[data-smartaction]').forEach(btn=>btn.addEventListener('click',()=>{
  const action=btn.dataset.smartaction;
+ if(action!=='Visualizar preview'&&!demoGuard(action==='Publicar'?'publish':'write','configurar Smart Finder'))return;
  if(action==='Salvar rascunho'){
   const state=smartStore(page);state.draft={fields:smartFormValues(target)};state.previewed=false;
   if(!stage)state.published={fields:[...state.draft.fields]};
@@ -850,7 +851,7 @@ function bindSmartDemo(target,page){
   if(!state.previewed){toast('Visualize a prévia do rascunho antes da publicação.');return}
   if(!window.confirm('Simular a publicação? Nenhum ambiente real será alterado.'))return;
   state.published={fields:[...state.draft.fields]};state.previewed=false;state.logs=(state.logs||[]).concat([{action:'Publicação simulada',date:new Date().toLocaleString('pt-BR')}]).slice(-30);
-  if(saveSmartStore(page,state)){renderActiveModule(page);toast('Publicação local simulada com sucesso.')}
+  if(saveSmartStore(page,state)){auditEvent('Publicação simulada',page,'Configuração local');renderActiveModule(page);toast('Publicação local simulada com sucesso.')}
  }
  }));
 }
@@ -999,9 +1000,9 @@ function bindStudio(target){
  target.querySelector('#studioDevice').addEventListener('change',e=>{studioDevice=e.target.value;renderActiveModule('Commerce Studio')});
  const preview=()=>{const v=studioData();studioPending.set(studioKey(),v);target.querySelector('#studioFrame').innerHTML=renderStudioPreview(v);const status=target.querySelector('.studio-status');if(status)status.setAttribute('title','Há edições não salvas neste canal/tema')};
  ['studioTitle','studioSubtitle','studioButton','studioBanner','studioFeatured'].forEach(id=>target.querySelector('#'+id)?.addEventListener('input',preview));
- target.querySelector('#studioSave').addEventListener('click',()=>{const v=studioData();if(!v.title||!v.button){toast('Informe título e texto do botão.');return}const s=studioRead();s.draft=v;if(studioWrite(s)){studioPending.delete(studioKey());toast('Rascunho salvo neste navegador.');renderActiveModule('Commerce Studio')}});
- target.querySelector('#studioPublish').addEventListener('click',()=>{const v=studioData();if(!v.title||!v.button){toast('Informe título e texto do botão.');return}if(!window.confirm('Simular a publicação desta versão? Nenhuma loja real será alterada.'))return;const s=studioRead();s.draft=v;s.published={...v};s.history.push({version:'v'+(s.history.length+1),date:new Date().toLocaleString('pt-BR'),channel:studioChannel,theme:studioTheme});if(studioWrite(s)){studioPending.delete(studioKey());toast('Publicação simulada registrada localmente.');renderActiveModule('Commerce Studio')}});
- target.querySelector('#studioRevert').addEventListener('click',()=>{if(!window.confirm('Descartar alterações do rascunho local e restaurar a última versão simulada?'))return;const s=studioRead();s.draft={...s.published};if(studioWrite(s)){studioPending.delete(studioKey());toast('Rascunho restaurado.');renderActiveModule('Commerce Studio')}});
+ target.querySelector('#studioSave').addEventListener('click',()=>{if(!demoGuard('write','salvar tema'))return;const v=studioData();if(!v.title||!v.button){toast('Informe título e texto do botão.');return}const s=studioRead();s.draft=v;if(studioWrite(s)){studioPending.delete(studioKey());toast('Rascunho salvo neste navegador.');renderActiveModule('Commerce Studio')}});
+ target.querySelector('#studioPublish').addEventListener('click',()=>{if(!demoGuard('publish','publicar tema'))return;const v=studioData();if(!v.title||!v.button){toast('Informe título e texto do botão.');return}if(!window.confirm('Simular a publicação desta versão? Nenhuma loja real será alterada.'))return;const s=studioRead();s.draft=v;s.published={...v};s.history.push({version:'v'+(s.history.length+1),date:new Date().toLocaleString('pt-BR'),channel:studioChannel,theme:studioTheme});if(studioWrite(s)){auditEvent('Publicação simulada','Commerce Studio',studioChannel+'/'+studioTheme);studioPending.delete(studioKey());toast('Publicação simulada registrada localmente.');renderActiveModule('Commerce Studio')}});
+ target.querySelector('#studioRevert').addEventListener('click',()=>{if(!demoGuard('write','restaurar rascunho'))return;if(!window.confirm('Descartar alterações do rascunho local e restaurar a última versão simulada?'))return;const s=studioRead();s.draft={...s.published};if(studioWrite(s)){studioPending.delete(studioKey());toast('Rascunho restaurado.');renderActiveModule('Commerce Studio')}});
 }
 
 
