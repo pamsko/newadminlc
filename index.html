@@ -504,6 +504,11 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .wf-table-actions{position:relative}.wf-table-actions summary{list-style:none;border:1px solid var(--line);padding:7px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;background:var(--card);font-size:12px}.wf-table-actions summary::-webkit-details-marker{display:none}
 .wf-table-actions-list{position:absolute;right:0;top:calc(100% + 5px);z-index:20;min-width:178px;border:1px solid var(--line);box-shadow:var(--shadow);background:var(--card);padding:6px;border-radius:10px;display:grid;gap:2px}
 .workflow-table .wf-table-actions-list button{border:0;text-align:left;background:transparent;border-radius:6px;padding:9px 10px;color:var(--text)}.workflow-table .wf-table-actions-list button:hover{background:var(--bg)}.workflow-table .wf-table-actions-list button:last-child{color:#b84a4a}
+
+.wf-template-choice{padding:15px 0 19px;margin-bottom:16px;border-bottom:1px solid var(--line)}.wf-template-choice>strong{font-size:12px;display:block;margin-bottom:12px}.wf-template-choice>strong small{font-weight:400;color:var(--muted)}
+.wf-template-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:940px}.wf-template-list button{display:grid;grid-template-columns:30px 1fr;gap:3px 10px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px;color:var(--text)}
+.wf-template-list button:hover{background:var(--cyan-soft);border-color:#72c8d9}.wf-template-list button>span{grid-row:span 2;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#dbf8fc;color:#047993}
+.wf-template-list button b{font-size:12px}.wf-template-list button small{color:var(--muted);font-size:10px}@media(max-width:700px){.wf-template-list{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1619,6 +1624,11 @@ function openWorkflowEditor(code){
  draft.triggerMode=draft.triggerMode||(draft.event==='Execução manual'?'Manual':'Evento');
  draft.tasks=old?workflowTaskRows(old):[];
  let mode='simple',stage=0,dirty=false,taskQuery='',taskCategory='Todas',selected=-1,dragged=null,draftTimer=null;
+ const workflowTemplates={
+  paid:{name:'Processar pedido pago',entity:'Pedido',event:'OrderPaid',description:'Atualizar o pedido após o pagamento',tasks:[{name:'Alterar status',param:'Em separação'},{name:'Enviar e-mail ao consumidor',param:'Pagamento aprovado'}]},
+  customer:{name:'Receber novo cliente',entity:'Cliente',event:'CustomerInserted',description:'Comunicar a criação de uma conta',tasks:[{name:'Enviar e-mail ao consumidor',param:'Boas-vindas'}]},
+  shipped:{name:'Avisar sobre envio',entity:'Pedido',event:'OrderShipped',description:'Notificar o cliente quando o pedido for enviado',tasks:[{name:'Enviar e-mail ao consumidor',param:'Pedido enviado'}]}
+ };
  const draftKey='vnext-workflow-draft:'+draft.code;
  const recovered=vnextRead(draftKey,null);
  if(recovered&&window.confirm('Existe um rascunho local deste fluxo. Deseja recuperar?'))draft={...draft,...recovered,tasks:recovered.tasks||draft.tasks};
@@ -1647,7 +1657,7 @@ function openWorkflowEditor(code){
  const sections=[
  ()=>{
   const base=intro(1,'Qual processo você quer automatizar?','Dê um nome fácil de reconhecer e escolha onde a automação acontece.');
-  return base+'<div class="wf-editor-fields">'+inp('Nome do fluxo *','name',draft.name)+sel('Onde acontece? *','entity',Object.keys(workflowEventMap),draft.entity)+(mode==='advanced'?inp('Código','code',draft.code,'text',old?'readonly':'')+sel('Tipo de fluxo','kind',['Sequencial','Máquina de Estados'],workflowKind(draft))+inp('Identificador de integração','integrationId',draft.integrationId):'')+area('Descrição do objetivo','description',draft.description)+'</div>'+
+  return base+(mode==='simple'?'<div class="wf-template-choice"><strong>Começar por um modelo <small>(opcional)</small></strong><div class="wf-template-list"><button type="button" data-wf-template="paid"><span>▣</span><b>Pedido pago</b><small>Atualizar pedido e avisar cliente</small></button><button type="button" data-wf-template="customer"><span>♙</span><b>Novo cliente</b><small>Comunicar cadastro realizado</small></button><button type="button" data-wf-template="shipped"><span>↗</span><b>Pedido enviado</b><small>Notificar o envio</small></button></div></div>':'')+'<div class="wf-editor-fields">'+inp('Nome do fluxo *','name',draft.name)+sel('Onde acontece? *','entity',Object.keys(workflowEventMap),draft.entity)+(mode==='advanced'?inp('Código','code',draft.code,'text',old?'readonly':'')+sel('Tipo de fluxo','kind',['Sequencial','Máquina de Estados'],workflowKind(draft))+inp('Identificador de integração','integrationId',draft.integrationId):'')+area('Descrição do objetivo','description',draft.description)+'</div>'+
   help('Comece por um fluxo simples','Exemplo: quando um pedido for pago, atualizar seu status e avisar o time. Você pode mudar para Avançado a qualquer momento.');
  },
  ()=>{
@@ -1722,6 +1732,12 @@ function openWorkflowEditor(code){
    else if(['kind','triggerMode'].includes(key))render();
   }));
   main.querySelectorAll('[data-wf-field]').forEach(x=>x.addEventListener('input',()=>{draft[x.dataset.wfField]=x.value;makeDirty()}));
+  main.querySelectorAll('[data-wf-template]').forEach(x=>x.addEventListener('click',()=>{
+   const preset=workflowTemplates[x.dataset.wfTemplate];if(!preset)return;
+   if(draft.tasks.length&&!window.confirm('Utilizar este modelo e substituir as ações atuais?'))return;
+   Object.assign(draft,{name:preset.name,entity:preset.entity,kind:'Sequencial',triggerMode:'Evento',event:preset.event,description:preset.description,tasks:preset.tasks.map(t=>({...t}))});
+   makeDirty();render();notice('Modelo aplicado. Você pode editar tudo antes de salvar.');
+  }));
   main.querySelectorAll('[data-wf-trigger]').forEach(x=>x.addEventListener('click',()=>{draft.triggerMode=x.dataset.wfTrigger;makeDirty();render()}));
   main.querySelectorAll('[data-wf-event]').forEach(x=>x.addEventListener('click',()=>{draft.triggerMode='Evento';draft.event=x.dataset.wfEvent;makeDirty();render()}));
   main.querySelector('#wfTaskQuery')?.addEventListener('input',x=>{taskQuery=x.target.value;const cursor=x.target.selectionStart;render();const field=el('wfTaskQuery');field?.focus();if(field&&cursor!=null)field.setSelectionRange(cursor,cursor)});
