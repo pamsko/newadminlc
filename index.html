@@ -543,7 +543,7 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 
 /* 2026-11: telas focadas em operação — remove painéis de descoberta e avisos pedagógicos. */
 .domain-banner,.domain-info,.vnext-help,.module-highlight,.module-secondary,
-.module-intro,.module-tiles,.demo-register-note:not(.catalog-status),
+.module-tiles,.demo-register-note:not(.catalog-status),
 .module-toolbar .eyebrow{display:none!important}
 .module-toolbar{margin-bottom:12px}
 .module-toolbar .sub{display:none}
@@ -2139,7 +2139,9 @@ function renderDiscoveryScreen(page){
  '<div class="domain-info">Utilize o cadastro abaixo para adicionar e gerenciar registros próprios neste ambiente.</div></section>'+(registerModels[page]?renderRegisterList(page):'');
 }
 
-function renderLanding(page){return moduleShell(page,'Gerencie '+page.toLowerCase()+'.','<div class="module-intro"><section class="module-highlight"><div class="eyebrow" style="color:#00dbff">Próxima evolução</div><h2>'+esc(page)+' no vNext Commerce</h2><p>Estrutura dedicada do módulo, pronta para evoluir com fluxos de trabalho, regras de negócio e integrações reais.</p></section><section class="module-secondary"><h3>O que podemos detalhar?</h3><p>Jornadas operacionais, indicadores, formulários, permissões, filtros e ações específicas do módulo.</p><button class="primary" id="moduleExplore">Explorar funcionalidades</button></section></div><div class="module-tiles"><button class="module-tile" data-feature="Visão geral"><b>Visão geral</b><span>Indicadores e tarefas principais</span></button><button class="module-tile" data-feature="Gestão"><b>Gestão</b><span>Listagem, busca e filtros</span></button><button class="module-tile" data-feature="Configurações"><b>Configurações</b><span>Regras e parâmetros operacionais</span></button></div>')}
+function renderLanding(page){
+ return '<section class="panel module-panel"><div class="panel-title"><div><h2>'+esc(page)+'</h2><p>Registros</p></div></div><div class="module-filters"><input type="search" aria-label="Buscar registros" placeholder="Buscar registros..." disabled><button type="button" disabled>Filtrar</button></div><div class="demo-register-table"><table><thead><tr><th>ID</th><th>Nome / referência</th><th>Situação</th><th>Atualizado em</th><th>Ações</th></tr></thead><tbody></tbody></table></div><div class="module-empty">Nenhum registro disponível para esta área.</div></section>';
+}
 
 let selectedOrderId=null,selectedOrderTab='overview';
 const orderTabsDetail=[['overview','Visão geral'],['items','Itens'],['payment','Pagamento'],['shipping','Entrega'],['history','Histórico'],['integrations','Integrações']];
@@ -2518,7 +2520,6 @@ target.querySelectorAll('[data-product]').forEach(b=>b.addEventListener('click',
 function navigate(page){vnextPage=page;selectedOrderId=null;document.getElementById('homeShortcut')?.classList.toggle('active',page==='Área de trabalho');renderAdminNav(page);moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);window.scrollTo({top:0,behavior:'instant'})}
 
 
-/* Experiência de login demonstrativo. Não é autenticação nem controle de acesso. */
 /* Autenticação verificada pelo Cloudflare Worker — nunca por senha no navegador. */
 const AUTH_API='https://newadminlc-api.pamelasko.workers.dev';
 const AUTH_SESSION_KEY='newadminlc-auth-session-v1';
