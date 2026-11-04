@@ -648,6 +648,12 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-filter-row{grid-template-columns:repeat(5,minmax(110px,1fr)) auto}
 @media(max-width:1100px){.catalog-filter-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.catalog-filter-row{grid-template-columns:1fr}}
+
+.catalog-list-panel .catalog-table-actions button{font:inherit;border-radius:7px;padding:7px 11px;border:1px solid var(--line);cursor:pointer}
+.catalog-list-panel .catalog-table-actions button[data-layer-edit]{background:var(--navy);border-color:var(--navy);color:#fff}
+.catalog-list-panel .catalog-table-actions button[data-layer-detail]{background:var(--card);color:var(--text)}
+.catalog-list-panel .catalog-table-actions button:hover{filter:brightness(.94)}
+.catalog-readonly-banner{line-height:1.5}
 </style>
 </head>
 <body>
@@ -2253,7 +2259,7 @@ const CATALOG_FIELD_LABELS={
  variationProperties:'Variações e metadados',associations:'Associações',associationDataSources:'Fontes das associações',
  loyaltyPrograms:'Programas de fidelidade',suppliers:'Fornecedores',inventorySettings:'Estoque',
  dimensions:'Dimensões',misc:'Outras configurações',rules:'Regras do kit',pricing:'Preços do kit',
- composition:'Composição',items:'Itens do kit',skuIds:'IDs dos SKUs',
+ composition:'Composição',items:'Itens do kit',media:'Mídias',skus:'SKUs vinculados',skuIds:'IDs dos SKUs',
  pageTitle:'Título da página',urlFriendly:'URL amigável',metaDescription:'Meta description',
  metaKeywords:'Palavras-chave',searchKeywords:'Termos de busca',isVisible:'Visível',isSearchable:'Pesquisável',
  longDescription:'Descrição completa',shortDescription:'Descrição resumida',
@@ -2265,7 +2271,8 @@ const CATALOG_ENTITY_GROUPS={
   ['Exibição',['display','availability']],
   ['Conteúdo e SEO',['descriptions','seo']],
   ['Categorias e classificações',['categories','flags','tags','propertyValues']],
-  ['SKUs e relacionamentos',['skuIds','associations','associationDataSources']],
+  ['SKUs e relacionamentos',['skuIds','skus','associations','associationDataSources']],
+  ['Mídias',['media']],
   ['Entrega',['shipping']],
   ['Referências e programas',['references','loyaltyPrograms']]
  ],
@@ -2282,6 +2289,7 @@ const CATALOG_ENTITY_GROUPS={
   ['Exibição',['isVisible','isSearchable','visibleFrom','visibleTo','sendToMarketplace']],
   ['Categorias',['categories']],
   ['Regras e composição',['rules','composition','items']],
+  ['Mídias',['media']],
   ['Preços e disponibilidade',['pricing','availability']],
   ['Entrega',['shipping']],
   ['Conteúdo',['seo','descriptions','display']]
