@@ -260,6 +260,43 @@ body.dark-mode{--navy:#062638;--navy2:#073b51;--text:#e5f4fa;--muted:#a9c0cd;--l
 .dark-mode .expanded-register-actions .expanded-register-save{background:#07516a;color:#fff}
 @media(max-width:780px){.expanded-register-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.expanded-register-tabs{display:flex;overflow:auto;max-height:80px;border-right:0;border-bottom:1px solid #dce9ef}.expanded-register-tabs button{white-space:nowrap;width:auto}.expanded-register-fields{grid-template-columns:1fr}.expanded-register-content{padding:16px}.expanded-register-header{padding:13px}.expanded-register-actions{justify-content:space-between}}
 
+
+/* Fundação transversal vNext: contexto, navegação e leitura operacional */
+.vnext-context{display:flex;align-items:center;gap:7px;min-width:0}
+.vnext-context label{font-size:10px;color:var(--muted);font-weight:800;display:grid;gap:2px}
+.vnext-context select{border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);font-size:12px;max-width:120px;padding:5px}
+.vnext-context-scope{font-size:10px;color:var(--muted);max-width:70px;line-height:1.2}
+.vnext-role{display:grid;padding:10px;font-size:11px;font-weight:700;color:var(--muted);gap:4px}
+.vnext-role select{width:100%;border:1px solid var(--line);padding:7px;background:var(--card);color:var(--text);border-radius:7px}
+.vnext-panel{border:1px solid var(--line);background:var(--card);border-radius:13px;padding:17px;margin:12px 0}
+.vnext-panel h3{margin:0 0 8px;font-size:16px}
+.vnext-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.vnext-toolbar button,.vnext-toolbar select,.vnext-toolbar input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);color:var(--text);font-size:12px}
+.vnext-toolbar button{cursor:pointer}
+.vnext-toolbar button.primary{background:var(--navy);color:#fff}
+.vnext-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:11px;margin:12px 0}
+.vnext-metric{background:var(--card);padding:16px;border-radius:12px;border:1px solid var(--line)}
+.vnext-metric small{display:block;color:var(--muted);margin-bottom:6px}
+.vnext-metric strong{font-size:20px;display:block}
+.vnext-metric p{font-size:12px;color:var(--muted)}
+.vnext-search-results{position:absolute;z-index:35;top:60px;left:50%;transform:translateX(-50%);width:min(650px,calc(100vw - 28px));background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 20px 45px #0005;max-height:65vh;overflow:auto;padding:12px}
+.vnext-search-results[hidden]{display:none}
+.vnext-search-results button{display:block;width:100%;background:transparent;border:0;color:var(--text);padding:11px;text-align:left;border-radius:8px;cursor:pointer}
+.vnext-search-results button:hover{background:var(--bg)}
+.vnext-search-results small{color:var(--muted);display:block}
+.vnext-help{border-left:3px solid var(--cyan);padding:10px 14px;background:var(--bg);font-size:12px;margin:12px 0;border-radius:7px}
+.vnext-audit{list-style:none;padding:0}.vnext-audit li{border-bottom:1px solid var(--line);padding:11px 5px;font-size:12px}
+.vnext-audit small{color:var(--muted);display:block;margin-top:3px}
+.vnext-table-scroll{overflow:auto;max-width:100%}
+.vnext-table-scroll table{border-collapse:collapse;width:100%;font-size:12px}
+.vnext-table-scroll td,.vnext-table-scroll th{border-bottom:1px solid var(--line);padding:11px;text-align:left}
+.vnext-table-scroll th{color:var(--muted);background:var(--bg)}
+.vnext-empty{padding:22px;text-align:center;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.vnext-checklist{display:grid;gap:8px}.vnext-checklist label{display:flex;align-items:start;gap:7px;font-size:12px}
+.vnext-chip{background:var(--bg);padding:5px 10px;border:1px solid var(--line);border-radius:100px;font-size:11px;color:var(--text)}
+.vnext-conditional-hidden{display:none!important}
+@media(max-width:1250px){.vnext-context-scope{display:none}.topbar{gap:8px;padding:0 12px}.top-right{gap:6px}.top-search{width:min(240px,25vw)}}
+@media(max-width:930px){.vnext-context{order:4;width:100%;justify-content:center}.topbar{height:auto;min-height:70px;flex-wrap:wrap;padding:8px}.top-search{width:min(300px,35vw)}.vnext-context select{max-width:170px}}
 </style>
 </head>
 <body>
@@ -269,7 +306,7 @@ body.dark-mode{--navy:#062638;--navy2:#073b51;--text:#e5f4fa;--muted:#a9c0cd;--l
 <div class="shell" id="appShell">
 <aside class="sidebar" aria-label="Navegação principal"><div class="brand"><div class="brand-type"><b>vNext</b><small>COMMERCE</small></div></div><button id="sidebarToggle" class="sidebar-toggle" type="button" aria-controls="nav" aria-expanded="true" aria-label="Recolher menu lateral" title="Recolher menu lateral"><span aria-hidden="true">☰</span><span class="toggle-label">Recolher menu</span></button>
 <div id="nav"></div><div class="nav-bottom"><button class="nav-item" data-page="Ajuda" title="Central de ajuda"><span class="ico">ⓘ</span><span class="nav-text">Central de ajuda</span></button><a class="nav-item nav-doc-link" href="./documentacao.html" title="Documentação do Admin"><span class="ico">▤</span><span class="nav-text">Documentação do Admin</span></a><div class="sandbox-note">Conceito UX/UI · dados simulados</div></div></aside>
-<div class="workspace"><header class="topbar"><div class="top-left"><div class="breadcrumb">vNext Commerce <span style="margin:0 7px">/</span> <b id="crumb">Área de trabalho</b></div></div><div class="top-search"><span>⌕</span><input id="globalSearch" aria-label="Buscar na plataforma" placeholder="Pesquisar na plataforma..."><span style="color:#94a8b1;font-size:11px">Ctrl K</span></div><div class="top-right"><span class="version"><i></i> Protótipo Admin vNext</span><button class="icon-button" id="notifications" title="Notificações">♧</button><div class="profile-wrap" id="profileWrap"><button class="profile-trigger" type="button" id="profileTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" title="Opções do usuário"><span class="profile-name" id="profileName">Demonstração</span><span class="avatar" id="profileAvatar" aria-hidden="true">DE</span><span aria-hidden="true">⌄</span></button><div class="profile-menu" id="profileMenu" hidden><div class="profile-menu-head"><b id="menuUsername">Demonstração</b><small>Ambiente demonstrativo</small></div><button type="button" id="themeToggle">☾ <span id="themeLabel">Ativar modo escuro</span></button><button type="button" id="changePassword">⚿ Alterar senha</button><button type="button" id="signOut" class="signout">↪ Sair</button></div></div></div></header>
+<div class="workspace"><header class="topbar"><div class="top-left"><div class="breadcrumb">vNext Commerce <span style="margin:0 7px">/</span> <b id="crumb">Área de trabalho</b></div></div><div class="vnext-context" id="vnextContext" aria-label="Contexto operacional"><label>Unidade<select id="ctxUnit"><option>B2C</option><option>B2B</option><option>Hub</option></select></label><label>Canal<select id="ctxChannel"></select></label><span id="ctxScope" class="vnext-context-scope">Escopo demonstrativo</span></div><div class="top-search"><span>⌕</span><input id="globalSearch" aria-label="Buscar na plataforma" placeholder="Pesquisar na plataforma..."><span style="color:#94a8b1;font-size:11px">Ctrl K</span></div><div class="top-right"><button class="icon-button" id="workQueue" title="Central de tarefas">☷ <span id="taskCount">0</span></button><span class="version"><i></i> Protótipo Admin vNext</span><button class="icon-button" id="notifications" title="Notificações">♧</button><div class="profile-wrap" id="profileWrap"><button class="profile-trigger" type="button" id="profileTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu" title="Opções do usuário"><span class="profile-name" id="profileName">Demonstração</span><span class="avatar" id="profileAvatar" aria-hidden="true">DE</span><span aria-hidden="true">⌄</span></button><div class="profile-menu" id="profileMenu" hidden><div class="profile-menu-head"><b id="menuUsername">Demonstração</b><small>Ambiente demonstrativo</small></div><label class="vnext-role">Perfil demonstrativo<select id="demoRole"><option value="Administrador">Administrador</option><option value="Operação">Operação</option><option value="Consulta">Consulta</option></select></label><button type="button" id="themeToggle">☾ <span id="themeLabel">Ativar modo escuro</span></button><button type="button" id="changePassword">⚿ Alterar senha</button><button type="button" id="signOut" class="signout">↪ Sair</button></div></div></div></header>
 <main class="content"><div class="heading"><div><div class="eyebrow">Visão geral da operação</div><h1 id="pageTitle">Área de trabalho</h1><div class="sub" id="pageSub">Acompanhe os resultados e identifique onde seu e-commerce mais vende.</div></div><span class="demo-chip">● Ambiente demonstrativo</span></div>
 <div class="layout" id="adminLayout"><div class="main"><div id="moduleView" class="module-view" aria-live="polite"></div><div id="dashboardView" class="dashboard-view">
 <div class="control-row"><div class="segmented" role="group" aria-label="Tipo de pedido"><button class="active" data-mode="captados">Captados</button><button data-mode="adquiridos">Adquiridos</button></div><div class="filters"><label class="filter">Canal <select id="channel"><option value="all">Todos os canais</option><option value="loja">Loja virtual</option><option value="market">Marketplace</option><option value="b2b">B2B</option></select></label><label class="filter">Período <select id="period"><option value="today">Hoje</option><option value="7d">Últimos 7 dias</option><option value="30d">Últimos 30 dias</option></select></label><button class="refresh" id="reset" title="Restaurar filtros">↻</button></div></div>
@@ -292,7 +329,7 @@ body.dark-mode{--navy:#062638;--navy2:#073b51;--text:#e5f4fa;--muted:#a9c0cd;--l
 
 /* Nova arquitetura da informação — preserve rotas e módulos legados */
 const menuGroups=[
-{title:'Início',items:[{name:'Visão geral',icon:'▣',route:'Área de trabalho'}]},
+{title:'Início',items:[{name:'Visão geral',icon:'▣',route:'Área de trabalho'},{name:'Tarefas e notificações',icon:'♧',route:'Tarefas e notificações'},{name:'Saúde operacional',icon:'◉',route:'Saúde operacional'},{name:'Auditoria demonstrativa',icon:'▤',route:'Auditoria demonstrativa'},{name:'Simulador B2B',icon:'◇',route:'Simulador B2B'}]},
 {title:'Operação',items:[
 {name:'Pedidos',icon:'▤',children:[['Todos os pedidos','Pedidos'],['Pedidos com conflito','Pedidos com conflito'],['Trocas e devoluções','Trocas e devoluções'],['Edição de pedidos','Edição de pedidos'],['Expedição e entregas','Logística'],['Carrinhos','Carrinhos'],['Representantes comerciais','Representantes comerciais'],['Workflows','Fluxos (workflows)']]},
 {name:'Catálogo',icon:'◇',children:[['Produtos e SKUs','Produtos e SKUs'],['Marcas','Marcas'],['Fornecedores','Fornecedores'],['Definições de produto','Definições de produto'],['Categorias','Categorias'],['Preços','Preços'],['Estoque','Estoque'],['Filtros e atributos','Filtros e atributos'],['Flags, tags e metadados','Flags e tags'],['Listas e kits','Listas de produtos'],['Grupos de categorias','Grupos de categorias'],['Serviços adicionais','Serviços adicionais'],['Importadores','Importadores'],['Tarefas agendadas','Tarefas agendadas'],['Indexação de produtos','Indexação de produtos']]},
