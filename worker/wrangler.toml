@@ -1,0 +1,7 @@
+name = "newadminlc-api"
+main = "auth-worker.js"
+compatibility_date = "2026-11-04"
+workers_dev = true
+
+# Credenciais e configuracoes sensiveis permanecem como Secrets no Cloudflare.
+# Nao duplicar LAYER_API_PASSWORD, ADMIN_SESSION_SECRET ou outros valores aqui.
