@@ -69,6 +69,37 @@ export default {
    if(!session)return output({authenticated:false},401,cors);
    return output({authenticated:true,username:session.sub,expiresAt:session.exp},200,cors);
   }
+  if(/^\/api\/products\/[0-9]+$/.test(url.pathname)&&request.method==="GET"){
+   const rawAuth=request.headers.get("Authorization")||"";
+   const token=rawAuth.startsWith("Bearer ")?rawAuth.slice(7):"";
+   const session=await checkToken(token,env.ADMIN_SESSION_SECRET,env.ADMIN_USERNAME);
+   if(!session)return output({error:"UNAUTHORIZED"},401,cors);
+   if(!env.LAYER_API_USERNAME||!env.LAYER_API_PASSWORD)return output({error:"LAYER_NOT_CONFIGURED"},503,cors);
+   const id=url.pathname.split("/").pop();
+   try{
+    const authResponse=await fetch("https://projetos.layer.core.dcg.com.br/api/v3/auth/token",{
+     method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},
+     body:JSON.stringify({username:env.LAYER_API_USERNAME,password:env.LAYER_API_PASSWORD}),
+     signal:AbortSignal.timeout(10000)
+    });
+    if(!authResponse.ok)return output({error:"LAYER_AUTH_FAILED",upstreamStatus:authResponse.status},502,cors);
+    const credentials=await authResponse.json();
+    if(!credentials.accessToken)return output({error:"LAYER_TOKEN_MISSING"},502,cors);
+    const detailResponse=await fetch("https://projetos.layer.core.dcg.com.br/api/v3/catalog/products/"+id,{
+     method:"GET",headers:{Accept:"application/json",Authorization:"Bearer "+credentials.accessToken},
+     signal:AbortSignal.timeout(12000)
+    });
+    if(detailResponse.status===404)return output({error:"PRODUCT_NOT_FOUND"},404,cors);
+    if(!detailResponse.ok)return output({error:"LAYER_PRODUCT_DETAIL_FAILED",upstreamStatus:detailResponse.status},502,cors);
+    const payload=await detailResponse.json();
+    const product=(payload&&typeof payload==="object"&&payload.data&&typeof payload.data==="object")?payload.data:payload;
+    // Evita o encaminhamento indiscriminado de metadados/credenciais.
+    const allowed=["id","sku","integrationId","name","status","active","description","shortDescription","brand","categories","category","skus","images","seo","slug","url","tags","attributes","productDefinition","type","createdAt","updatedAt"];
+    const detail={};
+    for(const field of allowed)if(product&&Object.prototype.hasOwnProperty.call(product,field))detail[field]=product[field];
+    return output({source:"layer-test",product:detail},200,cors);
+   }catch{return output({error:"LAYER_REQUEST_FAILED"},502,cors);}
+  }
   if(url.pathname==="/api/products"&&request.method==="GET"){
    const authorization=request.headers.get("Authorization")||"";
    const raw=authorization.startsWith("Bearer ")?authorization.slice(7):"";
