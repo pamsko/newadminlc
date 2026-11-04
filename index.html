@@ -622,6 +622,11 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-detail-tabs button.active{color:var(--text);border-color:var(--line);border-bottom:2px solid var(--cyan);background:var(--bg)}
 .catalog-detail-section{min-height:180px}
 .catalog-detail-footer{color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:14px;margin-top:24px}
+
+.catalog-list-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.catalog-list-actions button{min-height:40px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:9px 14px;cursor:pointer}
+.catalog-list-actions button.primary{background:var(--navy);color:white;border-color:var(--navy)}
+.catalog-list-actions button:disabled{opacity:.55;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -2071,7 +2076,7 @@ function renderLayerProducts(){
  else if(!pageRows.length)content='<div class="catalog-state"><div><strong>Nenhum produto encontrado</strong><p>Revise os filtros e tente novamente.</p><button type="button" id="layerClearInline">Limpar filtros</button></div></div>';
  else content='<div class="catalog-table-scroll"><table class="catalog-products-table"><thead><tr><th>ID</th><th>SKU</th><th>ID de integração</th><th>Produto</th><th>Situação</th><th>Marca</th><th class="catalog-actions-head">Ações</th></tr></thead><tbody>'+pageRows.map(p=>'<tr><td class="catalog-id">'+layerEsc(p.id)+'</td><td>'+layerEsc(p.sku)+'</td><td>'+layerEsc(p.integrationId)+'</td><td><strong>'+layerEsc(p.name)+'</strong></td><td>'+layerEsc(layerStatusValue(p))+'</td><td>'+layerEsc(p.brand)+'</td><td class="catalog-table-actions">'+(p.id!==null&&p.id!==undefined?'<button type="button" data-layer-detail="'+esc(String(p.id))+'">Visualizar</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
  return '<section class="panel module-panel catalog-list-panel">'+
- '<div class="catalog-list-head"><div><h2>Lista de produtos</h2><p>'+(data?layerEsc(data.totalCount??available)+' produtos na API · '+available+' carregados':'Catálogo do ambiente de testes')+'</p></div><button type="button" id="layerRefresh" class="primary" '+(layerLoading?'disabled':'')+'>↻ Atualizar</button></div>'+
+ '<div class="catalog-list-head"><div><h2>Lista de produtos</h2><p>'+(data?layerEsc(data.totalCount??available)+' produtos na API · '+available+' carregados':'Catálogo do ambiente de testes')+'</p></div><div class="catalog-list-actions"><button type="button" id="layerExport" '+(!data||layerLoading?'disabled':'')+'>Exportar CSV</button><button type="button" id="layerRefresh" class="primary" '+(layerLoading?'disabled':'')+'>↻ Atualizar</button></div></div>'+
  '<div class="catalog-filter-panel">'+
  '<div class="catalog-search-row"><label class="catalog-search-control"><span>Buscar produtos</span><input id="layerSearch" type="search" value="'+esc(layerSearch)+'" placeholder="Nome, SKU, ID ou integração" autocomplete="off" aria-label="Pesquisar produtos"></label>'+
  '<label><span>Buscar em</span><select id="layerField"><option value="all" '+(layerField==='all'?'selected':'')+'>Todos os campos</option>'+[['name','Nome'],['sku','SKU'],['id','ID'],['integrationId','ID de integração']].map(([k,v])=>'<option value="'+k+'" '+(layerField===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label></div>'+
@@ -2121,6 +2126,23 @@ async function loadLayerProducts(){
   }
  }
 }
+function exportLayerCSV(){
+ if(!layerData?.items?.length)return;
+ const rows=layerFilteredRows();
+ if(!rows.length){toast('Nenhum produto encontrado para exportar.');return}
+ const entries=[['ID','SKU','ID de integração','Nome','Situação','Marca'],...rows.map(p=>[p.id,p.sku,p.integrationId,p.name,layerStatusValue(p),p.brand])];
+ function csvCell(value){
+  let txt=String(value??'');
+  if(/^\s*[=+@-]/.test(txt))txt="'"+txt;
+  return '"'+txt.replace(/"/g,'""')+'"';
+ }
+ const csv=String.fromCharCode(65279)+entries.map(row=>row.map(csvCell).join(';')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+ const anchor=document.createElement('a');anchor.href=URL.createObjectURL(blob);
+ anchor.download='produtos-layer-testes-'+new Date().toISOString().slice(0,10)+'.csv';
+ document.body.appendChild(anchor);anchor.click();anchor.remove();
+ setTimeout(()=>URL.revokeObjectURL(anchor.href),1000);
+}
 function bindLayerCatalog(target,page){
  if(page!=='Produtos e SKUs')return;
  const render=()=>renderActiveModule(page);
@@ -2146,6 +2168,7 @@ function bindLayerCatalog(target,page){
  target.querySelector('#layerPageSize')?.addEventListener('change',e=>{layerPageSize=Number(e.target.value)||20;layerPage=1;render()});
  target.querySelector('#layerClear')?.addEventListener('click',reset);
  target.querySelector('#layerClearInline')?.addEventListener('click',reset);
+ target.querySelector('#layerExport')?.addEventListener('click',exportLayerCSV);
  target.querySelector('#layerRefresh')?.addEventListener('click',loadLayerProducts);
  target.querySelector('#layerRetry')?.addEventListener('click',loadLayerProducts);
  target.querySelector('#layerPrev')?.addEventListener('click',()=>{if(layerPage>1){layerPage--;render()}});
