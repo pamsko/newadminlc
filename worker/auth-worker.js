@@ -75,6 +75,7 @@ export default {
    url.pathname==="/api/product-statuses"||
    url.pathname==="/api/catalog-thumbnails"||
    url.pathname==="/api/catalog-references"||
+   url.pathname==="/api/catalog-summaries"||
    /^\/api\/items\/(products|skus|kits)\/[0-9]+$/.test(url.pathname)||
    /^\/api\/products\/[0-9]+$/.test(url.pathname)
   )){
@@ -133,6 +134,49 @@ export default {
       totalCount:type==="kits"?null:type==="products"?null:parts.reduce((sum,part)=>sum+Number(part.totalCount||0),0),
       totalPages:type==="all"?Math.max(...parts.map(p=>p.totalPages)):parts[0]?.totalPages??1,
       partialTypeCount:["products","kits"].includes(type)},200,cors);
+    }
+    if(url.pathname==="/api/catalog-summaries"){
+     const rawIds=url.searchParams.get("ids")||"";
+     const type=url.searchParams.get("type")||"products";
+     const ids=rawIds.split(",").filter(Boolean);
+     if(!["products","skus","kits"].includes(type)||ids.length<1||ids.length>8||
+      ids.some(id=>!/^[0-9]{1,10}$/.test(id)))return output({error:"INVALID_PARAMETERS"},400,cors);
+     let masterPriceList=null;
+     if(type==="skus"){
+      const master=await layerGet("/pricing/price-lists/master").catch(()=>({error:true}));
+      if(!master.error)masterPriceList=master.data?.id??master.data?.data?.id??null;
+     }
+     const items=await Promise.all(ids.map(async id=>{
+      const summary={id,category:null,price:null,stock:null};
+      try{
+       const kind=type==="kits"?"bundles":type;
+       const detail=await layerGet("/catalog/"+kind+"/"+id);
+       if(!detail.error){
+        const item=detail.data?.data??detail.data??{};
+        const mainId=item.mainCategoryId??item.categories?.[0]?.id??item.categories?.[0]?.categoryId;
+        const categoryName=item.categories?.find?.(c=>c.id===mainId||c.categoryId===mainId)?.name;
+        summary.category=categoryName??(mainId!==undefined&&mainId!==null?String(mainId):null);
+       }
+       if(type==="skus"){
+        if(masterPriceList!==null){
+         const prices=await layerGet("/pricing/prices?skuId="+id+"&priceListId="+encodeURIComponent(masterPriceList)+"&page=1&pageSize=100");
+         if(!prices.error){
+          const rows=Array.isArray(prices.data?.items)?prices.data.items:[];
+          const baseRows=rows.filter(p=>Number(p.quantityFrom??0)===0&&Number(p.paymentTermId??0)===0);
+          if(baseRows.length===1&&Number.isFinite(Number(baseRows[0].price)))summary.price=Number(baseRows[0].price);
+         }
+        }
+        const stocks=await layerGet("/inventory/stocks?filter=skuId:eq:"+id+"&page=1&pageSize=100");
+        if(!stocks.error){
+         const rows=Array.isArray(stocks.data?.items)?stocks.data.items:[];
+         if(rows.length&&Number(stocks.data?.totalPages??1)<=1&&rows.every(p=>Number.isFinite(Number(p.stockBalance))))
+          summary.stock=rows.reduce((acc,p)=>acc+Number(p.stockBalance),0);
+        }
+       }
+      }catch{}
+      return summary;
+     }));
+     return output({source:"layer-test",items,priceScope:"master-price-list",stockScope:"sum-of-warehouses"},200,cors);
     }
     if(url.pathname==="/api/catalog-thumbnails"){
      const rawIds=url.searchParams.get("ids")||"";
