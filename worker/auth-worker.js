@@ -73,6 +73,7 @@ export default {
   if(request.method==="GET"&&(
    url.pathname==="/api/products"||
    url.pathname==="/api/product-statuses"||
+   url.pathname==="/api/catalog-thumbnails"||
    /^\/api\/items\/(products|skus|kits)\/[0-9]+$/.test(url.pathname)||
    /^\/api\/products\/[0-9]+$/.test(url.pathname)
   )){
@@ -131,6 +132,23 @@ export default {
       totalCount:type==="kits"?null:type==="products"?null:parts.reduce((sum,part)=>sum+Number(part.totalCount||0),0),
       totalPages:type==="all"?Math.max(...parts.map(p=>p.totalPages)):parts[0]?.totalPages??1,
       partialTypeCount:["products","kits"].includes(type)},200,cors);
+    }
+    if(url.pathname==="/api/catalog-thumbnails"){
+     const rawIds=url.searchParams.get("ids")||"";
+     const ids=rawIds.split(",").filter(Boolean);
+     if(ids.length<1||ids.length>12||ids.some(id=>!/^[0-9]{1,10}$/.test(id)))
+      return output({error:"INVALID_IDS"},400,cors);
+     const entries=await Promise.all(ids.map(async id=>{
+      try{
+       const result=await layerGet("/catalog/products/"+id+"/media");
+       if(result.error)return {id,relativePath:null};
+       const media=Array.isArray(result.data?.product)?result.data.product:[];
+       const images=media.filter(item=>item.type==="image"&&typeof item.relativePath==="string"&&item.relativePath.trim());
+       images.sort((a,b)=>(Number(a.order)||0)-(Number(b.order)||0));
+       return {id,relativePath:images[0]?.relativePath||null};
+      }catch{return {id,relativePath:null}}
+     }));
+     return output({items:entries},200,cors);
     }
     if(url.pathname==="/api/product-statuses"){
      const result=await layerGet("/catalog/product-statuses?page=1&pageSize=100");
