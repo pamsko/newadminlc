@@ -540,6 +540,32 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .nav-subparent>.nav-caret{margin-left:auto}
 @media(max-width:820px){.nav-child-icon{display:none}}
 .notification-bell-button{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:8px}.notification-bell-button svg{flex:none}.notification-bell-button:hover{color:#0088a5;background:var(--cyan-soft)}
+
+/* 2026-11: telas focadas em operação — remove painéis de descoberta e avisos pedagógicos. */
+.domain-banner,.domain-info,.vnext-help,.module-highlight,.module-secondary,
+.module-intro,.module-tiles,.demo-register-note:not(.catalog-status),
+.module-toolbar .eyebrow{display:none!important}
+.module-toolbar{margin-bottom:12px}
+.module-toolbar .sub{display:none}
+.module-panel{margin-top:12px}
+.catalog-toolbar{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.catalog-toolbar .catalog-selector{display:flex;align-items:center;gap:8px}
+.catalog-toolbar select,.catalog-toolbar input{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--card);color:var(--text)}
+.catalog-detail-overlay{position:fixed;inset:0;background:#001b2977;z-index:1100;display:flex;justify-content:flex-end}
+.catalog-detail-drawer{background:var(--card);color:var(--text);width:min(790px,100vw);height:100%;overflow-y:auto;padding:24px;box-shadow:-8px 0 28px #0003}
+.catalog-detail-drawer header{display:flex;justify-content:space-between;gap:16px;align-items:start;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:18px}
+.catalog-detail-drawer h2{margin:0 0 6px;font-size:22px}
+.catalog-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.catalog-field{border:1px solid var(--line);border-radius:9px;padding:12px;min-width:0}
+.catalog-field small{display:block;color:var(--muted);margin-bottom:6px}
+.catalog-field strong{font-size:13px;overflow-wrap:anywhere}
+.catalog-section{margin:22px 0}
+.catalog-section h3{font-size:15px;margin-bottom:10px}
+.catalog-json{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);padding:14px;border-radius:9px;max-height:340px;overflow:auto;font-size:12px}
+.catalog-search{width:min(330px,100%);min-width:200px}
+.catalog-table-actions{white-space:nowrap}
+.catalog-source-info{font-size:12px;color:var(--muted)}
+@media(max-width:740px){.catalog-detail-drawer{padding:15px}.catalog-toolbar{align-items:stretch}}
 </style>
 </head>
 <body>
@@ -1094,7 +1120,7 @@ function renderRegisterList(page){
  const filtered=data.filter(x=>Object.values(x).some(v=>String(v).toLocaleLowerCase('pt-BR').includes(term)));
  const headers=model.fields.filter(x=>![model.id,'internalId','integrationId','externalId'].includes(x[0])).slice(0,3);
  return '<section class="panel module-panel"><div class="panel-title"><div><h2>'+esc(model.label)+'s cadastrados</h2><p>Consulte e gerencie os registros cadastrados.</p></div><button class="primary" data-register-create="'+esc(page)+'">+ Cadastrar '+esc(model.label.toLowerCase())+'</button></div>'+
- '<div class="demo-register-note">As alterações são mantidas no ambiente atual. É possível restaurar os registros iniciais.</div>'+
+ ''+
  '<div class="module-filters"><input aria-label="Buscar cadastros" type="search" id="moduleQuery" value="'+esc(moduleFilters.query)+'" placeholder="Buscar por ID, código, ID de integração, nome ou situação..."><button class="icon-button" id="moduleClear">Limpar busca</button></div>'+
  (filtered.length?'<div class="demo-register-table"><table><thead><tr><th>ID</th><th>Código de cadastro</th><th>ID de integração</th>'+headers.map(x=>'<th>'+esc(x[1])+'</th>').join('')+'<th>Ações</th></tr></thead><tbody>'+filtered.map(x=>'<tr>'+registerIdentifierCells(x,model)+headers.map(f=>'<td>'+esc(f[2]==='money'?fmtMoney(Number(x[f[0]])||0):x[f[0]]??'—')+'</td>').join('')+'<td><div class="demo-register-actions"><button data-register-edit="'+esc(x[model.id])+'">Editar</button><button class="delete" data-register-delete="'+esc(x[model.id])+'">Excluir</button></div></td></tr>').join('')+'</tbody></table></div>':'<div class="module-empty">Nenhum registro encontrado. Use “Cadastrar” para criar um exemplo.</div>')+
  registerTools(page)+'</section>';
@@ -1563,7 +1589,7 @@ const contractsRows=[
 ['B2B-003','Distribuidores Nacional','Grupo econômico','Regra específica do grupo','Inativo']];
 let catalogTab='Dados gerais';
 function demoTable(headers,rows){return '<div class="domain-table"><table><thead><tr>'+headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}
-function domainHeader(title,subtitle){return '<div class="domain-banner"><div><b>'+title+'</b><p>'+subtitle+'</p></div></div>'}
+function domainHeader(title,subtitle){return '';}
 function domainCards(items){return '<div class="domain-grid">'+items.map(x=>'<div class="panel domain-card"><small>'+x[0]+'</small><strong>'+x[1]+'</strong><p>'+x[2]+'</p></div>').join('')+'</div>'}
 function renderIndexation(){return domainHeader('Indexação de produtos','Observabilidade e manutenção de catálogo — dados e operações fictícias.')+domainCards([['Fila de indexação','24','Eventos aguardando processamento'],['Processados na última hora','1.284','Volume demonstrativo'],['Produtos com falha','3','Investigar logs e possíveis causas']])+'<section class="panel module-panel"><div class="panel-title"><div><h2>Monitoramento da indexação</h2><p>Consulte SKUs, situação de processamento e ocorrências.</p></div><button class="icon-button" data-domain-action="Ver logs">Ver logs</button></div>'+demoTable(['SKU','Evento / situação','Última atualização','Resultado'],indexationRows)+'<div class="domain-info"><b>Ações sensíveis:</b> reindexação completa e exclusão do índice devem exigir permissão específica, confirmação do impacto, auditoria e controles técnicos. Nenhuma dessas ações está disponível neste protótipo.</div></section>'}
 
@@ -1926,9 +1952,9 @@ function renderContracts(){return domainHeader('Contratos e regras comerciais B2
 
 
 /* Leitura de catálogo via Layer API; modo demo permanece independente. */
-let catalogSource='demo',layerPage=1,layerData=null,layerLoading=false,layerError='';
+let catalogSource='demo',layerPage=1,layerData=null,layerLoading=false,layerError='',layerSearch='';
 function catalogSourcePicker(){
- return '<section class="panel module-panel"><div class="panel-title"><div><h2>Origem dos produtos</h2><p>Consulte produtos demonstrativos ou dados da Layer no ambiente de testes.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="sourceDemo" class="'+(catalogSource==='demo'?'primary':'ghost')+'">Demonstração</button><button type="button" id="sourceLayer" class="'+(catalogSource==='layer'?'primary':'ghost')+'">Layer — Testes</button></div></div><div class="demo-register-note">'+(catalogSource==='demo'?'Registros demonstrativos salvos somente no navegador.':'Dados reais do ambiente de testes. Acesso autenticado, somente leitura: nenhuma alteração na Layer.')+'</div></section>';
+ return '<section class="panel module-panel"><div class="catalog-toolbar"><div><h2 style="margin:0">Produtos e SKUs</h2><span class="catalog-source-info">'+(catalogSource==='demo'?'Dados de demonstração':'Layer API v3 · Ambiente de testes · Somente leitura')+'</span></div><div class="catalog-selector"><label for="catalogSourceSelect">Fonte:</label><select id="catalogSourceSelect" aria-label="Origem dos produtos"><option value="demo" '+(catalogSource==='demo'?'selected':'')+'>Demonstração</option><option value="layer" '+(catalogSource==='layer'?'selected':'')+'>Layer — Testes</option></select></div></div></section>';
 }
 function renderLayerProducts(){
  const data=layerData,fmt=v=>v===undefined||v===null||v===''?'—':esc(String(v));
@@ -1936,11 +1962,15 @@ function renderLayerProducts(){
  let content='';
  if(layerLoading)content='<div class="module-empty" role="status">Consultando produtos da Layer…</div>';
  else if(layerError)content='<div class="module-empty" role="alert">'+esc(layerError)+' <button id="layerRetry" type="button">Tentar novamente</button></div>';
- else if(!data)content='<div class="module-empty">Clique em Consultar produtos para carregar os dados.</div>';
- else if(!data.items.length)content='<div class="module-empty">Nenhum produto retornado para esta página.</div>';
- else content='<div class="demo-register-table"><table><thead><tr><th>ID Layer</th><th>SKU</th><th>ID de integração</th><th>Nome</th><th>Situação</th><th>Marca</th></tr></thead><tbody>'+data.items.map(p=>'<tr><td>'+fmt(p.id)+'</td><td>'+fmt(p.sku)+'</td><td>'+fmt(p.integrationId)+'</td><td>'+fmt(p.name)+'</td><td>'+fmt(p.status??(p.active===true?'Ativo':p.active===false?'Inativo':null))+'</td><td>'+fmt(p.brand)+'</td></tr>').join('')+'</tbody></table></div>';
- return '<section class="panel module-panel"><div class="panel-title"><div><h2>Produtos — Layer API v3</h2><p>Consulta autenticada ao ambiente de testes · Somente leitura</p></div><button id="layerRefresh" class="primary" type="button" '+(layerLoading?'disabled':'')+'>Atualizar</button></div>'+(data?'<div class="demo-register-note">'+fmt(data.totalCount)+' produtos · Página '+layerPage+(pages?' de '+pages:'')+' · '+data.items.length+' exibidos</div>':'')+content+'<div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:16px"><button id="layerPrev" type="button" '+(layerLoading||layerPage===1?'disabled':'')+'>Anterior</button><span>Página '+layerPage+'</span><button id="layerNext" type="button" '+(layerLoading||!data?.items?.length||(pages&&layerPage>=pages)?'disabled':'')+'>Próxima</button></div></section>';
+ else if(!data)content='<div class="module-empty">Clique em Atualizar para carregar os produtos.</div>';
+ else if(!data.items.length)content='<div class="module-empty">Nenhum produto encontrado.</div>';
+ else{
+  const filtered=data.items.filter(p=>[p.id,p.sku,p.integrationId,p.name,p.status,p.brand].some(v=>String(v??'').toLocaleLowerCase('pt-BR').includes(layerSearch.toLocaleLowerCase('pt-BR'))));
+  content='<div class="demo-register-table"><table><thead><tr><th>ID</th><th>SKU</th><th>ID de integração</th><th>Nome</th><th>Status</th><th>Marca</th><th>Ações</th></tr></thead><tbody>'+filtered.map(p=>'<tr><td>'+fmt(p.id)+'</td><td>'+fmt(p.sku)+'</td><td>'+fmt(p.integrationId)+'</td><td><strong>'+fmt(p.name)+'</strong></td><td>'+fmt(p.status??(p.active===true?'Ativo':p.active===false?'Inativo':null))+'</td><td>'+fmt(p.brand)+'</td><td class="catalog-table-actions">'+(p.id!==null&&p.id!==undefined?'<button type="button" data-layer-detail="'+esc(String(p.id))+'">Detalhes</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
+ }
+ return '<section class="panel module-panel"><div class="panel-title"><div><h2>Lista de produtos</h2><p>'+(data?fmt(data.totalCount)+' registros · Página '+layerPage+(pages?' de '+pages:''):'Produtos do ambiente de testes')+'</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="catalog-search" type="search" id="layerSearch" value="'+esc(layerSearch)+'" placeholder="Filtrar nesta página..." aria-label="Filtrar produtos da página"><button id="layerRefresh" class="primary" type="button" '+(layerLoading?'disabled':'')+'>Atualizar</button></div></div>'+content+'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px"><span class="catalog-source-info">Busca local na página atual · Consulta sem alterações</span><div style="display:flex;gap:8px;align-items:center"><button id="layerPrev" type="button" '+(layerLoading||layerPage===1?'disabled':'')+'>Anterior</button><span>'+layerPage+(pages?' / '+pages:'')+'</span><button id="layerNext" type="button" '+(layerLoading||!data?.items?.length||(pages&&layerPage>=pages)?'disabled':'')+'>Próxima</button></div></div></section>';
 }
+
 async function loadLayerProducts(){
  if(layerLoading||catalogSource!=='layer')return;
  layerLoading=true;layerError='';
@@ -1961,31 +1991,47 @@ async function loadLayerProducts(){
 }
 function bindLayerCatalog(target,page){
  if(page!=='Produtos e SKUs')return;
- target.querySelector('#sourceDemo')?.addEventListener('click',()=>{catalogSource='demo';renderActiveModule(page)});
- target.querySelector('#sourceLayer')?.addEventListener('click',()=>{catalogSource='layer';layerPage=1;layerData=null;layerError='';renderActiveModule(page);loadLayerProducts()});
+ target.querySelector('#catalogSourceSelect')?.addEventListener('change',e=>{
+  catalogSource=e.target.value==='layer'?'layer':'demo';layerPage=1;layerSearch='';layerData=null;layerError='';
+  renderActiveModule(page);if(catalogSource==='layer')loadLayerProducts();
+ });
+ target.querySelector('#layerSearch')?.addEventListener('input',e=>{
+  const position=e.target.selectionStart;layerSearch=e.target.value;renderActiveModule(page);
+  const field=document.getElementById('layerSearch');field?.focus();field?.setSelectionRange(position,position);
+ });
  target.querySelector('#layerRefresh')?.addEventListener('click',loadLayerProducts);
  target.querySelector('#layerRetry')?.addEventListener('click',loadLayerProducts);
- target.querySelector('#layerPrev')?.addEventListener('click',()=>{if(layerPage>1){layerPage--;loadLayerProducts()}});
- target.querySelector('#layerNext')?.addEventListener('click',()=>{layerPage++;loadLayerProducts()});
+ target.querySelector('#layerPrev')?.addEventListener('click',()=>{if(layerPage>1){layerPage--;layerSearch='';loadLayerProducts()}});
+ target.querySelector('#layerNext')?.addEventListener('click',()=>{layerPage++;layerSearch='';loadLayerProducts()});
+ target.querySelectorAll('[data-layer-detail]').forEach(b=>b.addEventListener('click',()=>showLayerProductDetails(b.dataset.layerDetail)));
+}
+function catalogFields(product){
+ const labels={id:'ID',sku:'SKU',integrationId:'ID de integração',name:'Nome',status:'Status',active:'Ativo',description:'Descrição',shortDescription:'Descrição curta',brand:'Marca',category:'Categoria',slug:'URL amigável',type:'Tipo',createdAt:'Criado em',updatedAt:'Atualizado em'};
+ return Object.entries(labels).filter(([key])=>product[key]!==null&&product[key]!==undefined&&product[key]!=='').map(([key,label])=>{
+  const val=product[key];const printable=typeof val==='object'?JSON.stringify(val):typeof val==='boolean'?(val?'Sim':'Não'):String(val);
+  return '<div class="catalog-field"><small>'+esc(label)+'</small><strong>'+esc(printable)+'</strong></div>';
+ }).join('');
+}
+async function showLayerProductDetails(id){
+ if(!/^[0-9]+$/.test(id))return;
+ const overlay=document.createElement('div');overlay.className='catalog-detail-overlay';
+ overlay.innerHTML='<section class="catalog-detail-drawer" role="dialog" aria-modal="true" aria-label="Detalhes do produto"><header><div><h2>Produto #'+esc(id)+'</h2><span class="catalog-source-info">Layer API v3 · somente leitura</span></div><button type="button" id="closeLayerDetail">Fechar</button></header><div id="layerDetailBody" role="status">Carregando produto…</div></section>';
+ document.body.appendChild(overlay);
+ const close=()=>overlay.remove();overlay.querySelector('#closeLayerDetail').addEventListener('click',close);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ try{
+  const response=await fetch(AUTH_API+'/api/products/'+encodeURIComponent(id),{headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'});
+  const payload=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(payload.error||'API_ERROR');
+  const product=payload.product||{};
+  const related=['categories','skus','images','seo','tags','attributes','productDefinition'].filter(k=>product[k]!==undefined&&product[k]!==null);
+  overlay.querySelector('#layerDetailBody').innerHTML='<div class="catalog-fields">'+catalogFields(product)+'</div>'+related.map(k=>'<section class="catalog-section"><h3>'+esc(({categories:'Categorias',skus:'SKUs / Variações',images:'Mídias',seo:'SEO',tags:'Tags',attributes:'Atributos',productDefinition:'Definição de produto'})[k])+'</h3><pre class="catalog-json">'+esc(JSON.stringify(product[k],null,2))+'</pre></section>').join('')+'<p class="catalog-source-info">Os campos exibidos dependem da resposta da Layer. Edição desabilitada nesta fase.</p>';
+ }catch(error){if(overlay.isConnected)overlay.querySelector('#layerDetailBody').textContent='Não foi possível consultar o produto: '+error.message;}
 }
 
+
 function renderCatalogDetails(){
- const tabs=['Dados gerais','SEO e descrições','Mídias','Associações','Atributos','SKUs','Programas de pontos','Estoque e preço','Entrega','Publicação'];
- const copy={
- 'Dados gerais':[['Identificação e origem','Nome obrigatório, SKU e identificador externo; definição de produto, marca e categorias com categoria principal'],['Regras de exposição','Pesquisável, visibilidade no site por data, controle global de disponibilidade e regra de visualização de preço: Sim / Não / Somente logado'],['Comportamento comercial','Presente, frete grátis, política/formulário de compra, flags, produtos sob consulta e termos']],
- 'SEO e descrições':[['Indexação e URLs','Título da página, URL amigável e verificação de unicidade'],['Metadados','Meta description, keywords, tags, termos de busca e avaliações'],['Conteúdo rico','Descrição curta/longa, garantia e tabela de medidas']],
- 'Mídias':[['Imagens e vídeos','Imagem ou vídeo por URL/upload; título, usos e ordem'],['Referência do legado','Limite exibido na interface: seis imagens do produto pai e seis por variação; reconfirmar antes de implementar']],
- 'Associações':[['Venda cruzada','Compre junto, produtos atrelados e listas relacionadas'],['Recomendação','Quem comprou também comprou e quem viu também viu']],
- 'Atributos':[['Definições dinâmicas','Atributos da definição de produto/categoria, por tenant; não assumir campos fixos'],['Herança','Mostrar origem e impacto de sobrescrever valores herdados']],
- 'SKUs':[['Grade de variações','Código, SKU, nome, opções, preço base, custo e saldo'],['Ações dependentes','Associar/desassociar, importar/exportar, consultar estoque; validar criação prévia do produto pai']],
- 'Programas de pontos':[['Benefícios e pontuação','Relação com regras de pontos e elegibilidade por canal; comportamento sujeito à validação']],
- 'Estoque e preço':[['Estoque de SKU','Controle, saldo somente leitura, mínimo, pré-venda, venda sem estoque e reposição'],['Preços de SKU','Base, custo, taxa, preço promocional e vigência; preço e saldo podem ter origem externa']],
- 'Entrega':[['Logística da variação','Normal ou virtual; peso e dimensões; embalagem, unidade de medida, estado do produto'],['Disponibilidade','Prazo de envio com ou sem estoque e política de compra']],
- 'Publicação':[['Pré-condições','Produto associado a SKU, preço e estoque válidos, categoria, visibilidade e atributos exigidos'],['Estados independentes','Publicação, indexação, replicação e sincronismo por canal; não colapsar em um status único']]
- };
- if(!copy[catalogTab])catalogTab='Dados gerais';
- return catalogSourcePicker()+domainHeader('Produto e SKU: estrutura documentada','Mapa das abas identificadas no relatório de navegação aprofundada — campos e ações reais ainda dependem de implementação e permissões.')+
- '<section class="panel module-panel"><div class="domain-tabs" role="group" aria-label="Áreas de produto e SKU">'+tabs.map(t=>'<button class="'+(catalogTab===t?'active':'')+'" data-catalogtab="'+t+'">'+t+'</button>').join('')+'</div><div class="domain-list">'+copy[catalogTab].map(x=>'<article><b>'+x[0]+'</b><p>'+x[1]+'</p></article>').join('')+'</div><div class="domain-info">Conteúdo orientado pelo último relatório. Ações de mídia, importação, precificação, estoque e publicação são documentadas, mas <b>não estão conectadas a um backend</b>.</div></section>'+(catalogSource==='layer'?renderLayerProducts():renderProducts());
+ return catalogSourcePicker()+(catalogSource==='layer'?renderLayerProducts():renderProducts());
 }
 
 
@@ -2093,7 +2139,7 @@ function renderDiscoveryScreen(page){
  '<div class="domain-info">Utilize o cadastro abaixo para adicionar e gerenciar registros próprios neste ambiente.</div></section>'+(registerModels[page]?renderRegisterList(page):'');
 }
 
-function renderLanding(page){return moduleShell(page,'Exploração conceitual de uma experiência futura para '+page.toLowerCase()+'.','<div class="module-intro"><section class="module-highlight"><div class="eyebrow" style="color:#00dbff">Próxima evolução</div><h2>'+esc(page)+' no vNext Commerce</h2><p>Estrutura dedicada do módulo, pronta para evoluir com fluxos de trabalho, regras de negócio e integrações reais.</p></section><section class="module-secondary"><h3>O que podemos detalhar?</h3><p>Jornadas operacionais, indicadores, formulários, permissões, filtros e ações específicas do módulo.</p><button class="primary" id="moduleExplore">Explorar funcionalidades</button></section></div><div class="module-tiles"><button class="module-tile" data-feature="Visão geral"><b>Visão geral</b><span>Indicadores e tarefas principais</span></button><button class="module-tile" data-feature="Gestão"><b>Gestão</b><span>Listagem, busca e filtros</span></button><button class="module-tile" data-feature="Configurações"><b>Configurações</b><span>Regras e parâmetros operacionais</span></button></div>')}
+function renderLanding(page){return moduleShell(page,'Gerencie '+page.toLowerCase()+'.','<div class="module-intro"><section class="module-highlight"><div class="eyebrow" style="color:#00dbff">Próxima evolução</div><h2>'+esc(page)+' no vNext Commerce</h2><p>Estrutura dedicada do módulo, pronta para evoluir com fluxos de trabalho, regras de negócio e integrações reais.</p></section><section class="module-secondary"><h3>O que podemos detalhar?</h3><p>Jornadas operacionais, indicadores, formulários, permissões, filtros e ações específicas do módulo.</p><button class="primary" id="moduleExplore">Explorar funcionalidades</button></section></div><div class="module-tiles"><button class="module-tile" data-feature="Visão geral"><b>Visão geral</b><span>Indicadores e tarefas principais</span></button><button class="module-tile" data-feature="Gestão"><b>Gestão</b><span>Listagem, busca e filtros</span></button><button class="module-tile" data-feature="Configurações"><b>Configurações</b><span>Regras e parâmetros operacionais</span></button></div>')}
 
 let selectedOrderId=null,selectedOrderTab='overview';
 const orderTabsDetail=[['overview','Visão geral'],['items','Itens'],['payment','Pagamento'],['shipping','Entrega'],['history','Histórico'],['integrations','Integrações']];
@@ -2251,18 +2297,8 @@ function renderVnextB2B(){
  '<section class="vnext-panel"><h3>Explicação da regra</h3><p>Empresa → grupo econômico → contrato do grupo, quando houver → contrato padrão do canal como alternativa. A seleção é ilustrativa, sem simular corretamente múltiplos grupos, prioridade, preço por SKU, catálogo, estoque, crédito e pagamento.</p>'+
  '<div class="vnext-help">O contrato por canal e a prioridade de grupos exigem especificação validada. Não use o resultado para precificação ou aprovação financeira.</div><div class="vnext-toolbar"><button data-vnext-route="Grupos econômicos">Gerenciar grupos</button><button data-vnext-route="Contratos">Gerenciar contratos</button><button data-vnext-route="Clientes">Consultar clientes</button></div></section>';
 }
-function renderVnextHelp(page){
- const tips={
- 'Produtos e SKUs':'Produto pai concentra conteúdo e SEO. SKU possui preço, estoque e entrega. Confira a origem ERP/Admin e a disponibilidade por canal.',
- 'Pedidos':'Pedido, pagamento, entrega e integração possuem estados independentes. Antes de qualquer ação, valide transições e permissões.',
- 'Clientes':'Cuidado com dados pessoais e impersonação. Na operação B2B, grupos e contratos podem alterar catálogo, preço, crédito e pagamento.',
- 'Contratos':'A relação grupo/canal tem precedência contextual. Campo vazio de limite não deve ser interpretado automaticamente como zero.',
- 'Promoções':'Valide vigência, canal, acumulação e conflitos de promoção antes de ativar.',
- 'Webhooks':'Em produção: exigir permissão para teste/retry, idempotência, assinatura/header e logs sem segredos.'
- };
- if(!tips[page])return '';
- return '<div class="vnext-help"><b>Ajuda contextual:</b> '+esc(tips[page])+' <a href="./documentacao.html" target="_blank" rel="noopener noreferrer">Abrir documentação</a></div>';
-}
+function renderVnextHelp(page){return '';}
+
 function bindVnextDomain(target,page){
  target.querySelectorAll('[data-vnext-route]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.vnextRoute)));
  target.querySelector('#auditClear')?.addEventListener('click',()=>{if(!window.confirm('Limpar os eventos de auditoria apenas deste navegador?'))return;vnextStore(VNEXT_AUDIT_KEY,[]);renderActiveModule(page)});
