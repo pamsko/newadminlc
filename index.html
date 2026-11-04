@@ -194,7 +194,7 @@
 
 .webhook-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0 15px}.webhook-tabs button{padding:8px 14px;border:1px solid #cee7ed;background:#fff;color:#03566a;border-radius:9px;font-weight:750;cursor:pointer}.webhook-tabs button.active{color:#fff;background:#002233;border-color:#002233}
 
-/* Acesso e preferências — exclusivamente demonstração, não autenticação real */
+/* Acesso autenticado por Worker (a hospedagem estática continua pública) */
 #appShell{display:none}body.demo-authenticated #appShell{display:grid}body.demo-authenticated #demoLogin{display:none}
 #demoLogin{min-height:100vh;display:grid;grid-template-columns:minmax(290px,1.1fr) minmax(330px,.9fr);background:#f2f8fa}
 .login-brand-side{background:linear-gradient(145deg,#002233 0%,#064862 100%);color:white;padding:clamp(35px,6vw,90px);display:flex;flex-direction:column;justify-content:center;gap:18px}
@@ -545,7 +545,7 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 <body>
 <div id="demoLogin">
 <section class="login-brand-side" aria-label="Apresentação do Admin"><div><div style="font-size:12px;letter-spacing:.2em;color:#00dbff;font-weight:800">vNext COMMERCE</div><h1>Uma nova experiência para administrar seu e-commerce.</h1></div><p>Operação, catálogo, pedidos, clientes, canais e configurações em uma experiência integrada.</p><div style="font-size:12px;color:#a8ceda">Gestão e inteligência para o seu comércio</div></section>
-<div class="login-form-wrap"><div class="login-card"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#007995;font-weight:800;margin-bottom:13px">Acesso ao Admin</div><h2>Bem-vindo(a)</h2><p>Acesse sua área de trabalho.</p><form id="demoLoginForm"><label for="demoUser">Usuário ou e-mail<input id="demoUser" name="username" autocomplete="username" required placeholder="Digite seu usuário"></label><label for="demoPass">Senha<input id="demoPass" name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha"></label><button type="submit">Entrar no Admin</button></form><div class="login-tip">Ambiente de avaliação. Use um usuário e senha de sua escolha, sem utilizar credenciais reais.</div></div></div></div>
+<div class="login-form-wrap"><div class="login-card"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#007995;font-weight:800;margin-bottom:13px">Acesso ao Admin</div><h2>Bem-vindo(a)</h2><p>Acesse sua área de trabalho.</p><form id="demoLoginForm"><label for="demoUser">Usuário ou e-mail<input id="demoUser" name="username" autocomplete="username" required placeholder="Digite seu usuário"></label><label for="demoPass">Senha<input id="demoPass" name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha"></label><button type="submit">Entrar no Admin</button></form><div class="login-tip">Acesso restrito. Entre com o usuário autorizado pelo administrador. Sua sessão será validada pelo servidor.</div><div id="loginStatus" class="password-error" role="alert" aria-live="polite"></div></div></div></div>
 <div class="shell" id="appShell">
 <aside class="sidebar" aria-label="Navegação principal"><div class="brand"><div class="brand-type"><b>vNext</b><small>COMMERCE</small></div></div><button id="sidebarToggle" class="sidebar-toggle" type="button" aria-controls="nav" aria-expanded="true" aria-label="Recolher menu lateral" title="Recolher menu lateral"><span aria-hidden="true">☰</span><span class="toggle-label">Recolher menu</span></button>
 <div id="nav"></div><div class="nav-bottom"><button class="nav-item" data-page="Ajuda" title="Central de ajuda"><span class="ico">ⓘ</span><span class="nav-text">Central de ajuda</span></button><a class="nav-item nav-doc-link" href="./documentacao.html" title="Documentação do Admin"><span class="ico">▤</span><span class="nav-text">Documentação do Admin</span></a><div class="sandbox-note">vNext Commerce · Admin</div></div></aside>
@@ -2438,11 +2438,20 @@ function navigate(page){vnextPage=page;selectedOrderId=null;document.getElementB
 
 
 /* Experiência de login demonstrativo. Não é autenticação nem controle de acesso. */
-const DEMO_SESSION_KEY='totvs-admin-demo-session';
+/* Autenticação verificada pelo Cloudflare Worker — nunca por senha no navegador. */
+const AUTH_API='https://newadminlc-api.pamelasko.workers.dev';
+const AUTH_SESSION_KEY='newadminlc-auth-session-v1';
 const DEMO_THEME_KEY='totvs-admin-demo-theme';
-let loggedUser='';
-function storedSession(){try{return sessionStorage.getItem(DEMO_SESSION_KEY)||''}catch(e){return ''}}
-function setStoredSession(v){try{if(v)sessionStorage.setItem(DEMO_SESSION_KEY,v);else sessionStorage.removeItem(DEMO_SESSION_KEY)}catch(e){}}
+let loggedUser='',authSessionToken='';
+function storedSession(){try{return sessionStorage.getItem(AUTH_SESSION_KEY)||''}catch(e){return ''}}
+function setStoredSession(v){try{if(v)sessionStorage.setItem(AUTH_SESSION_KEY,v);else sessionStorage.removeItem(AUTH_SESSION_KEY)}catch(e){}}
+async function authFetch(path,options={}){
+ const response=await fetch(AUTH_API+path,{...options,cache:'no-store',headers:{Accept:'application/json',...(options.headers||{})}});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok){const err=new Error(data.error||'AUTH_FAILED');err.status=response.status;throw err}
+ return data;
+}
+function setLoginStatus(message){const el=document.getElementById('loginStatus');if(el)el.textContent=message}
 function setProfile(open){
  const popup=document.getElementById('profileMenu'),trigger=document.getElementById('profileTrigger');
  popup.hidden=!open;trigger.setAttribute('aria-expanded',String(open));
@@ -2453,56 +2462,71 @@ function setDarkMode(enabled){
  document.getElementById('themeToggle').setAttribute('aria-pressed',String(enabled));
  try{localStorage.setItem(DEMO_THEME_KEY,enabled?'dark':'light')}catch(e){}
 }
-function showAdmin(username){
- loggedUser=username;setStoredSession(username);
- const initials=username.trim().split(/[\s@._-]+/).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join('')||'DE';
+function showAdmin(username,token){
+ if(!token)return;
+ authSessionToken=token;loggedUser=username;
+ const initials=username.trim().split(/[\s@._-]+/).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join('')||'AD';
  document.getElementById('profileName').textContent=username;
  document.getElementById('menuUsername').textContent=username;
  document.getElementById('profileAvatar').textContent=initials;
  document.body.classList.add('demo-authenticated');
  document.getElementById('demoPass').value='';
+ setLoginStatus('');
 }
 function signOutDemo(){
- setProfile(false);setStoredSession('');loggedUser='';
+ setProfile(false);setStoredSession('');authSessionToken='';loggedUser='';
  document.body.classList.remove('demo-authenticated');
  document.getElementById('passwordDialog').hidden=true;
  document.getElementById('demoLoginForm').reset();
+ setLoginStatus('');
  document.getElementById('demoUser').focus();
 }
-document.getElementById('demoLoginForm').addEventListener('submit',e=>{
+document.getElementById('demoLoginForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const user=document.getElementById('demoUser').value.trim(),pass=document.getElementById('demoPass').value;
  if(!user||!pass)return;
- showAdmin(user);
+ const button=e.currentTarget.querySelector('[type=submit]');
+ button.disabled=true;button.textContent='Autenticando…';
+ setLoginStatus('');
+ try{
+  const result=await authFetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
+  if(!result.token||!result.username)throw new Error('INVALID_RESPONSE');
+  setStoredSession(result.token);
+  showAdmin(result.username,result.token);
+ }catch(err){
+  setStoredSession('');document.getElementById('demoPass').value='';
+  setLoginStatus(err.status===401?'Usuário ou senha incorretos.':err.status===503?'Login não configurado no servidor. Contate o administrador.':'Não foi possível autenticar. Verifique a conexão e a configuração do servidor.');
+ }finally{button.disabled=false;button.textContent='Entrar no Admin'}
 });
 document.getElementById('profileTrigger').addEventListener('click',()=>setProfile(document.getElementById('profileMenu').hidden));
 document.getElementById('themeToggle').addEventListener('click',()=>{setDarkMode(!document.body.classList.contains('dark-mode'));setProfile(false)});
 document.getElementById('adminVersionSelect').addEventListener('change',e=>setAdminVersion(e.target.value));
 document.getElementById('signOut').addEventListener('click',signOutDemo);
 document.getElementById('changePassword').addEventListener('click',()=>{
- setProfile(false);document.getElementById('passwordError').textContent='';
- document.getElementById('passwordForm').reset();
- document.getElementById('passwordDialog').hidden=false;
- document.getElementById('currentPassword').focus();
+ setProfile(false);
+ toast('A senha é administrada com segurança nos Secrets do Cloudflare Worker. Solicite a alteração ao administrador.');
 });
-function closePassword(){document.getElementById('passwordDialog').hidden=true;document.getElementById('profileTrigger').focus()}
-document.getElementById('cancelPassword').addEventListener('click',closePassword);
-document.getElementById('passwordForm').addEventListener('submit',e=>{
- e.preventDefault();
- const pass=document.getElementById('newPassword').value,confirmation=document.getElementById('confirmPassword').value;
- const error=document.getElementById('passwordError');
- if(pass!==confirmation){error.textContent='As senhas informadas não coincidem.';return}
- if(pass.length<6){error.textContent='Utilize pelo menos 6 caracteres.';return}
- closePassword();document.getElementById('passwordForm').reset();
- toast('Senha alterada apenas na simulação. O login continua aceitando qualquer senha.');
-});
+document.getElementById('cancelPassword').addEventListener('click',()=>{document.getElementById('passwordDialog').hidden=true});
+document.getElementById('passwordForm').addEventListener('submit',e=>e.preventDefault());
 document.addEventListener('click',e=>{const wrap=document.getElementById('profileWrap');if(!wrap.contains(e.target))setProfile(false)});
-document.addEventListener('keydown',e=>{
- if(e.key==='Escape'){setProfile(false);if(!document.getElementById('passwordDialog').hidden)closePassword()}
-});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setProfile(false)});
 let preferredTheme=false;try{preferredTheme=localStorage.getItem(DEMO_THEME_KEY)==='dark'}catch(e){}
 setDarkMode(preferredTheme);
-const persistedUser=storedSession();if(persistedUser)showAdmin(persistedUser);
+async function verifyAdminSession(){
+ const token=authSessionToken||storedSession();
+ if(!token)return;
+ try{
+  const result=await authFetch('/auth/session',{headers:{Authorization:'Bearer '+token}});
+  if(!result.authenticated||!result.username)throw new Error('INVALID_SESSION');
+  showAdmin(result.username,token);
+ }catch(err){
+  signOutDemo();
+  setLoginStatus('Sua sessão expirou ou não pôde ser validada. Entre novamente.');
+ }
+}
+verifyAdminSession();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&authSessionToken)verifyAdminSession()});
+setInterval(()=>{if(authSessionToken)verifyAdminSession()},5*60*1000);
 
 loadRegisters();
 vnextContextInit();
