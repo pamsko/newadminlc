@@ -627,6 +627,8 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-list-actions button{min-height:40px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:9px 14px;cursor:pointer}
 .catalog-list-actions button.primary{background:var(--navy);color:white;border-color:var(--navy)}
 .catalog-list-actions button:disabled{opacity:.55;cursor:not-allowed}
+.catalog-filter-row{grid-template-columns:repeat(4,minmax(120px,1fr)) auto}
+.catalog-products-table .catalog-table-actions{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -2026,12 +2028,13 @@ function renderContracts(){return domainHeader('Contratos e regras comerciais B2
 
 /* Catálogo: leitura autenticada da Layer, filtros globais sobre o lote carregado. */
 let catalogSource='demo',layerPage=1,layerData=null,layerLoading=false,layerError='',layerSearch='';
-let layerField='all',layerStatus='all',layerBrand='all',layerOrder='name-asc',layerPageSize=20;
+let layerField='all',layerStatus='all',layerBrand='all',layerOrder='name-asc',layerPageSize=20,layerEntityType='products';
 let layerRequestId=0;
 const LAYER_MAX_RECORDS=500;
 function layerEsc(v){return v===null||v===undefined||v===''?'—':esc(String(v))}
 function layerText(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
-function layerStatusValue(p){return p.status??(p.active===true?'Ativo':p.active===false?'Inativo':null)}
+function layerStatusValue(p){return p.isVisible===true?'Visível':p.isVisible===false?'Oculto':null}
+function layerTypeLabel(p){return p.entityType==='skus'?'SKU':p.entityType==='kits'?'Kit':'Produto'}
 function catalogSourcePicker(){
  return '<section class="panel module-panel catalog-source-box"><div class="catalog-toolbar"><div><h2 style="margin:0">Produtos e SKUs</h2><span class="catalog-source-info">'+(catalogSource==='demo'?'Dados locais de demonstração':'Layer API v3 · Ambiente de testes · Somente leitura')+'</span></div><div class="catalog-selector"><label for="catalogSourceSelect">Fonte de dados</label><select id="catalogSourceSelect" aria-label="Origem dos produtos"><option value="demo" '+(catalogSource==='demo'?'selected':'')+'>Demonstração</option><option value="layer" '+(catalogSource==='layer'?'selected':'')+'>Layer — Testes</option></select></div></div></section>';
 }
@@ -2043,7 +2046,7 @@ function layerFilteredRows(){
  let rows=layerData?.items||[];
  const query=layerText(layerSearch.trim());
  if(query){
-  const fields=layerField==='all'?['id','sku','integrationId','name','status','brand']:[layerField];
+  const fields=layerField==='all'?['id','sku','integrationId','name','brand']:[layerField];
   rows=rows.filter(p=>fields.some(k=>layerText(k==='status'?layerStatusValue(p):p[k]).includes(query)));
  }
  if(layerStatus!=='all')rows=rows.filter(p=>String(layerStatusValue(p))===layerStatus);
@@ -2074,13 +2077,13 @@ function renderLayerProducts(){
  else if(layerError)content='<div class="catalog-state catalog-error" role="alert"><div><strong>Não foi possível carregar os produtos</strong><p>'+esc(layerError)+'</p><button id="layerRetry" type="button">Tentar novamente</button></div></div>';
  else if(!data)content='<div class="catalog-state">Selecione Atualizar para consultar os produtos.</div>';
  else if(!pageRows.length)content='<div class="catalog-state"><div><strong>Nenhum produto encontrado</strong><p>Revise os filtros e tente novamente.</p><button type="button" id="layerClearInline">Limpar filtros</button></div></div>';
- else content='<div class="catalog-table-scroll"><table class="catalog-products-table"><thead><tr><th>ID</th><th>SKU</th><th>ID de integração</th><th>Produto</th><th>Situação</th><th>Marca</th><th class="catalog-actions-head">Ações</th></tr></thead><tbody>'+pageRows.map(p=>'<tr><td class="catalog-id">'+layerEsc(p.id)+'</td><td>'+layerEsc(p.sku)+'</td><td>'+layerEsc(p.integrationId)+'</td><td><strong>'+layerEsc(p.name)+'</strong></td><td>'+layerEsc(layerStatusValue(p))+'</td><td>'+layerEsc(p.brand)+'</td><td class="catalog-table-actions">'+(p.id!==null&&p.id!==undefined?'<button type="button" data-layer-detail="'+esc(String(p.id))+'">Visualizar</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
+ else content='<div class="catalog-table-scroll"><table class="catalog-products-table"><thead><tr><th>ID</th><th>SKU</th><th>ID de integração</th><th>Nome</th><th>Tipo</th><th>Visibilidade</th><th>Marca</th><th class="catalog-actions-head">Ações</th></tr></thead><tbody>'+pageRows.map(p=>'<tr><td class="catalog-id">'+layerEsc(p.id)+'</td><td>'+layerEsc(p.sku)+'</td><td>'+layerEsc(p.integrationId)+'</td><td><strong>'+layerEsc(p.name)+'</strong></td><td>'+layerTypeLabel(p)+'</td><td>'+layerEsc(layerStatusValue(p))+'</td><td>'+layerEsc(p.brand)+'</td><td class="catalog-table-actions">'+(p.id!==null&&p.id!==undefined?'<button type="button" data-layer-detail="'+esc(String(p.id))+'" data-layer-kind="'+esc(p.entityType||'products')+'">Visualizar</button> <button type="button" data-layer-edit="'+esc(String(p.id))+'" data-layer-kind="'+esc(p.entityType||'products')+'">Editar</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
  return '<section class="panel module-panel catalog-list-panel">'+
- '<div class="catalog-list-head"><div><h2>Lista de produtos</h2><p>'+(data?layerEsc(data.totalCount??available)+' produtos na API · '+available+' carregados':'Catálogo do ambiente de testes')+'</p></div><div class="catalog-list-actions"><button type="button" id="layerExport" '+(!data||layerLoading?'disabled':'')+'>Exportar CSV</button><button type="button" id="layerRefresh" class="primary" '+(layerLoading?'disabled':'')+'>↻ Atualizar</button></div></div>'+
+ '<div class="catalog-list-head"><div><h2>Lista de produtos</h2><p>'+(data?layerEsc(data.totalCount??available)+' registros · '+available+' carregados':'Catálogo do ambiente de testes')+'</p></div><div class="catalog-list-actions"><button type="button" id="layerExport" '+(!data||layerLoading?'disabled':'')+'>Exportar CSV</button><button type="button" id="layerRefresh" class="primary" '+(layerLoading?'disabled':'')+'>↻ Atualizar</button></div></div>'+
  '<div class="catalog-filter-panel">'+
  '<div class="catalog-search-row"><label class="catalog-search-control"><span>Buscar produtos</span><input id="layerSearch" type="search" value="'+esc(layerSearch)+'" placeholder="Nome, SKU, ID ou integração" autocomplete="off" aria-label="Pesquisar produtos"></label>'+
  '<label><span>Buscar em</span><select id="layerField"><option value="all" '+(layerField==='all'?'selected':'')+'>Todos os campos</option>'+[['name','Nome'],['sku','SKU'],['id','ID'],['integrationId','ID de integração']].map(([k,v])=>'<option value="'+k+'" '+(layerField===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label></div>'+
- '<div class="catalog-filter-row"><label><span>Situação</span><select id="layerStatus">'+layerOptions(statusList,layerStatus,'Todas as situações')+'</select></label>'+
+ '<div class="catalog-filter-row"><label><span>Tipo</span><select id="layerEntityType">'+[['products','Produtos'],['skus','SKUs'],['kits','Kits'],['all','Todos']].map(([key,label])=>'<option value="'+key+'" '+(layerEntityType===key?'selected':'')+'>'+label+'</option>').join('')+'</select></label><label><span>Visibilidade</span><select id="layerStatus">'+layerOptions(statusList,layerStatus,'Todas')+'</select></label>'+
  '<label><span>Marca</span><select id="layerBrand">'+layerOptions(brandList,layerBrand,'Todas as marcas')+'</select></label>'+
  '<label><span>Ordenação</span><select id="layerOrder">'+[['name-asc','Nome: A–Z'],['name-desc','Nome: Z–A'],['id-desc','ID: maior primeiro'],['id-asc','ID: menor primeiro'],['sku-asc','SKU: A–Z'],['sku-desc','SKU: Z–A']].map(([k,v])=>'<option value="'+k+'" '+(layerOrder===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
  '<button type="button" class="catalog-clear" id="layerClear">Limpar filtros</button></div></div>'+
@@ -2098,22 +2101,23 @@ async function loadLayerProducts(){
  try{
   if(!authSessionToken)throw new Error('UNAUTHORIZED');
   const combined=[],seen=new Set();
-  let total=null,lastPage=1;
+  let total=null,lastPage=1,truncated=false;
   for(let page=1;page<=Math.ceil(LAYER_MAX_RECORDS/100);page++){
-   const response=await fetch(AUTH_API+'/api/products?page='+page+'&pageSize=100',{headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'});
+   const response=await fetch(AUTH_API+'/api/products?type='+encodeURIComponent(layerEntityType)+'&page='+page+'&pageSize=100',{headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'});
    const data=await response.json().catch(()=>({}));
    if(!response.ok){const error=new Error(data.error||'API_ERROR');error.status=response.status;throw error}
    if(!Array.isArray(data.items))throw new Error('INVALID_RESPONSE');
    if(total===null&&data.totalCount!==null&&data.totalCount!==undefined)total=Number(data.totalCount);
    for(const item of data.items){
-    const key=item.id!==undefined&&item.id!==null?'id:'+item.id:'sku:'+item.sku;
+    const key=item.id!==undefined&&item.id!==null?(item.entityType||'products')+':'+item.id:(item.entityType||'products')+':sku:'+item.sku;
     if(!seen.has(key)){seen.add(key);combined.push(item)}
    }
    lastPage=page;
-   if(data.items.length<100||(total!==null&&combined.length>=total))break;
+   if(page>=Math.ceil(LAYER_MAX_RECORDS/100)&&Number(data.totalPages)>page)truncated=true;
+   if(page>=Number(data.totalPages||1)||(total!==null&&combined.length>=total))break;
   }
   if(requestId!==layerRequestId)return;
-  layerData={items:combined,totalCount:total??combined.length,pageSize:100,pagesLoaded:lastPage};
+  layerData={items:combined,totalCount:total??combined.length,pageSize:100,pagesLoaded:lastPage,truncated};
   layerPage=1;
  }catch(error){
   if(requestId!==layerRequestId)return;
@@ -2165,6 +2169,7 @@ function bindLayerCatalog(target,page){
    layerPage=1;render();
   });
  });
+ target.querySelector('#layerEntityType')?.addEventListener('change',e=>{layerEntityType=e.target.value;layerData=null;layerSearch='';layerStatus='all';layerBrand='all';layerPage=1;render();loadLayerProducts()});
  target.querySelector('#layerPageSize')?.addEventListener('change',e=>{layerPageSize=Number(e.target.value)||20;layerPage=1;render()});
  target.querySelector('#layerClear')?.addEventListener('click',reset);
  target.querySelector('#layerClearInline')?.addEventListener('click',reset);
@@ -2173,7 +2178,8 @@ function bindLayerCatalog(target,page){
  target.querySelector('#layerRetry')?.addEventListener('click',loadLayerProducts);
  target.querySelector('#layerPrev')?.addEventListener('click',()=>{if(layerPage>1){layerPage--;render()}});
  target.querySelector('#layerNext')?.addEventListener('click',()=>{layerPage++;render()});
- target.querySelectorAll('[data-layer-detail]').forEach(b=>b.addEventListener('click',()=>showLayerProductDetails(b.dataset.layerDetail)));
+ target.querySelectorAll('[data-layer-detail]').forEach(b=>b.addEventListener('click',()=>showLayerProductDetails(b.dataset.layerDetail,b.dataset.layerKind,'view')));
+ target.querySelectorAll('[data-layer-edit]').forEach(b=>b.addEventListener('click',()=>showLayerProductDetails(b.dataset.layerEdit,b.dataset.layerKind,'edit')));
 }
 function catalogValue(v){
  if(v===null||v===undefined||v==='')return '—';
