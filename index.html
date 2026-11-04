@@ -578,6 +578,44 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 #layerSearch{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:10px 12px}
 #layerRefresh{border-radius:8px;padding:10px 18px}
 .catalog-source-info{line-height:1.5}
+
+/* Catálogo com filtros de operação, tabelas densas e paginação. */
+.catalog-source-box{padding:18px 20px}
+.catalog-list-panel{padding:20px}
+.catalog-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.catalog-list-head h2{margin:0 0 3px;font-size:18px}
+.catalog-list-head p{margin:0;color:var(--muted);font-size:13px}
+.catalog-filter-panel{border:1px solid var(--line);background:var(--bg);padding:14px;border-radius:12px;margin-bottom:14px}
+.catalog-filter-panel label{display:flex;flex-direction:column;gap:6px;min-width:0;color:var(--muted);font-size:12px;font-weight:650}
+.catalog-filter-panel input,.catalog-filter-panel select,.catalog-page-controls select{height:40px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:7px 10px;width:100%;font:inherit}
+.catalog-search-row{display:grid;grid-template-columns:minmax(220px,2fr) minmax(160px,1fr);gap:12px;margin-bottom:12px}
+.catalog-filter-row{display:grid;grid-template-columns:repeat(3,minmax(130px,1fr)) auto;gap:12px;align-items:end}
+.catalog-clear{height:40px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);white-space:nowrap;cursor:pointer}
+.catalog-result-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:12px 0}
+.catalog-result-bar strong{color:var(--text);font-size:13px}
+.catalog-table-scroll{overflow:auto;border:1px solid var(--line);border-radius:10px}
+.catalog-products-table{width:100%;border-collapse:collapse;text-align:left;min-width:750px}
+.catalog-products-table th{background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;padding:13px 14px;white-space:nowrap}
+.catalog-products-table td{border-top:1px solid var(--line);padding:12px 14px;font-size:13px}
+.catalog-products-table tr:hover td{background:var(--bg)}
+.catalog-products-table td strong{font-weight:650}
+.catalog-id{font-variant-numeric:tabular-nums}
+.catalog-actions-head{text-align:right}
+.catalog-products-table .catalog-table-actions{text-align:right}
+.catalog-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;color:var(--muted);font-size:13px}
+.catalog-page-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.catalog-page-controls select{width:70px}
+.catalog-page-controls button{padding:9px 12px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;cursor:pointer}
+.catalog-page-controls button:disabled{opacity:.45;cursor:not-allowed}
+.catalog-state{display:flex;align-items:center;justify-content:center;gap:14px;min-height:155px;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center}
+.catalog-state strong{font-size:14px}
+.catalog-state p{color:var(--muted);font-size:13px;margin:8px 0}
+.catalog-state button{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:9px 15px;cursor:pointer}
+.catalog-error{border-color:#d87b7b}
+.catalog-spinner{width:24px;height:24px;border:3px solid var(--line);border-top-color:var(--cyan);border-radius:50%;animation:catalog-spin .75s linear infinite}
+@keyframes catalog-spin{to{transform:rotate(360deg)}}
+@media(max-width:850px){.catalog-filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-result-bar{align-items:flex-start;flex-direction:column}}
+@media(max-width:570px){.catalog-search-row,.catalog-filter-row{grid-template-columns:1fr}.catalog-pagination{flex-direction:column;align-items:flex-start}}
 </style>
 </head>
 <body>
@@ -1963,58 +2001,137 @@ function bindWorkflow(target){
 function renderContracts(){return domainHeader('Contratos e regras comerciais B2B','Condições comerciais configuradas por canal e grupo econômico.')+domainCards([['Contratos','3','Dados fictícios'],['Vinculados a grupos','2','Escopo específico'],['Contrato padrão','1','Fallback por canal a validar']])+'<section class="panel module-panel"><h2>Contratos comerciais</h2><p class="hint">O contrato pode controlar catálogo, preços, estoque, pagamentos, entrega, limites e crédito.</p>'+demoTable(['Código','Contrato','Vínculo','Origem da regra','Status'],contractsRows)+'<div class="domain-info"><b>Origem das regras:</b> identificar claramente quando as condições são determinadas pelo contrato de um grupo econômico ou pelo contrato padrão do canal. As precedências e exceções precisam ser validadas na implementação real.</div><button class="primary" data-domain-action="Consultar contrato">Consultar contrato</button></section>'+renderRegisterList('Contratos')}
 
 
-/* Leitura de catálogo via Layer API; modo demo permanece independente. */
+/* Catálogo: leitura autenticada da Layer, filtros globais sobre o lote carregado. */
 let catalogSource='demo',layerPage=1,layerData=null,layerLoading=false,layerError='',layerSearch='';
+let layerField='all',layerStatus='all',layerBrand='all',layerOrder='name-asc',layerPageSize=20;
+let layerRequestId=0;
+const LAYER_MAX_RECORDS=500;
+function layerEsc(v){return v===null||v===undefined||v===''?'—':esc(String(v))}
+function layerText(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR')}
+function layerStatusValue(p){return p.status??(p.active===true?'Ativo':p.active===false?'Inativo':null)}
 function catalogSourcePicker(){
- return '<section class="panel module-panel"><div class="catalog-toolbar"><div><h2 style="margin:0">Produtos e SKUs</h2><span class="catalog-source-info">'+(catalogSource==='demo'?'Dados de demonstração':'Layer API v3 · Ambiente de testes · Somente leitura')+'</span></div><div class="catalog-selector"><label for="catalogSourceSelect">Fonte:</label><select id="catalogSourceSelect" aria-label="Origem dos produtos"><option value="demo" '+(catalogSource==='demo'?'selected':'')+'>Demonstração</option><option value="layer" '+(catalogSource==='layer'?'selected':'')+'>Layer — Testes</option></select></div></div></section>';
+ return '<section class="panel module-panel catalog-source-box"><div class="catalog-toolbar"><div><h2 style="margin:0">Produtos e SKUs</h2><span class="catalog-source-info">'+(catalogSource==='demo'?'Dados locais de demonstração':'Layer API v3 · Ambiente de testes · Somente leitura')+'</span></div><div class="catalog-selector"><label for="catalogSourceSelect">Fonte de dados</label><select id="catalogSourceSelect" aria-label="Origem dos produtos"><option value="demo" '+(catalogSource==='demo'?'selected':'')+'>Demonstração</option><option value="layer" '+(catalogSource==='layer'?'selected':'')+'>Layer — Testes</option></select></div></div></section>';
+}
+function layerOptions(values,current,allLabel){
+ const unique=[...new Set(values.filter(v=>v!==null&&v!==undefined&&String(v).trim()!==''))].map(String).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ return '<option value="all">'+allLabel+'</option>'+unique.map(v=>'<option value="'+esc(v)+'" '+(String(current)===v?'selected':'')+'>'+esc(v)+'</option>').join('');
+}
+function layerFilteredRows(){
+ let rows=layerData?.items||[];
+ const query=layerText(layerSearch.trim());
+ if(query){
+  const fields=layerField==='all'?['id','sku','integrationId','name','status','brand']:[layerField];
+  rows=rows.filter(p=>fields.some(k=>layerText(k==='status'?layerStatusValue(p):p[k]).includes(query)));
+ }
+ if(layerStatus!=='all')rows=rows.filter(p=>String(layerStatusValue(p))===layerStatus);
+ if(layerBrand!=='all')rows=rows.filter(p=>String(p.brand??'')===layerBrand);
+ rows=[...rows];
+ rows.sort((a,b)=>{
+  if(layerOrder==='id-asc')return (Number(a.id)||0)-(Number(b.id)||0);
+  if(layerOrder==='id-desc')return (Number(b.id)||0)-(Number(a.id)||0);
+  if(layerOrder==='sku-asc')return String(a.sku??'').localeCompare(String(b.sku??''),'pt-BR',{numeric:true});
+  if(layerOrder==='sku-desc')return String(b.sku??'').localeCompare(String(a.sku??''),'pt-BR',{numeric:true});
+  return (layerOrder==='name-desc'?-1:1)*String(a.name??'').localeCompare(String(b.name??''),'pt-BR',{numeric:true});
+ });
+ return rows;
 }
 function renderLayerProducts(){
- const data=layerData,fmt=v=>v===undefined||v===null||v===''?'—':esc(String(v));
- const pages=Number(data?.totalPages)||((data?.totalCount!==null&&data?.totalCount!==undefined)?Math.ceil(Number(data.totalCount)/(Number(data.pageSize)||20)):null);
+ const data=layerData;
+ const filtered=layerFilteredRows();
+ const maxPages=Math.max(1,Math.ceil(filtered.length/layerPageSize));
+ if(layerPage>maxPages)layerPage=maxPages;
+ const pageRows=filtered.slice((layerPage-1)*layerPageSize,layerPage*layerPageSize);
+ const available=data?.items?.length??0;
+ const allLoaded=data&&((Number(data.totalCount)||0)<=available);
+ const statusList=data?.items?.map(layerStatusValue)||[];
+ const brandList=data?.items?.map(p=>p.brand)||[];
+ const scopedNote=!data?'':allLoaded?'Filtros e ordenação aplicados a todos os produtos carregados.':'Filtros aplicados somente aos '+available+' registros carregados; o total da API pode ser maior.';
  let content='';
- if(layerLoading)content='<div class="module-empty" role="status">Consultando produtos da Layer…</div>';
- else if(layerError)content='<div class="module-empty" role="alert">'+esc(layerError)+' <button id="layerRetry" type="button">Tentar novamente</button></div>';
- else if(!data)content='<div class="module-empty">Clique em Atualizar para carregar os produtos.</div>';
- else if(!data.items.length)content='<div class="module-empty">Nenhum produto encontrado.</div>';
- else{
-  const filtered=data.items.filter(p=>[p.id,p.sku,p.integrationId,p.name,p.status,p.brand].some(v=>String(v??'').toLocaleLowerCase('pt-BR').includes(layerSearch.toLocaleLowerCase('pt-BR'))));
-  content='<div class="demo-register-table"><table><thead><tr><th>ID</th><th>SKU</th><th>ID de integração</th><th>Nome</th><th>Status</th><th>Marca</th><th>Ações</th></tr></thead><tbody>'+filtered.map(p=>'<tr><td>'+fmt(p.id)+'</td><td>'+fmt(p.sku)+'</td><td>'+fmt(p.integrationId)+'</td><td><strong>'+fmt(p.name)+'</strong></td><td>'+fmt(p.status??(p.active===true?'Ativo':p.active===false?'Inativo':null))+'</td><td>'+fmt(p.brand)+'</td><td class="catalog-table-actions">'+(p.id!==null&&p.id!==undefined?'<button type="button" data-layer-detail="'+esc(String(p.id))+'">Detalhes</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
- }
- return '<section class="panel module-panel"><div class="panel-title"><div><h2>Lista de produtos</h2><p>'+(data?fmt(data.totalCount)+' registros · Página '+layerPage+(pages?' de '+pages:''):'Produtos do ambiente de testes')+'</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="catalog-search" type="search" id="layerSearch" value="'+esc(layerSearch)+'" placeholder="Filtrar nesta página..." aria-label="Filtrar produtos da página"><button id="layerRefresh" class="primary" type="button" '+(layerLoading?'disabled':'')+'>Atualizar</button></div></div>'+content+'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px"><span class="catalog-source-info">Busca local na página atual · Consulta sem alterações</span><div style="display:flex;gap:8px;align-items:center"><button id="layerPrev" type="button" '+(layerLoading||layerPage===1?'disabled':'')+'>Anterior</button><span>'+layerPage+(pages?' / '+pages:'')+'</span><button id="layerNext" type="button" '+(layerLoading||!data?.items?.length||(pages&&layerPage>=pages)?'disabled':'')+'>Próxima</button></div></div></section>';
+ if(layerLoading)content='<div class="catalog-state" role="status"><span class="catalog-spinner"></span><div><strong>Carregando catálogo…</strong><p>Consultando os produtos do ambiente de testes.</p></div></div>';
+ else if(layerError)content='<div class="catalog-state catalog-error" role="alert"><div><strong>Não foi possível carregar os produtos</strong><p>'+esc(layerError)+'</p><button id="layerRetry" type="button">Tentar novamente</button></div></div>';
+ else if(!data)content='<div class="catalog-state">Selecione Atualizar para consultar os produtos.</div>';
+ else if(!pageRows.length)content='<div class="catalog-state"><div><strong>Nenhum produto encontrado</strong><p>Revise os filtros e tente novamente.</p><button type="button" id="layerClearInline">Limpar filtros</button></div></div>';
+ else content='<div class="catalog-table-scroll"><table class="catalog-products-table"><thead><tr><th>ID</th><th>SKU</th><th>ID de integração</th><th>Produto</th><th>Situação</th><th>Marca</th><th class="catalog-actions-head">Ações</th></tr></thead><tbody>'+pageRows.map(p=>'<tr><td class="catalog-id">'+layerEsc(p.id)+'</td><td>'+layerEsc(p.sku)+'</td><td>'+layerEsc(p.integrationId)+'</td><td><strong>'+layerEsc(p.name)+'</strong></td><td>'+layerEsc(layerStatusValue(p))+'</td><td>'+layerEsc(p.brand)+'</td><td class="catalog-table-actions">'+(p.id!==null&&p.id!==undefined?'<button type="button" data-layer-detail="'+esc(String(p.id))+'">Visualizar</button>':'—')+'</td></tr>').join('')+'</tbody></table></div>';
+ return '<section class="panel module-panel catalog-list-panel">'+
+ '<div class="catalog-list-head"><div><h2>Lista de produtos</h2><p>'+(data?layerEsc(data.totalCount??available)+' produtos na API · '+available+' carregados':'Catálogo do ambiente de testes')+'</p></div><button type="button" id="layerRefresh" class="primary" '+(layerLoading?'disabled':'')+'>↻ Atualizar</button></div>'+
+ '<div class="catalog-filter-panel">'+
+ '<div class="catalog-search-row"><label class="catalog-search-control"><span>Buscar produtos</span><input id="layerSearch" type="search" value="'+esc(layerSearch)+'" placeholder="Nome, SKU, ID ou integração" autocomplete="off" aria-label="Pesquisar produtos"></label>'+
+ '<label><span>Buscar em</span><select id="layerField"><option value="all" '+(layerField==='all'?'selected':'')+'>Todos os campos</option>'+[['name','Nome'],['sku','SKU'],['id','ID'],['integrationId','ID de integração']].map(([k,v])=>'<option value="'+k+'" '+(layerField===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label></div>'+
+ '<div class="catalog-filter-row"><label><span>Situação</span><select id="layerStatus">'+layerOptions(statusList,layerStatus,'Todas as situações')+'</select></label>'+
+ '<label><span>Marca</span><select id="layerBrand">'+layerOptions(brandList,layerBrand,'Todas as marcas')+'</select></label>'+
+ '<label><span>Ordenação</span><select id="layerOrder">'+[['name-asc','Nome: A–Z'],['name-desc','Nome: Z–A'],['id-desc','ID: maior primeiro'],['id-asc','ID: menor primeiro'],['sku-asc','SKU: A–Z'],['sku-desc','SKU: Z–A']].map(([k,v])=>'<option value="'+k+'" '+(layerOrder===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
+ '<button type="button" class="catalog-clear" id="layerClear">Limpar filtros</button></div></div>'+
+ '<div class="catalog-result-bar"><strong>'+filtered.length+' resultado'+(filtered.length===1?'':'s')+'</strong><span>'+esc(scopedNote)+'</span></div>'+
+ content+
+ '<div class="catalog-pagination"><div>Exibindo '+(pageRows.length?((layerPage-1)*layerPageSize+1):0)+'–'+Math.min(filtered.length,layerPage*layerPageSize)+' de '+filtered.length+'</div>'+
+ '<div class="catalog-page-controls"><label for="layerPageSize">Por página</label><select id="layerPageSize">'+[10,20,50,100].map(v=>'<option value="'+v+'" '+(layerPageSize===v?'selected':'')+'>'+v+'</option>').join('')+'</select><button type="button" id="layerPrev" '+(layerLoading||layerPage<=1?'disabled':'')+' aria-label="Página anterior">Anterior</button><span>Página '+layerPage+' de '+maxPages+'</span><button type="button" id="layerNext" '+(layerLoading||layerPage>=maxPages?'disabled':'')+' aria-label="Próxima página">Próxima</button></div></div>'+
+ '</section>';
 }
-
 async function loadLayerProducts(){
  if(layerLoading||catalogSource!=='layer')return;
+ const requestId=++layerRequestId;
  layerLoading=true;layerError='';
  if(vnextPage==='Produtos e SKUs')renderActiveModule(vnextPage);
  try{
   if(!authSessionToken)throw new Error('UNAUTHORIZED');
-  const response=await fetch(AUTH_API+'/api/products?page='+layerPage+'&pageSize=20',{headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok){const error=new Error(data.error||'API_ERROR');error.status=response.status;throw error}
-  if(!Array.isArray(data.items))throw new Error('INVALID_RESPONSE');
-  layerData=data;
+  const combined=[],seen=new Set();
+  let total=null,lastPage=1;
+  for(let page=1;page<=Math.ceil(LAYER_MAX_RECORDS/100);page++){
+   const response=await fetch(AUTH_API+'/api/products?page='+page+'&pageSize=100',{headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok){const error=new Error(data.error||'API_ERROR');error.status=response.status;throw error}
+   if(!Array.isArray(data.items))throw new Error('INVALID_RESPONSE');
+   if(total===null&&data.totalCount!==null&&data.totalCount!==undefined)total=Number(data.totalCount);
+   for(const item of data.items){
+    const key=item.id!==undefined&&item.id!==null?'id:'+item.id:'sku:'+item.sku;
+    if(!seen.has(key)){seen.add(key);combined.push(item)}
+   }
+   lastPage=page;
+   if(data.items.length<100||(total!==null&&combined.length>=total))break;
+  }
+  if(requestId!==layerRequestId)return;
+  layerData={items:combined,totalCount:total??combined.length,pageSize:100,pagesLoaded:lastPage};
+  layerPage=1;
  }catch(error){
+  if(requestId!==layerRequestId)return;
   layerData=null;
-  layerError=error.status===401||error.message==='UNAUTHORIZED'?'Sessão expirada ou não autorizada. Entre novamente.':error.status===503?'Backend ainda não configurado para consultar a Layer.':error.message==='Failed to fetch'?'Falha na conexão ou CORS. Verifique se publicou o novo Worker.':'Erro na consulta à Layer: '+error.message;
+  layerError=error.status===401||error.message==='UNAUTHORIZED'?'Sessão inválida ou expirada. Faça login novamente.':error.status===503?'Configuração do backend indisponível.':error.message==='Failed to fetch'?'Falha de rede ou CORS. Confira a publicação do Worker.':'Erro na consulta à Layer ('+error.message+').';
  }finally{
-  layerLoading=false;if(vnextPage==='Produtos e SKUs'&&catalogSource==='layer')renderActiveModule(vnextPage);
+  if(requestId===layerRequestId){
+   layerLoading=false;
+   if(vnextPage==='Produtos e SKUs'&&catalogSource==='layer')renderActiveModule(vnextPage);
+  }
  }
 }
 function bindLayerCatalog(target,page){
  if(page!=='Produtos e SKUs')return;
+ const render=()=>renderActiveModule(page);
+ const reset=()=>{layerSearch='';layerField='all';layerStatus='all';layerBrand='all';layerOrder='name-asc';layerPage=1;render()};
  target.querySelector('#catalogSourceSelect')?.addEventListener('change',e=>{
-  catalogSource=e.target.value==='layer'?'layer':'demo';layerPage=1;layerSearch='';layerData=null;layerError='';
-  renderActiveModule(page);if(catalogSource==='layer')loadLayerProducts();
+  catalogSource=e.target.value==='layer'?'layer':'demo';
+  layerRequestId++;layerLoading=false;layerData=null;layerError='';reset();
+  if(catalogSource==='layer')loadLayerProducts();
  });
  target.querySelector('#layerSearch')?.addEventListener('input',e=>{
-  const position=e.target.selectionStart;layerSearch=e.target.value;renderActiveModule(page);
-  const field=document.getElementById('layerSearch');field?.focus();field?.setSelectionRange(position,position);
+  layerSearch=e.target.value;layerPage=1;const pos=e.target.selectionStart;render();
+  const input=document.getElementById('layerSearch');input?.focus();input?.setSelectionRange(pos,pos);
  });
+ [['layerField','layerField'],['layerStatus','layerStatus'],['layerBrand','layerBrand'],['layerOrder','layerOrder']].forEach(([id,key])=>{
+  target.querySelector('#'+id)?.addEventListener('change',e=>{
+   if(key==='layerField')layerField=e.target.value;
+   if(key==='layerStatus')layerStatus=e.target.value;
+   if(key==='layerBrand')layerBrand=e.target.value;
+   if(key==='layerOrder')layerOrder=e.target.value;
+   layerPage=1;render();
+  });
+ });
+ target.querySelector('#layerPageSize')?.addEventListener('change',e=>{layerPageSize=Number(e.target.value)||20;layerPage=1;render()});
+ target.querySelector('#layerClear')?.addEventListener('click',reset);
+ target.querySelector('#layerClearInline')?.addEventListener('click',reset);
  target.querySelector('#layerRefresh')?.addEventListener('click',loadLayerProducts);
  target.querySelector('#layerRetry')?.addEventListener('click',loadLayerProducts);
- target.querySelector('#layerPrev')?.addEventListener('click',()=>{if(layerPage>1){layerPage--;layerSearch='';loadLayerProducts()}});
- target.querySelector('#layerNext')?.addEventListener('click',()=>{layerPage++;layerSearch='';loadLayerProducts()});
+ target.querySelector('#layerPrev')?.addEventListener('click',()=>{if(layerPage>1){layerPage--;render()}});
+ target.querySelector('#layerNext')?.addEventListener('click',()=>{layerPage++;render()});
  target.querySelectorAll('[data-layer-detail]').forEach(b=>b.addEventListener('click',()=>showLayerProductDetails(b.dataset.layerDetail)));
 }
 function catalogValue(v){
