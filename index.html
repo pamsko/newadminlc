@@ -1521,6 +1521,161 @@ function workflowActionMenu(code){
  auditEvent('Alterar ativação do fluxo','Fluxos',code+' '+prev+' → '+newStatus);
  renderActiveModule('Fluxos (workflows)');
 }
+
+function openWorkflowEditor(code){
+ if(!demoGuard('write','configurar fluxo'))return;
+ const page='Fluxos (workflows)',rows=registerRows(page),old=code==null?null:rows.find(x=>String(x.code)===String(code));
+ if(code!=null&&!old){toast('Fluxo não encontrado.');return}
+ const oldJSON=old?JSON.stringify(old):null;
+ const now=()=>new Date().toLocaleString('pt-BR');
+ let draft={code:'WF-'+String(Date.now()).slice(-8),name:'',entity:'Pedido',kind:'Sequencial',triggerMode:'Evento',event:'OrderPurchased',status:'Rascunho',conditionField:'',conditionOperator:'Igual a',conditionValue:'',description:'',integrationId:'',sourceState:'',targetState:'',delay:'',createdBy:loggedUser||'Usuário',createdAt:now(),...(old||{})};
+ const eventAliases={'Pedido criado':'OrderPurchased','Pedido pago':'OrderPaid','Pedido cancelado':'OrderGlobalStatusCancelled','Produto atualizado':'ProductUpdated','Cliente aprovado':'CustomerUpdated'};
+ draft.event=draft.event||eventAliases[draft.trigger]||'OrderPurchased';
+ draft.kind=draft.kind||'Sequencial';
+ draft.triggerMode=draft.triggerMode||(draft.event==='Execução manual'?'Manual':'Evento');
+ draft.tasks=old?workflowTaskRows(old):[];
+ let mode='simple',stage=0,dirty=false,taskQuery='',taskCategory='Todas',selected=-1,dragged=null,draftTimer=null;
+ const draftKey='vnext-workflow-draft:'+draft.code;
+ const recovered=vnextRead(draftKey,null);
+ if(recovered&&window.confirm('Existe um rascunho local deste fluxo. Deseja recuperar?'))draft={...draft,...recovered,tasks:recovered.tasks||draft.tasks};
+ const backdrop=document.createElement('div');backdrop.className='workflow-editor-overlay expanded-register-overlay';
+ backdrop.innerHTML='<div class="workflow-editor-shell" role="dialog" aria-modal="true" aria-labelledby="wfDialogTitle">'+
+ '<header class="workflow-editor-header"><div class="eyebrow">CONFIGS / FLUXOS</div><h2 id="wfDialogTitle">'+(old?'Editar fluxo':'Criar fluxo')+'</h2><p>Configure as etapas e entenda o impacto antes de ativar.</p><div class="wf-mode-switch" role="group" aria-label="Complexidade do editor"><button type="button" data-wf-mode="simple" class="active">Simples</button><button type="button" data-wf-mode="advanced">Avançado</button></div></header>'+
+ '<button type="button" class="workflow-editor-close" id="wfEditorClose" aria-label="Fechar">✕</button>'+
+ '<nav class="workflow-editor-steps" aria-label="Etapas"><button data-wf-stage="0">1 · Identificação</button><button data-wf-stage="1">2 · Quando acontece</button><button data-wf-stage="2">3 · Ações</button><button data-wf-stage="3">4 · Revisão</button></nav>'+
+ '<main id="wfEditorMain" class="workflow-editor-main"></main>'+
+ '<footer class="workflow-editor-footer"><span id="wfEditorNotice" role="status"></span><div><button type="button" id="wfPrevious">Voltar</button><button type="button" id="wfSave">Salvar rascunho</button><button type="button" id="wfNext" class="primary">Continuar</button><button type="button" id="wfActivate" class="primary">Ativar fluxo</button></div></footer></div>';
+ document.body.appendChild(backdrop);
+ const origOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
+ const main=backdrop.querySelector('#wfEditorMain');
+ const el=id=>backdrop.querySelector('#'+id);
+ const notice=text=>{el('wfEditorNotice').textContent=text};
+ const option=(items,val)=>workflowSelectOptions(items,val);
+ const inp=(label,key,val,type='text',extra='')=>'<label class="wf-editor-field"><span>'+esc(label)+'</span><input data-wf-field="'+key+'" value="'+esc(val??'')+'" type="'+type+'" '+extra+'></label>';
+ const sel=(label,key,items,val)=>'<label class="wf-editor-field"><span>'+esc(label)+'</span><select data-wf-field="'+key+'">'+option(items,val)+'</select></label>';
+ const area=(label,key,val)=>'<label class="wf-editor-field wf-wide"><span>'+esc(label)+'</span><textarea data-wf-field="'+key+'" rows="3">'+esc(val??'')+'</textarea></label>';
+ const intro=(n,title,desc)=>'<header class="wf-editor-intro"><small>ETAPA '+n+' DE 4</small><h3>'+title+'</h3><p>'+desc+'</p></header>';
+ const help=(title,desc)=>'<div class="wf-editor-help"><strong>'+title+'</strong><p>'+desc+'</p></div>';
+ const makeDirty=()=>{dirty=true;notice('Alterações pendentes');clearTimeout(draftTimer);draftTimer=setTimeout(()=>{if(vnextStore(draftKey,draft))notice('Rascunho salvo automaticamente')},1500)};
+ const close=(force=false)=>{if(!force&&dirty&&!window.confirm('Existem alterações não salvas. Deseja fechar o editor?'))return;clearTimeout(draftTimer);document.removeEventListener('keydown',onKey);backdrop.remove();document.body.style.overflow=origOverflow};
+ const onKey=e=>{if(e.key==='Escape'){e.preventDefault();close()}};
+ document.addEventListener('keydown',onKey);el('wfEditorClose').addEventListener('click',()=>close());
+ const sections=[
+ ()=>{
+  const base=intro(1,'Qual processo você quer automatizar?','Dê um nome fácil de reconhecer e escolha onde a automação acontece.');
+  return base+'<div class="wf-editor-fields">'+inp('Nome do fluxo *','name',draft.name)+sel('Onde acontece? *','entity',Object.keys(workflowEventMap),draft.entity)+(mode==='advanced'?inp('Código','code',draft.code,'text',old?'readonly':'')+sel('Tipo de fluxo','kind',['Sequencial','Máquina de Estados'],workflowKind(draft))+inp('Identificador de integração','integrationId',draft.integrationId):'')+area('Descrição do objetivo','description',draft.description)+'</div>'+
+  help('Comece por um fluxo simples','Exemplo: quando um pedido for pago, atualizar seu status e avisar o time. Você pode mudar para Avançado a qualquer momento.');
+ },
+ ()=>{
+  const events=workflowEventMap[draft.entity]||[];
+  const displayEvents={OrderPurchased:'Pedido realizado',OrderPaid:'Pagamento aprovado',OrderRefunded:'Pedido estornado',OrderShipped:'Pedido enviado',OrderDelivered:'Pedido entregue',CustomerInserted:'Novo cliente cadastrado',CustomerUpdated:'Cadastro atualizado',ProductUpdated:'Produto atualizado',StockKeepUnitUpdated:'SKU atualizado'};
+  const triggers=events.map(event=>'<button type="button" class="wf-event-card '+(draft.triggerMode==='Evento'&&draft.event===event?'is-selected':'')+'" data-wf-event="'+esc(event)+'"><strong>'+esc(displayEvents[event]||event)+'</strong>'+(mode==='advanced'?'<small>'+esc(event)+'</small>':'')+'</button>').join('');
+  return intro(2,'Quando este fluxo deve começar?','Selecione um acontecimento ou escolha a execução manual.')+
+  '<div class="wf-trigger-options"><button data-wf-trigger="Evento" class="'+(draft.triggerMode==='Evento'?'is-selected':'')+'">Automático por evento</button><button data-wf-trigger="Manual" class="'+(draft.triggerMode==='Manual'?'is-selected':'')+'">Quando eu solicitar</button>'+(mode==='advanced'?'<button data-wf-trigger="Agendado" class="'+(draft.triggerMode==='Agendado'?'is-selected':'')+'">Agendado</button>':'')+'</div>'+
+  (draft.triggerMode==='Evento'?'<h4>Escolha o evento</h4><div class="wf-event-grid">'+triggers+'</div>':draft.triggerMode==='Agendado'?'<div class="wf-editor-fields">'+inp('Atraso em minutos','delay',draft.delay,'number','min="1" step="1"')+'</div>':help('Execução manual','O operador autorizado inicia o fluxo a partir do registro aplicável.'))+
+  (mode==='advanced'?'<div class="wf-advanced-conditions"><h4>Condição de execução (opcional)</h4><div class="wf-editor-fields">'+sel('Campo','conditionField',['','status','payment.status','shipping.status','stock','channel','error.code'],draft.conditionField)+sel('Operador','conditionOperator',['Igual a','Diferente de','Contém','Maior que','Menor que'],draft.conditionOperator)+inp('Valor','conditionValue',draft.conditionValue)+(workflowKind(draft)==='Máquina de Estados'?inp('Estado de origem *','sourceState',draft.sourceState)+inp('Estado de destino *','targetState',draft.targetState):'')+'</div></div>':'')
+ },
+ ()=>{
+  const favorites=mode==='simple'?workflowTaskCatalog.filter(x=>['Alterar status','Adicionar tag','Enviar e-mail ao consumidor','Enviar pedido para fila de integração','Confirmar reserva','Exibir aviso'].includes(x.id)):workflowTaskCatalog.filter(x=>(taskCategory==='Todas'||x.group===taskCategory)&&x.id.toLowerCase().includes(taskQuery.toLowerCase()));
+  const catOptions=['Todas',...new Set(workflowTaskCatalog.map(x=>x.group))];
+  const palette='<aside class="wf-library"><div class="wf-library-header"><h4>Biblioteca de ações</h4><p>'+(mode==='simple'?'Escolha uma ação para adicionar.':'Arraste uma ação para o fluxo ou clique para adicionar.')+'</p></div>'+
+  (mode==='advanced'?'<input id="wfTaskQuery" type="search" placeholder="Buscar tarefa…" value="'+esc(taskQuery)+'" aria-label="Buscar tarefa"><select id="wfTaskCategory" aria-label="Categoria">'+option(catOptions,taskCategory)+'</select>':'')+
+  '<div class="wf-library-items">'+favorites.map(x=>'<button type="button" draggable="'+(mode==='advanced'?'true':'false')+'" data-wf-palette="'+esc(x.id)+'"><span>✥</span><strong>'+esc(x.id)+'</strong><small>'+esc(x.group)+'</small></button>').join('')+'</div></aside>';
+  const node=(task,i)=>{
+   const meta=workflowTaskMeta(task);
+   return '<article class="wf-canvas-node '+(selected===i?'is-selected':'')+'" data-wf-node="'+i+'" draggable="'+(mode==='advanced'?'true':'false')+'" tabindex="0"><div class="wf-canvas-node-top"><span class="wf-canvas-node-number">'+(i+1)+'</span><div><strong>'+esc(task.name)+'</strong><small>'+esc(meta.group)+(meta.risk==='high'?' · Ação sensível':'')+'</small></div><span class="wf-drag-handle" aria-hidden="true">⠿</span></div><label class="wf-parameter"><span>'+esc(meta.parameter)+'</span><input data-wf-param="'+i+'" value="'+esc(task.param||'')+'" placeholder="Informe o parâmetro"></label><div class="wf-node-controls"><button data-wf-up="'+i+'" type="button" '+(i===0?'disabled':'')+'>↑ Subir</button><button data-wf-down="'+i+'" type="button" '+(i===draft.tasks.length-1?'disabled':'')+'>↓ Descer</button><button data-wf-remove="'+i+'" type="button">Remover</button></div></article>';
+  };
+  const zone=i=>'<div class="wf-drop-target" data-wf-drop="'+i+'" tabindex="0" role="button" aria-label="Inserir ação na posição '+(i+1)+'"><span>＋ '+(mode==='advanced'?'Solte uma ação aqui':'Adicionar ação aqui')+'</span></div>';
+  const steps=draft.tasks.flatMap((t,i)=>[zone(i),node(t,i)]).join('')+zone(draft.tasks.length);
+  return intro(3,'Monte o fluxo de ações',mode==='advanced'?'Arraste da biblioteca para o fluxo e arraste os blocos para reordenar.':'Adicione ações na ordem desejada. Use Subir e Descer para organizar.')+
+  '<div class="wf-builder-layout">'+palette+'<section class="wf-canvas"><div class="wf-canvas-title"><strong>Seu fluxo</strong><span>'+draft.tasks.length+' ação(ões)</span></div>'+
+  '<div class="wf-start-node">◉ INÍCIO · '+esc(draft.triggerMode==='Evento'?draft.event:draft.triggerMode)+'</div>'+
+  (draft.conditionField?'<div class="wf-condition-node">◇ SE '+esc(draft.conditionField)+' '+esc(draft.conditionOperator)+' '+esc(draft.conditionValue)+'</div>':'')+
+  steps+'<div class="wf-end-node">✓ FIM DO FLUXO</div></section></div>'+
+  help('As ações ainda não estão sendo executadas','Aqui você define o comportamento. Use Revisão para validar as etapas e identificar possíveis riscos antes de ativar.');
+ },
+ ()=>{
+  const problems=workflowValidation(draft,true),high=draft.tasks.filter(x=>workflowTaskMeta(x).risk==='high').length;
+  const diff=old?Object.keys(draft).filter(k=>JSON.stringify(draft[k])!==JSON.stringify(old[k])):[];
+  return intro(4,'Tudo pronto para revisar?','Confira o que aciona a automação, as ações escolhidas e os pontos de atenção.')+
+  '<div class="wf-review-grid"><div><small>Contexto</small><strong>'+esc(draft.entity)+'</strong></div><div><small>Tipo</small><strong>'+esc(workflowKind(draft))+'</strong></div><div><small>Acionamento</small><strong>'+esc(draft.triggerMode==='Evento'?draft.event:draft.triggerMode)+'</strong></div><div><small>Ações</small><strong>'+draft.tasks.length+'</strong></div></div>'+
+  '<div class="wf-review-card"><h4>Sequência de ações</h4><ol>'+draft.tasks.map(x=>'<li>'+esc(x.name)+' · '+esc(x.param||'Parâmetro pendente')+'</li>').join('')+'</ol>'+(draft.tasks.length?'':'<p>Nenhuma ação configurada.</p>')+'</div>'+
+  (high?'<div class="wf-impact-warning"><strong>⚠ '+high+' ação(ões) de alto impacto</strong><p>Confira mudanças de pedido, pagamento, estoque ou integrações. Essas operações exigirão autorização, rastreabilidade e controle de repetição em produção.</p></div>':'')+
+  '<div class="wf-review-card"><h4>Validação</h4>'+(problems.length?'<ul class="wf-validation-issues">'+problems.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p class="wf-valid">✓ Sem pendências na configuração local.</p>')+'</div>'+
+  '<div class="wf-review-card"><h4>Alterações e histórico</h4><p>Responsável: '+esc(draft.createdBy||'—')+' · '+esc(draft.createdAt||'—')+'</p><p>Versões anteriores: '+(workflowVersions()[draft.code]||[]).length+'</p><p>'+(old?diff.length+' campo(s) diferente(s) do cadastro atual.':'Novo cadastro de fluxo.')+'</p><button type="button" id="wfReviewTest">Validar sequência sem executar</button></div>';
+ }
+ ];
+ const save=(activation=false)=>{
+  if(!demoGuard(activation?'publish':'write',activation?'ativar fluxo':'salvar fluxo'))return;
+  const problems=workflowValidation(draft,activation);
+  if(problems.length){notice(problems[0]);if(activation){stage=problems.some(x=>/tarefa|parâmetro|ações|ação/.test(x))?2:problems.some(x=>/evento|condição|estado|agendamento/.test(x))?1:0;render()}return}
+  if(old&&JSON.stringify(old)!==oldJSON){notice('Outro processo alterou este fluxo. Reabra para revisar.');return}
+  if(!draft.code||rows.some(x=>x!==old&&x.code===draft.code)){notice('Informe um código único para o fluxo.');return}
+  const high=draft.tasks.filter(x=>workflowTaskMeta(x).risk==='high').length;
+  const message=activation?'Ativar '+draft.name+'?\n'+draft.tasks.length+' ações configuradas, '+high+' sensíveis.\nA ativação será registrada somente neste ambiente.':'Salvar rascunho de '+draft.name+' neste ambiente?';
+  if(!window.confirm(message))return;
+  const oldStatus=old?.status;
+  const stamp=now();
+  const next={...draft,status:activation?'Ativo':'Rascunho',trigger:draft.triggerMode==='Evento'?draft.event:draft.triggerMode,steps:draft.tasks.map(t=>t.name+' | '+t.param).join('\n'),modifiedBy:loggedUser||'Usuário',modifiedAt:stamp,createdAt:draft.createdAt||stamp,createdBy:draft.createdBy||loggedUser||'Usuário'};
+  let previousIndex=old?rows.indexOf(old):-1;
+  if(old)rows[previousIndex]=next;else rows.unshift(next);
+  if(!persistRegisters(page)){if(old)rows[previousIndex]=old;else rows.shift();notice('Falha ao salvar.');return}
+  const versions=workflowVersions();versions[next.code]=[...(versions[next.code]||[]),{savedAt:stamp,author:next.modifiedBy,status:next.status,data:next}].slice(-15);
+  vnextStore(WORKFLOW_VERSIONS,versions);
+  try{localStorage.removeItem(draftKey)}catch(e){}
+  auditEvent(activation?'Ativar fluxo':'Salvar rascunho','Fluxos',next.code+' · '+next.name+' · '+(oldStatus||'novo')+' → '+next.status);
+  dirty=false;close(true);workflowUI.tab='flows';renderActiveModule(page);toast(activation?'Fluxo ativado neste ambiente.':'Fluxo salvo como rascunho.');
+ };
+ const render=()=>{
+  backdrop.querySelectorAll('[data-wf-mode]').forEach(x=>x.classList.toggle('active',(x.dataset.wfMode==='advanced')===(mode==='advanced')));
+  backdrop.querySelectorAll('[data-wf-stage]').forEach(x=>x.classList.toggle('active',Number(x.dataset.wfStage)===stage));
+  main.innerHTML=sections[stage]();
+  el('wfPrevious').disabled=stage===0;el('wfNext').hidden=stage===3;el('wfActivate').hidden=stage!==3;
+  main.querySelectorAll('[data-wf-field]').forEach(x=>x.addEventListener('change',()=>{
+   const key=x.dataset.wfField;draft[key]=x.value;makeDirty();
+   if(key==='entity'){if(!(workflowEventMap[draft.entity]||[]).includes(draft.event))draft.event=workflowEventMap[draft.entity]?.[0]||'';render()}
+   else if(['kind','triggerMode'].includes(key))render();
+  }));
+  main.querySelectorAll('[data-wf-field]').forEach(x=>x.addEventListener('input',()=>{draft[x.dataset.wfField]=x.value;makeDirty()}));
+  main.querySelectorAll('[data-wf-trigger]').forEach(x=>x.addEventListener('click',()=>{draft.triggerMode=x.dataset.wfTrigger;makeDirty();render()}));
+  main.querySelectorAll('[data-wf-event]').forEach(x=>x.addEventListener('click',()=>{draft.triggerMode='Evento';draft.event=x.dataset.wfEvent;makeDirty();render()}));
+  main.querySelector('#wfTaskQuery')?.addEventListener('input',x=>{taskQuery=x.target.value;const cursor=x.target.selectionStart;render();const field=el('wfTaskQuery');field?.focus();if(field&&cursor!=null)field.setSelectionRange(cursor,cursor)});
+  main.querySelector('#wfTaskCategory')?.addEventListener('change',x=>{taskCategory=x.target.value;render()});
+  const add=(name,index=draft.tasks.length)=>{
+   if(draft.tasks.length>=25){notice('Limite de 25 ações por fluxo.');return}
+   draft.tasks.splice(index,0,{name,param:''});selected=index;makeDirty();render();
+   main.querySelector('[data-wf-param="'+index+'"]')?.focus();
+  };
+  const move=(a,b)=>{if(a===b||a<0||a>=draft.tasks.length||b<0||b>draft.tasks.length)return;const [task]=draft.tasks.splice(a,1);const index=b>a?b-1:b;draft.tasks.splice(index,0,task);selected=index;makeDirty();render()};
+  main.querySelectorAll('[data-wf-palette]').forEach(x=>{
+   x.addEventListener('click',()=>add(x.dataset.wfPalette));
+   x.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','palette:'+x.dataset.wfPalette);e.dataTransfer.effectAllowed='copy'});
+  });
+  main.querySelectorAll('[data-wf-param]').forEach(x=>x.addEventListener('input',()=>{draft.tasks[Number(x.dataset.wfParam)].param=x.value;makeDirty()}));
+  main.querySelectorAll('[data-wf-up]').forEach(x=>x.addEventListener('click',()=>{const i=Number(x.dataset.wfUp);move(i,i-1)}));
+  main.querySelectorAll('[data-wf-down]').forEach(x=>x.addEventListener('click',()=>{const i=Number(x.dataset.wfDown);move(i,i+2)}));
+  main.querySelectorAll('[data-wf-remove]').forEach(x=>x.addEventListener('click',()=>{draft.tasks.splice(Number(x.dataset.wfRemove),1);makeDirty();render()}));
+  main.querySelectorAll('[data-wf-node]').forEach(x=>x.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','node:'+x.dataset.wfNode);e.dataTransfer.effectAllowed='move'}));
+  main.querySelectorAll('[data-wf-drop]').forEach(x=>{
+   x.addEventListener('dragover',e=>{e.preventDefault();x.classList.add('is-over')});
+   x.addEventListener('dragleave',()=>x.classList.remove('is-over'));
+   x.addEventListener('drop',e=>{e.preventDefault();x.classList.remove('is-over');const payload=e.dataTransfer.getData('text/plain');const index=Number(x.dataset.wfDrop);
+    if(payload.startsWith('palette:'))add(payload.slice(8),index);else if(payload.startsWith('node:'))move(Number(payload.slice(5)),index);
+   });
+   x.addEventListener('click',()=>{selected=Number(x.dataset.wfDrop);notice('Escolha uma ação na biblioteca para adicioná-la à posição selecionada.');main.querySelector('.wf-library')?.scrollIntoView({block:'nearest',behavior:'smooth'})});
+  });
+  main.querySelectorAll('[data-wf-palette]').forEach(x=>x.addEventListener('click',()=>{if(selected>=0&&selected<draft.tasks.length-1){const [last]=draft.tasks.splice(draft.tasks.length-1,1);draft.tasks.splice(selected,0,last);selected=-1;makeDirty();render()}}));
+  main.querySelector('#wfReviewTest')?.addEventListener('click',()=>{const problems=workflowValidation(draft,true);if(problems.length){notice(problems[0]);return}modal('Configuração validada',draft.tasks.length+' ações configuradas. O teste não altera pedidos, pagamentos, estoque ou integrações.')});
+ };
+ backdrop.querySelectorAll('[data-wf-mode]').forEach(x=>x.addEventListener('click',()=>{mode=x.dataset.wfMode;render()}));
+ backdrop.querySelectorAll('[data-wf-stage]').forEach(x=>x.addEventListener('click',()=>{stage=Number(x.dataset.wfStage);render()}));
+ el('wfPrevious').addEventListener('click',()=>{stage=Math.max(0,stage-1);render()});
+ el('wfNext').addEventListener('click',()=>{if(stage===0&&!draft.name.trim()){notice('Informe o nome do fluxo.');return}stage=Math.min(3,stage+1);render()});
+ el('wfSave').addEventListener('click',()=>save(false));
+ el('wfActivate').addEventListener('click',()=>save(true));
+ render();
+}
+
 function bindWorkflow(target){
  target.querySelector('#wfCreate')?.addEventListener('click',()=>openWorkflowEditor());
  target.querySelectorAll('[data-wf-tab]').forEach(b=>b.addEventListener('click',()=>{workflowUI.tab=b.dataset.wfTab;renderActiveModule('Fluxos (workflows)')}));
