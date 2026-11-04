@@ -355,6 +355,11 @@ body.admin-new-old .version{border-color:#a6d7e2;background:#e5f6fa;color:#07566
 body.dark-mode.admin-new-old{--bg:#0b1c27;--card:#142d3a;--text:#e5f4fa;--line:#2a4654}
 body.dark-mode.admin-new-old .topbar{border-bottom-color:#315d6d}
 body.dark-mode.admin-new-old .version{background:#183d4a;color:#b6e9f5;border-color:#355d6c}
+
+body.admin-new-old .nav-group{padding-bottom:12px}
+body.admin-new-old .nav-item.nav-parent[aria-expanded="true"]{background:rgba(98,199,233,.16);border-left:3px solid #65cbec}
+body.admin-new-old .nav-children{background:rgba(0,0,0,.09);border-radius:0 0 10px 10px;margin-bottom:5px}
+body.admin-new-old .nav-child{font-size:12px}
 </style>
 </head>
 <body>
@@ -421,7 +426,7 @@ function newOldMenuGroups(){
  root('Clientes','♙',byName('Clientes e B2B')),
  root('Marketing','◈',byName('Marketing').filter(x=>x[1]!=='Recorrência')),
  root('Aparência','▥',byName('Experiência da loja').filter(x=>!x[1].startsWith('Smart Finder'))),
- root('Configs','⚙',byName('Configurações').filter(x=>!['Segurança e privacidade','Auditoria e logs'].includes(x[1]))),
+ root('Configs','⚙',byName('Configurações').filter(x=>!['Segurança e privacidade','Auditoria e logs','Meios de pagamento'].includes(x[1]))),
  root('Canais','▧',byName('Canais')),
  root('Recorrência','↻',[['Recorrência','Recorrência']]),
  root('Integrações','⇄',byName('Integrações')),
