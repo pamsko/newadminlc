@@ -629,6 +629,25 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-list-actions button:disabled{opacity:.55;cursor:not-allowed}
 .catalog-filter-row{grid-template-columns:repeat(4,minmax(120px,1fr)) auto}
 .catalog-products-table .catalog-table-actions{white-space:nowrap}
+
+.catalog-edit-drawer{width:min(1050px,100vw)}
+.catalog-edit-drawer .catalog-detail-tabs{margin-top:14px}
+.catalog-edit-content{padding-bottom:32px}
+.catalog-readonly-banner{padding:12px 14px;background:var(--bg);border:1px solid var(--line);border-radius:9px;font-size:12px;color:var(--muted)}
+.catalog-section-block{margin:0 0 22px}
+.catalog-section-block h3{font-size:14px;margin:0 0 10px;color:var(--text)}
+.catalog-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.catalog-edit-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:var(--muted);min-width:0}
+.catalog-edit-field input,.catalog-edit-field textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:8px;font:inherit;font-size:13px;opacity:1;resize:vertical}
+.catalog-edit-field input:disabled,.catalog-edit-field textarea:disabled{opacity:1;-webkit-text-fill-color:var(--text)}
+.catalog-field-group{grid-column:1/-1;padding:12px;border:1px solid var(--line);border-radius:9px}
+.catalog-field-group h4{margin:0 0 12px;font-size:13px}
+.catalog-nested-item{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px}
+.catalog-nested-item>strong{display:block;margin-bottom:10px}
+.catalog-muted{color:var(--muted);font-size:13px}
+.catalog-filter-row{grid-template-columns:repeat(5,minmax(110px,1fr)) auto}
+@media(max-width:1100px){.catalog-filter-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.catalog-filter-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -2221,11 +2240,81 @@ function renderCatalogRelated(key,value){
  }
  return '<section class="catalog-section"><h3>'+title+'</h3>'+content+'</section>';
 }
-async function showLayerProductDetails(id){
+/* Editor de consulta: campos reais do cadastro exibidos com controles desabilitados. */
+const CATALOG_FIELD_LABELS={
+ id:'ID',sku:'Código / SKU',integrationId:'ID de integração',name:'Nome',brandId:'Marca (ID)',brandName:'Marca',
+ productDefinitionId:'Definição de produto (ID)',mainCategoryId:'Categoria principal (ID)',productStatusId:'Situação do produto (ID)',
+ categories:'Categorias',flags:'Flags',tags:'Tags',skuIds:'SKUs vinculados',productIds:'Produtos vinculados',
+ behavior:'Tipo de kit',itemCount:'Quantidade de itens',upc:'EAN / UPC',isVisible:'Visível na loja',isSearchable:'Pesquisável',
+ visibleFrom:'Visível a partir de',visibleTo:'Visível até',ratingAverage:'Média das avaliações',
+ sendToMarketplace:'Enviar ao marketplace',productStatusName:'Situação do produto',
+ display:'Exibição',seo:'SEO',descriptions:'Descrições',shipping:'Entrega e dimensões',
+ references:'Referências',availability:'Disponibilidade',propertyValues:'Propriedades e atributos',
+ variationProperties:'Variações e metadados',associations:'Associações',associationDataSources:'Fontes das associações',
+ loyaltyPrograms:'Programas de fidelidade',suppliers:'Fornecedores',inventorySettings:'Estoque',
+ dimensions:'Dimensões',misc:'Outras configurações',rules:'Regras do kit',pricing:'Preços do kit',
+ composition:'Composição',items:'Itens do kit',skuIds:'IDs dos SKUs',
+ pageTitle:'Título da página',urlFriendly:'URL amigável',metaDescription:'Meta description',
+ metaKeywords:'Palavras-chave',searchKeywords:'Termos de busca',isVisible:'Visível',isSearchable:'Pesquisável',
+ longDescription:'Descrição completa',shortDescription:'Descrição resumida',
+ productStatusId:'ID da situação',status:'Situação',color:'Cor',isDefault:'Padrão'
+};
+const CATALOG_ENTITY_GROUPS={
+ products:[
+  ['Identificação',['id','sku','integrationId','name','brandId','productDefinitionId','mainCategoryId','productStatusId','productStatusName','ratingAverage']],
+  ['Exibição',['display','availability']],
+  ['Conteúdo e SEO',['descriptions','seo']],
+  ['Categorias e classificações',['categories','flags','tags','propertyValues']],
+  ['SKUs e relacionamentos',['skuIds','associations','associationDataSources']],
+  ['Entrega',['shipping']],
+  ['Referências e programas',['references','loyaltyPrograms']]
+ ],
+ skus:[
+  ['Identificação',['id','sku','integrationId','name','upc','productIds','productDefinitionId']],
+  ['Variações',['variationProperties']],
+  ['Exibição',['display']],
+  ['Estoque e dimensões',['inventorySettings','dimensions']],
+  ['Fornecedores',['suppliers']],
+  ['Outros dados',['misc']]
+ ],
+ kits:[
+  ['Identificação',['id','sku','integrationId','name','behavior','brandId','itemCount']],
+  ['Exibição',['isVisible','isSearchable','visibleFrom','visibleTo','sendToMarketplace']],
+  ['Categorias',['categories']],
+  ['Regras e composição',['rules','composition','items']],
+  ['Preços e disponibilidade',['pricing','availability']],
+  ['Entrega',['shipping']],
+  ['Conteúdo',['seo','descriptions','display']]
+ ]
+};
+function catalogInput(label,value){
+ const text=typeof value==='boolean'?(value?'Sim':'Não'):value===null||value===undefined?'':String(value);
+ const long=text.length>110||text.includes('\n');
+ const readonly=long?'<textarea rows="'+Math.min(8,Math.max(2,Math.ceil(text.length/75)))+'" disabled>'+esc(text)+'</textarea>':'<input type="text" value="'+esc(text)+'" disabled>';
+ return '<label class="catalog-edit-field"><span>'+esc(label)+'</span>'+readonly+'</label>';
+}
+function catalogNestedFields(value,prefix='',depth=0){
+ if(value===null||value===undefined||value==='')return '';
+ if(Array.isArray(value)){
+  if(!value.length)return '<p class="catalog-muted">Nenhum registro.</p>';
+  if(value.every(x=>x===null||typeof x!=='object'))return catalogInput('Valores',value.map(catalogValue).join(', '));
+  return '<div class="catalog-nested-list">'+value.map((row,i)=>'<div class="catalog-nested-item"><strong>Item '+(i+1)+'</strong>'+catalogNestedFields(row,prefix,depth+1)+'</div>').join('')+'</div>';
+ }
+ if(typeof value!=='object')return catalogInput(prefix||'Valor',value);
+ if(depth>5)return '<p class="catalog-muted">Nível de detalhe não disponível.</p>';
+ return '<div class="catalog-edit-grid">'+Object.entries(value).map(([key,val])=>{
+  const name=CATALOG_FIELD_LABELS[key]||key;
+  if(val!==null&&typeof val==='object')
+   return '<div class="catalog-field-group"><h4>'+esc(name)+'</h4>'+catalogNestedFields(val,name,depth+1)+'</div>';
+  return catalogInput(name,val);
+ }).join('')+'</div>';
+}
+async function showLayerProductDetails(id,kind='products',mode='view'){
  if(!/^[0-9]+$/.test(id))return;
- const previousFocus=document.activeElement;
+ if(!['products','skus','kits'].includes(kind))kind='products';
+ const previousFocus=document.activeElement,entityLabel={products:'Produto',skus:'SKU',kits:'Kit'}[kind];
  const overlay=document.createElement('div');overlay.className='catalog-detail-overlay';
- overlay.innerHTML='<section class="catalog-detail-drawer" role="dialog" aria-modal="true" aria-label="Detalhes do produto"><header><div><h2>Produto #'+esc(id)+'</h2><span class="catalog-source-info">Layer API v3 · somente leitura</span></div><button type="button" id="closeLayerDetail" aria-label="Fechar painel">Fechar</button></header><div id="layerDetailBody" role="status">Carregando produto…</div></section>';
+ overlay.innerHTML='<section class="catalog-detail-drawer catalog-edit-drawer" role="dialog" aria-modal="true" aria-label="Cadastro de '+entityLabel+'"><header><div><h2>'+entityLabel+' #'+esc(id)+'</h2><span class="catalog-source-info">Cadastro completo · Consulta somente leitura</span></div><button type="button" id="closeLayerDetail">Fechar</button></header><div id="layerDetailBody" role="status">Carregando cadastro…</div></section>';
  document.body.appendChild(overlay);
  const close=()=>{overlay.remove();document.removeEventListener('keydown',onEscape);previousFocus?.focus?.()};
  const onEscape=e=>{if(e.key==='Escape')close()};
@@ -2234,28 +2323,42 @@ async function showLayerProductDetails(id){
  overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
  overlay.querySelector('#closeLayerDetail').focus();
  try{
-  const response=await fetch(AUTH_API+'/api/products/'+encodeURIComponent(id),{headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'});
+  const response=await fetch(AUTH_API+'/api/items/'+kind+'/'+encodeURIComponent(id),{
+   headers:{Accept:'application/json',Authorization:'Bearer '+authSessionToken},cache:'no-store'
+  });
   const payload=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(payload.error||'API_ERROR');
   if(!overlay.isConnected)return;
-  const product=payload.product||{};
-  const tabs=[['general','Dados gerais'],...[
-   ['categories','Categorias'],['skus','SKUs'],['images','Mídias'],['seo','SEO'],['tags','Tags'],['attributes','Atributos'],['productDefinition','Definição']
-  ].filter(([key])=>product[key]!==undefined&&product[key]!==null&&!(Array.isArray(product[key])&&product[key].length===0))];
-  let active='general';
+  const item=payload.item||payload.product||{};
+  // Situação é cadastro próprio, não corresponde à visibilidade.
+  if(kind==='products'&&item.productStatusId!==undefined){
+   try{
+    const statuses=await fetch(AUTH_API+'/api/product-statuses',{headers:{Authorization:'Bearer '+authSessionToken},cache:'no-store'});
+    if(statuses.ok){const values=await statuses.json();item.productStatusName=(values.items||[]).find(x=>x.id===item.productStatusId)?.status??null}
+   }catch{}
+  }
+  if(!overlay.isConnected)return;
+  const group=CATALOG_ENTITY_GROUPS[kind],extra=Object.keys(item).filter(k=>!group.some(([,keys])=>keys.includes(k)));
+  const sections=extra.length?[...group,['Outros campos',extra]]:group;
+  const available=sections.filter(([title,keys])=>keys.some(k=>Object.prototype.hasOwnProperty.call(item,k)));
+  let active=available[0]?.[0]||'Identificação';
   const render=()=>{
-   const tabsHtml='<div class="catalog-detail-tabs" role="tablist" aria-label="Seções do produto">'+tabs.map(([key,label])=>'<button type="button" role="tab" aria-selected="'+(active===key)+'" class="'+(active===key?'active':'')+'" data-catalog-detail-tab="'+key+'">'+label+'</button>').join('')+'</div>';
-   const body=active==='general'?'<div class="catalog-fields">'+catalogFields(product)+'</div>':renderCatalogRelated(active,product[active]);
-   overlay.querySelector('#layerDetailBody').innerHTML=tabsHtml+'<div class="catalog-detail-section" role="tabpanel">'+body+'</div><div class="catalog-detail-footer">Dados consultados na Layer API v3 · Alterações desabilitadas</div>';
-   overlay.querySelectorAll('[data-catalog-detail-tab]').forEach(button=>button.addEventListener('click',()=>{
-    active=button.dataset.catalogDetailTab;render();
-    overlay.querySelector('[data-catalog-detail-tab="'+active+'"]')?.focus();
+   const tabs='<div class="catalog-detail-tabs" role="tablist" aria-label="Abas do cadastro">'+available.map(([name])=>'<button type="button" role="tab" aria-selected="'+(active===name)+'" class="'+(active===name?'active':'')+'" data-catalog-section="'+esc(name)+'">'+esc(name)+'</button>').join('')+'</div>';
+   const section=available.find(([name])=>name===active);
+   const fields=section?section[1].filter(k=>Object.prototype.hasOwnProperty.call(item,k)).map(k=>{
+    const val=item[k],label=CATALOG_FIELD_LABELS[k]||k;
+    return '<div class="catalog-section-block"><h3>'+esc(label)+'</h3>'+catalogNestedFields(val,label)+'</div>';
+   }).join(''):'';
+   overlay.querySelector('#layerDetailBody').innerHTML='<div class="catalog-readonly-banner">Modo '+(mode==='edit'?'edição':'visualização')+' · Todos os campos bloqueados · Nenhuma alteração será enviada à Layer</div>'+tabs+'<div class="catalog-edit-content" role="tabpanel">'+(fields||'<p class="catalog-muted">Nenhuma informação disponível.</p>')+'</div>';
+   overlay.querySelectorAll('[data-catalog-section]').forEach(btn=>btn.addEventListener('click',()=>{
+    active=btn.dataset.catalogSection;render();
+    overlay.querySelectorAll('[data-catalog-section]').forEach(el=>{if(el.dataset.catalogSection===active)el.focus()});
    }));
   };
-  overlay.querySelector('header h2').textContent=product.name?String(product.name):'Produto #'+id;
-  overlay.querySelector('header .catalog-source-info').textContent='ID '+id+' · Somente leitura · Layer API v3';
+  overlay.querySelector('header h2').textContent=item.name?String(item.name):entityLabel+' #'+id;
+  overlay.querySelector('header .catalog-source-info').textContent=entityLabel+' · ID '+id+' · Layer API v3 · Somente leitura';
   render();
- }catch(error){if(overlay.isConnected)overlay.querySelector('#layerDetailBody').textContent='Não foi possível consultar o produto: '+error.message;}
+ }catch(error){if(overlay.isConnected)overlay.querySelector('#layerDetailBody').textContent='Não foi possível consultar o cadastro: '+error.message;}
 }
 
 
