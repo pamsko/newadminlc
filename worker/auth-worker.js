@@ -158,7 +158,9 @@ export default {
       categories:{path:"categories",name:"name"},
       definitions:{path:"product-definitions",name:"displayName"},
       tags:{path:"tags",name:"name"},
-      statuses:{path:"product-statuses",name:"status"}
+      statuses:{path:"product-statuses",name:"status"},
+      products:{path:"products",name:"name"},
+      skus:{path:"skus",name:"name"}
      };
      const result={};
      await Promise.all(Object.entries(sources).map(async([type,cfg])=>{
