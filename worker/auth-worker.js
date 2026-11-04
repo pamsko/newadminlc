@@ -69,73 +69,89 @@ export default {
    if(!session)return output({authenticated:false},401,cors);
    return output({authenticated:true,username:session.sub,expiresAt:session.exp},200,cors);
   }
-  if(/^\/api\/products\/[0-9]+$/.test(url.pathname)&&request.method==="GET"){
-   const rawAuth=request.headers.get("Authorization")||"";
-   const token=rawAuth.startsWith("Bearer ")?rawAuth.slice(7):"";
-   const session=await checkToken(token,env.ADMIN_SESSION_SECRET,env.ADMIN_USERNAME);
-   if(!session)return output({error:"UNAUTHORIZED"},401,cors);
+  // Todas as consultas abaixo exigem sessão autenticada. Nenhuma rota de escrita é exposta.
+  if(request.method==="GET"&&(
+   url.pathname==="/api/products"||
+   url.pathname==="/api/product-statuses"||
+   /^\/api\/items\/(products|skus|kits)\/[0-9]+$/.test(url.pathname)||
+   /^\/api\/products\/[0-9]+$/.test(url.pathname)
+  )){
+   const authHeader=request.headers.get("Authorization")||"";
+   const raw=authHeader.startsWith("Bearer ")?authHeader.slice(7):"";
+   if(!await checkToken(raw,env.ADMIN_SESSION_SECRET,env.ADMIN_USERNAME))return output({error:"UNAUTHORIZED"},401,cors);
    if(!env.LAYER_API_USERNAME||!env.LAYER_API_PASSWORD)return output({error:"LAYER_NOT_CONFIGURED"},503,cors);
-   const id=url.pathname.split("/").pop();
+   const base="https://projetos.layer.core.dcg.com.br/api/v3";
    try{
-    const authResponse=await fetch("https://projetos.layer.core.dcg.com.br/api/v3/auth/token",{
+    const tokenResponse=await fetch(base+"/auth/token",{
      method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},
      body:JSON.stringify({username:env.LAYER_API_USERNAME,password:env.LAYER_API_PASSWORD}),
      signal:AbortSignal.timeout(10000)
     });
-    if(!authResponse.ok)return output({error:"LAYER_AUTH_FAILED",upstreamStatus:authResponse.status},502,cors);
-    const credentials=await authResponse.json();
-    if(!credentials.accessToken)return output({error:"LAYER_TOKEN_MISSING"},502,cors);
-    const detailResponse=await fetch("https://projetos.layer.core.dcg.com.br/api/v3/catalog/products/"+id,{
-     method:"GET",headers:{Accept:"application/json",Authorization:"Bearer "+credentials.accessToken},
-     signal:AbortSignal.timeout(12000)
-    });
-    if(detailResponse.status===404)return output({error:"PRODUCT_NOT_FOUND"},404,cors);
-    if(!detailResponse.ok)return output({error:"LAYER_PRODUCT_DETAIL_FAILED",upstreamStatus:detailResponse.status},502,cors);
-    const payload=await detailResponse.json();
-    const product=(payload&&typeof payload==="object"&&payload.data&&typeof payload.data==="object")?payload.data:payload;
-    // Evita o encaminhamento indiscriminado de metadados/credenciais.
-    const allowed=["id","sku","integrationId","name","status","active","description","shortDescription","brand","categories","category","skus","images","seo","slug","url","tags","attributes","productDefinition","type","createdAt","updatedAt"];
-    const detail={};
-    for(const field of allowed)if(product&&Object.prototype.hasOwnProperty.call(product,field))detail[field]=product[field];
-    return output({source:"layer-test",product:detail},200,cors);
-   }catch{return output({error:"LAYER_REQUEST_FAILED"},502,cors);}
-  }
-  if(url.pathname==="/api/products"&&request.method==="GET"){
-   const authorization=request.headers.get("Authorization")||"";
-   const raw=authorization.startsWith("Bearer ")?authorization.slice(7):"";
-   const session=await checkToken(raw,env.ADMIN_SESSION_SECRET,env.ADMIN_USERNAME);
-   if(!session)return output({error:"UNAUTHORIZED"},401,cors);
-   if(!env.LAYER_API_USERNAME||!env.LAYER_API_PASSWORD)return output({error:"LAYER_NOT_CONFIGURED"},503,cors);
-   const pageValue=url.searchParams.get("page")||"1";
-   const sizeValue=url.searchParams.get("pageSize")||"20";
-   if(!/^[0-9]+$/.test(pageValue)||!/^[0-9]+$/.test(sizeValue))return output({error:"INVALID_PAGINATION"},400,cors);
-   const page=Number(pageValue),pageSize=Number(sizeValue);
-   if(!Number.isSafeInteger(page)||page<1||page>100000||!Number.isSafeInteger(pageSize)||pageSize<1||pageSize>100)return output({error:"INVALID_PAGINATION"},400,cors);
-   const layerBase="https://projetos.layer.core.dcg.com.br";
-   try{
-    const authRes=await fetch(layerBase+"/api/v3/auth/token",{
-     method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
-     body:JSON.stringify({username:env.LAYER_API_USERNAME,password:env.LAYER_API_PASSWORD}),
-     signal:AbortSignal.timeout(10000)
-    });
-    if(!authRes.ok)return output({error:"LAYER_AUTH_FAILED",upstreamStatus:authRes.status},502,cors);
-    const auth=await authRes.json();
-    if(!auth.accessToken)return output({error:"LAYER_TOKEN_MISSING"},502,cors);
-    const productsRes=await fetch(layerBase+"/api/v3/catalog/products?page="+page+"&pageSize="+pageSize,{
-     method:"GET",headers:{"Accept":"application/json","Authorization":"Bearer "+auth.accessToken},
-     signal:AbortSignal.timeout(12000)
-    });
-    if(!productsRes.ok)return output({error:"LAYER_PRODUCTS_FAILED",upstreamStatus:productsRes.status},502,cors);
-    const payload=await productsRes.json();
-    const items=Array.isArray(payload.items)?payload.items:Array.isArray(payload.data)?payload.data:Array.isArray(payload)?payload:[];
-    const mapped=items.map(item=>({
-     id:item.id??null,sku:item.sku??null,integrationId:item.integrationId??null,
-     name:item.name??null,status:item.status??null,
-     active:item.active??null,
-     brand:item.brand?.name??(typeof item.brand==="string"?item.brand:null)
-    }));
-    return output({source:"layer-test",page:payload.page??page,pageSize:payload.pageSize??pageSize,
-     totalCount:payload.totalCount??payload.total??null,totalPages:payload.totalPages??null,items:mapped},200,cors);
+    if(!tokenResponse.ok)return output({error:"LAYER_AUTH_FAILED",upstreamStatus:tokenResponse.status},502,cors);
+    const tokenData=await tokenResponse.json();
+    if(!tokenData.accessToken)return output({error:"LAYER_TOKEN_MISSING"},502,cors);
+    async function layerGet(path){
+     const res=await fetch(base+path,{
+      method:"GET",headers:{Accept:"application/json",Authorization:"Bearer "+tokenData.accessToken},
+      signal:AbortSignal.timeout(14000)
+     });
+     if(!res.ok)return {error:true,status:res.status};
+     return {error:false,data:await res.json()};
+    }
+    if(url.pathname==="/api/products"){
+     const pageStr=url.searchParams.get("page")||"1",sizeStr=url.searchParams.get("pageSize")||"50";
+     const type=url.searchParams.get("type")||"products";
+     if(!/^[0-9]+$/.test(pageStr)||!/^[0-9]+$/.test(sizeStr)||!["products","skus","kits","all"].includes(type))
+      return output({error:"INVALID_PARAMETERS"},400,cors);
+     const page=Number(pageStr),pageSize=Number(sizeStr);
+     if(!Number.isSafeInteger(page)||page<1||page>100000||!Number.isSafeInteger(pageSize)||pageSize<1||pageSize>100)
+      return output({error:"INVALID_PAGINATION"},400,cors);
+     // Kits são discriminados no resultado de produtos (catalogItemType=Bundle).
+     // O OpenAPI não documenta GET /catalog/bundles; SKU tem listagem própria.
+     const sources=type==="skus"?["skus"]:type==="all"?["products","skus"]:["products"];
+     const parts=await Promise.all(sources.map(async kind=>{
+      const response=await layerGet("/catalog/"+kind+"?page="+page+"&pageSize="+pageSize);
+      if(response.error)return {error:true,upstreamStatus:response.status};
+      const payload=response.data||{},items=Array.isArray(payload.items)?payload.items:[];
+      return {kind,totalCount:payload.totalCount??items.length,totalPages:payload.totalPages??1,
+       items:items.map(item=>({
+        entityType:kind==="skus"?"skus":item.catalogItemType==="Bundle"?"kits":"products",
+        catalogItemType:item.catalogItemType??null,
+        id:item.id??null,sku:item.sku??null,integrationId:item.integrationId??null,
+        name:item.name??null,brand:item.brandName??null,brandId:item.brandId??null,
+        isVisible:item.isVisible??null,upc:item.upc??null,
+        createdAt:item.createdAt??null,modifiedAt:item.modifiedAt??null
+       }))}
+     }));
+     if(parts.some(part=>part.error))return output({error:"LAYER_PRODUCTS_FAILED",upstreamStatus:parts.find(p=>p.error).upstreamStatus},502,cors);
+     let items=parts.flatMap(part=>part.items);
+     if(type==="kits")items=items.filter(i=>i.entityType==="kits");
+     if(type==="products")items=items.filter(i=>i.entityType==="products");
+     return output({source:"layer-test",type,page,pageSize,items,
+      totalCount:type==="kits"?null:type==="products"?null:parts.reduce((sum,part)=>sum+Number(part.totalCount||0),0),
+      totalPages:type==="all"?Math.max(...parts.map(p=>p.totalPages)):parts[0]?.totalPages??1,
+      partialTypeCount:["products","kits"].includes(type)},200,cors);
+    }
+    if(url.pathname==="/api/product-statuses"){
+     const result=await layerGet("/catalog/product-statuses?page=1&pageSize=100");
+     if(result.error)return output({error:"LAYER_STATUSES_FAILED",upstreamStatus:result.status},502,cors);
+     return output({items:(result.data?.items||[]).map(i=>({id:i.id,status:i.status,color:i.color,isDefault:i.isDefault}))},200,cors);
+    }
+    const matches=url.pathname.match(/^\/api\/items\/(products|skus|kits)\/([0-9]+)$/);
+    const kind=matches?matches[1]:"products";
+    const id=matches?matches[2]:url.pathname.split("/").pop();
+    const upstream=kind==="kits"?"/catalog/bundles/"+id:kind==="skus"?"/catalog/skus/"+id:"/catalog/products/"+id;
+    const detail=await layerGet(upstream);
+    if(detail.error)return output({error:detail.status===404?"ITEM_NOT_FOUND":"LAYER_DETAIL_FAILED",upstreamStatus:detail.status},detail.status===404?404:502,cors);
+    const obj=detail.data?.data&&typeof detail.data.data==="object"?detail.data.data:detail.data;
+    // Esquema de leitura: somente campos de cadastro conhecidos da API v3.
+    const allow=kind==="skus"?
+     ["id","sku","integrationId","name","productIds","productDefinitionId","variationProperties","suppliers","upc","display","dimensions","inventorySettings","misc"]:
+     kind==="kits"?
+     ["id","behavior","sku","integrationId","name","brandId","categories","isVisible","visibleFrom","visibleTo","isSearchable","rules","pricing","availability","shipping","itemCount","sendToMarketplace","seo","descriptions","display","composition","items"]:
+     ["id","sku","integrationId","name","brandId","productDefinitionId","mainCategoryId","categories","flags","tags","display","seo","descriptions","shipping","references","availability","propertyValues","associations","associationDataSources","loyaltyPrograms","skuIds","ratingAverage","productStatusId"];
+    const record={};for(const key of allow)if(obj&&Object.prototype.hasOwnProperty.call(obj,key))record[key]=obj[key];
+    return output({source:"layer-test",entityType:kind,item:record,product:record},200,cors);
    }catch{return output({error:"LAYER_REQUEST_FAILED"},502,cors);}
   }
   return output({error:"NOT_FOUND"},404,cors);
