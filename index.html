@@ -393,6 +393,41 @@ body.admin-new-old .nav-subparent[aria-expanded="true"]{background:rgba(98,199,2
 body.admin-new-old .nav-subchildren{padding:3px 0 7px 15px;border-left:1px solid rgba(98,199,233,.24);margin-left:12px}
 body.admin-new-old .nav-subchildren .nav-child{font-size:11.5px;padding-left:10px;white-space:normal;line-height:1.4}
 body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65cbec}
+
+/* Área de trabalho · indicadores de conversão, pagamento e entrega */
+.commerce-insights{display:grid;gap:14px}
+.commerce-insights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.insight-panel{padding:19px 20px 20px;min-width:0}
+.insight-panel .panel-title{margin:0 0 14px;gap:8px;align-items:flex-start}
+.insight-panel .panel-title h2{font-size:17px}
+.insight-panel .panel-title p{margin-top:5px}
+.insight-link{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 10px;color:var(--text);font-size:11px;white-space:nowrap;cursor:pointer}
+.insight-link:hover{border-color:#12a6c0;background:var(--cyan-soft)}
+.insight-toggle{display:flex;gap:5px;margin:8px 0 16px;padding:4px;border:1px solid var(--line);background:var(--bg);border-radius:9px;width:max-content;max-width:100%}
+.insight-toggle button{border:0;background:transparent;padding:7px 12px;font-size:11px;font-weight:700;border-radius:7px;color:var(--muted);cursor:pointer}
+.insight-toggle button.active{background:var(--card);color:var(--text);box-shadow:0 2px 9px #00223312}
+.insight-list{display:grid;gap:16px}
+.insight-row-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:8px}
+.insight-row-heading strong{font-weight:800;white-space:nowrap}
+.insight-row-detail{font-size:10px;color:var(--muted);margin-top:4px}
+.insight-meter{width:100%;height:8px;border-radius:999px;background:#e6eef2;overflow:hidden}
+.insight-meter>span{display:block;height:100%;border-radius:999px;min-width:0;transition:width .25s ease}
+.insight-subtitle{font-size:11px;color:var(--muted)}
+.insight-funnel{display:grid;gap:14px}
+.insight-funnel-row .insight-row-heading{margin-bottom:6px}
+.insight-funnel .insight-meter{height:11px}
+.insight-conversion-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px;padding-top:13px;border-top:1px solid var(--line)}
+.insight-summary-tile{padding:12px;background:var(--bg);border-radius:10px}
+.insight-summary-tile small{display:block;font-size:10px;color:var(--muted);line-height:1.5}
+.insight-summary-tile strong{font-size:19px;display:block;margin-top:4px}
+.insight-approval-summary{padding:14px;border-radius:12px;background:var(--bg);margin-bottom:17px}
+.insight-approval-summary strong{font-size:28px;letter-spacing:-.04em;display:block}
+.insight-approval-summary span{color:var(--muted);font-size:11px}
+.insight-disclaimer{font-size:10px;line-height:1.6;color:var(--muted);padding:2px 4px}
+.dark-mode .insight-meter{background:#284454}
+.dark-mode .insight-link:hover{background:#153c4d}
+@media(max-width:980px){.commerce-insights-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.insight-panel{padding:15px}.insight-panel .panel-title{flex-wrap:wrap}.insight-approval-summary strong{font-size:24px}}
 </style>
 </head>
 <body>
@@ -415,6 +450,18 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 <div class="control-row"><div class="segmented" role="group" aria-label="Tipo de pedido"><button class="active" data-mode="captados">Captados</button><button data-mode="adquiridos">Adquiridos</button></div><div class="filters"><label class="filter">Canal <select id="channel"><option value="all">Todos os canais</option><option value="loja">Loja virtual</option><option value="market">Marketplace</option><option value="b2b">B2B</option></select></label><label class="filter">Período <select id="period"><option value="today">Hoje</option><option value="7d">Últimos 7 dias</option><option value="30d">Últimos 30 dias</option></select></label><button class="refresh" id="reset" title="Restaurar filtros">↻</button></div></div>
 <div class="kpis" id="kpis"></div>
 <section class="panel section-pad chart-panel"><div class="panel-title"><div><h2 id="chartTitle">Pedidos captados · Hoje</h2><p>Volume de pedidos e faturamento ao longo do período selecionado</p></div><div class="segmented" id="periodQuick"><button data-period="today" class="active">Hoje</button><button data-period="7d">7 dias</button><button data-period="30d">30 dias</button></div></div><div class="chart-wrap" id="chartWrap"><svg id="chart" role="img" aria-label="Gráfico ilustrativo de pedidos e faturamento"></svg><div id="chartTip" class="chart-tip"></div></div></section>
+
+<section class="commerce-insights" id="commerceInsights" aria-label="Indicadores comerciais e operacionais">
+<div class="commerce-insights-grid">
+<article class="panel insight-panel"><div class="panel-title"><div><h2>Top meios de pagamento</h2><p>Distribuição dos pedidos por modalidade</p></div><button type="button" class="insight-link" data-insight-route="Pagamentos">Ver pagamentos ↗</button></div><div class="insight-toggle" role="group" aria-label="Métrica dos meios de pagamento"><button type="button" data-insight-metric="revenue" class="active">Faturamento</button><button type="button" data-insight-metric="orders">Pedidos</button></div><div class="insight-list" id="paymentRanking"></div></article>
+<article class="panel insight-panel"><div class="panel-title"><div><h2>Top meios de entrega</h2><p>Distribuição por modalidade de entrega</p></div><button type="button" class="insight-link" data-insight-route="Meios de entrega">Ver entregas ↗</button></div><div class="insight-toggle" role="group" aria-label="Métrica dos meios de entrega"><button type="button" data-insight-delivery-metric="orders" class="active">Pedidos</button><button type="button" data-insight-delivery-metric="revenue">Faturamento</button></div><div class="insight-list" id="deliveryRanking"></div></article>
+</div>
+<div class="commerce-insights-grid">
+<article class="panel insight-panel"><div class="panel-title"><div><h2>Funil de conversão</h2><p>Do acesso à confirmação financeira</p></div><span class="insight-subtitle" id="funnelPeriod">Hoje</span></div><div id="conversionFunnel" class="insight-funnel"></div><div class="insight-conversion-summary" id="funnelSummary"></div></article>
+<article class="panel insight-panel"><div class="panel-title"><div><h2>Aprovação de pagamentos</h2><p>Tentativas aprovadas e não aprovadas por meio</p></div><button type="button" class="insight-link" data-insight-route="Transações">Ver transações ↗</button></div><div class="insight-approval-summary" id="approvalSummary"></div><div class="insight-list" id="approvalByMethod"></div></article>
+</div>
+<div class="insight-disclaimer">Indicadores ilustrativos calculados sobre a mesma base de exemplo dos KPIs. Os filtros Captados/Adquiridos, Canal e Período atualizam estes cartões; não são consultas de analytics ou conciliação de produção.</div>
+</section>
 <section class="panel section-pad map-panel"><div class="panel-title"><div><h2>◎ Mapa de vendas no Brasil</h2><p>Concentração geográfica das vendas · <span id="mapPeriodName">Hoje</span></p></div><div class="segmented" id="geoMode"><button class="active" data-geo="state">Estados</button><button data-geo="city">Cidades</button></div></div><div class="map-flex"><div class="map-region" id="mapRegion"><svg class="map-svg" viewBox="0 0 450 410" role="img" aria-label="Mapa geográfico do Brasil com vendas por Unidade da Federação"><path class="map-outline" d="M226.0,377.9 L223.3,372.8 L227.5,368.5 L222.0,362.4 L204.8,351.7 L201.3,351.9 L191.7,345.0 L185.6,345.9 L209.0,324.9 L223.3,316.3 L223.5,309.1 L218.8,303.9 L214.1,305.7 L217.2,295.1 L217.2,290.2 L213.8,288.6 L210.2,290.0 L206.7,289.6 L204.7,277.9 L202.9,275.2 L196.5,272.8 L192.6,274.5 L182.6,272.8 L183.2,260.6 L180.4,255.6 L183.4,253.7 L182.5,248.6 L185.1,244.7 L186.8,237.6 L184.5,232.0 L179.3,229.4 L178.3,225.9 L179.7,220.7 L161.5,220.3 L157.8,209.8 L160.6,209.7 L158.2,198.0 L152.7,195.3 L146.7,195.4 L142.8,192.8 L136.4,191.0 L132.6,187.6 L122.0,186.2 L111.7,178.1 L112.3,161.9 L99.9,163.4 L86.5,170.4 L84.4,173.1 L72.5,172.6 L67.1,174.1 L62.8,173.1 L63.4,159.4 L55.6,164.7 L47.2,164.5 L43.7,159.7 L37.3,159.2 L39.4,155.3 L34.1,149.8 L30.1,141.7 L32.6,140.1 L32.6,136.3 L38.4,133.7 L37.4,128.8 L39.8,125.7 L40.5,121.5 L51.4,115.3 L59.2,113.6 L60.4,112.3 L69.0,112.7 L73.5,84.1 L72.0,78.9 L67.8,75.7 L67.9,69.1 L73.2,67.6 L75.1,68.6 L75.4,65.1 L69.9,64.2 L69.7,58.6 L88.2,58.8 L91.4,55.7 L94.0,58.5 L95.9,63.8 L97.7,62.7 L102.9,67.5 L110.3,66.9 L112.1,64.1 L123.1,60.6 L124.2,56.8 L131.0,54.2 L130.5,52.3 L122.4,51.5 L121.1,45.9 L121.5,39.8 L117.2,37.5 L119.0,36.7 L133.6,40.1 L136.4,37.9 L153.8,33.2 L157.3,29.7 L156.0,27.2 L161.0,26.8 L163.2,28.9 L161.9,32.8 L165.2,34.2 L167.4,38.4 L164.8,41.5 L163.2,49.2 L166.4,57.9 L172.2,62.1 L176.9,62.6 L177.9,60.8 L185.2,58.9 L188.3,56.5 L201.0,57.6 L201.9,55.8 L200.3,54.0 L201.3,51.4 L205.1,52.2 L209.6,51.3 L219.2,55.0 L222.1,52.6 L224.2,53.0 L225.5,55.5 L230.1,54.9 L233.7,51.5 L242.3,36.6 L245.5,36.2 L253.2,56.9 L258.2,58.4 L258.5,64.6 L251.4,72.0 L254.3,74.7 L271.1,76.1 L271.4,85.1 L278.7,79.2 L306.4,88.0 L311.0,93.2 L309.5,98.2 L320.5,95.4 L339.0,100.2 L353.2,99.9 L367.2,107.3 L379.4,117.4 L386.7,120.0 L394.8,120.3 L398.3,123.2 L403.1,140.1 L399.3,155.0 L381.1,173.4 L375.0,183.5 L368.0,191.3 L365.6,191.5 L362.9,198.1 L363.6,215.0 L360.0,234.8 L357.0,238.4 L355.3,250.4 L345.6,262.1 L344.0,271.4 L336.3,275.3 L334.1,280.7 L323.8,280.7 L308.8,284.2 L302.2,288.2 L291.5,290.8 L280.3,298.0 L272.3,306.9 L270.9,313.6 L272.5,318.6 L268.6,332.1 L261.9,337.0 L251.4,352.9 L236.6,364.2 L232.2,372.8 L226.0,377.9 Z"/><g id="geoPoints"></g></svg><div class="map-tooltip" id="mapTooltip"></div><div class="map-caption"><span>Brasil · vendas por UF</span><span class="legend"><i></i> Mais vendas</span></div></div><div><div class="rank-head"><h3 id="rankTitle">Top 5 estados por faturamento</h3><span class="status">Visão geográfica</span></div><div id="ranking"></div><div class="total-note" id="mapNote">Selecione um ponto no mapa para ver o detalhe.</div></div></div></section>
 <section class="panel section-pad channel-panel"><div class="panel-title"><div><h2>◫ Distribuição por canal</h2><p>Participação dos canais no faturamento e nos pedidos · <span id="channelPeriod">Hoje</span></p></div><div class="segmented" role="group" aria-label="Métrica da distribuição"><button class="active" data-channelmetric="revenue">Faturamento</button><button data-channelmetric="orders">Pedidos</button></div></div><div class="channel-grid"><div class="channel-donut-col"><div id="channelDonut" class="channel-donut" role="img" aria-label="Gráfico de rosca por canal"><div class="channel-hole"><small>Total</small><strong id="channelDonutTotal">—</strong><span id="channelDonutSub">em vendas</span></div></div><p class="channel-footnote">Selecione um canal na lista para filtrar o dashboard.</p></div><div id="channelRows" class="channel-rows"></div></div></section></div></div><aside class="promo" aria-label="Novidades e banners"><article class="panel promo-card"><div class="promo-banner ai"><small>INTELIGÊNCIA ARTIFICIAL</small><b>Manu IA</b><div class="subbanner">Dados e decisões com IA</div></div><div class="promo-body"><h3>Conheça a Manu IA</h3><p>Explore análises e insights inteligentes sobre sua operação.</p><button data-banner="Manu IA">Saiba mais</button></div></article><article class="panel promo-card"><div class="promo-banner freight"><small>ECOSSISTEMA</small><b>Novas integrações</b><div class="subbanner">Mais eficiência para logística</div></div><div class="promo-body"><h3>Novidades</h3><p>Descubra novas possibilidades de integração e operação.</p><button data-banner="Integrações">Saiba mais</button></div></article><article class="panel promo-card"><div class="promo-banner roadmap"><small>EVOLUÇÃO DO PRODUTO</small><b>Roadmap 2026</b><div class="subbanner">O futuro da plataforma</div></div><div class="promo-body"><h3>Roadmap</h3><p>Conheça as frentes de evolução do vNext Commerce.</p><button data-banner="Roadmap 2026">Saiba mais</button></div></article><section class="panel online-visitors" aria-labelledby="onlineVisitorsTitle"><div class="online-visitors-head"><div><div class="online-visitors-eyebrow"><span class="online-pulse" aria-hidden="true"></span> VISITANTES POR CANAL</div><h3 id="onlineVisitorsTitle">Visitas online</h3></div><span class="online-visitors-icon" aria-hidden="true">◉</span></div><div class="online-visitors-summary"><strong id="onlineVisitorsTotal">101</strong><span>visitantes online</span></div><div class="online-visitors-rows" aria-label="Distribuição de visitantes por canal"><div class="online-visitors-row"><div class="online-visitors-label"><span>Loja virtual</span><b>68</b></div><div class="online-visitors-track"><span style="width:67.3%"></span></div></div><div class="online-visitors-row"><div class="online-visitors-label"><span>B2B</span><b>21</b></div><div class="online-visitors-track"><span style="width:20.8%"></span></div></div><div class="online-visitors-row"><div class="online-visitors-label"><span>Aplicativo</span><b>12</b></div><div class="online-visitors-track"><span style="width:11.9%"></span></div></div></div><div class="online-visitors-foot"><span>Distribuição de sessões ativas</span><small>Dados de exemplo</small></div></section></aside></div>
 <footer class="footer"><span>vNext Commerce</span><span>Ambiente de avaliação · Dados de exemplo</span></footer>
@@ -683,10 +730,77 @@ function renderChannels(){
  document.querySelectorAll('[data-pickchannel]').forEach(b=>b.addEventListener('click',()=>{let v=b.dataset.pickchannel;state.channel=v==='loja'?'loja':v==='b2b'?'b2b':'market';sync();toast('Filtro de canal aplicado.');}));
  document.querySelectorAll('[data-channelmetric]').forEach(b=>b.classList.toggle('active',b.dataset.channelmetric===metric));
 }
-function sync(){renderKpis();renderChart();renderMap();renderChannels();document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('active',b.dataset.period===state.period));document.querySelectorAll('[data-geo]').forEach(b=>b.classList.toggle('active',b.dataset.geo===state.geo));document.getElementById('period').value=state.period;document.getElementById('channel').value=state.channel}
+
+/* Indicadores comerciais: amostra determinística, sem métricas externas. */
+const insightState={paymentMetric:'revenue',deliveryMetric:'orders'};
+const insightPaymentColors=['#087f9c','#19a78a','#8c79d9'];
+const insightDeliveryColors=['#0b829d','#5b83dc','#dfa03b'];
+const INSIGHT_MIX={
+ all:{payment:[.52,.36,.12],delivery:[.53,.30,.17]},
+ loja:{payment:[.45,.43,.12],delivery:[.44,.37,.19]},
+ market:{payment:[.73,.23,.04],delivery:[.61,.35,.04]},
+ b2b:{payment:[.31,.14,.55],delivery:[.85,.05,.10]}
+};
+function insightSplit(total,shares){
+ const values=shares.map(x=>Math.floor(Math.max(0,total)*x));
+ let remainder=Math.max(0,total-values.reduce((a,b)=>a+b,0));
+ const fractions=shares.map((x,i)=>({index:i,part:total*x-values[i]})).sort((a,b)=>b.part-a.part);
+ let n=0;while(remainder>0){values[fractions[n%fractions.length].index]++;remainder--;n++}
+ return values;
+}
+function insightSnapshot(){
+ const periodFactor=factors[state.period],channelFactor=channelFactors[state.channel];
+ const captured=Math.round(156*periodFactor*channelFactor);
+ const acquired=Math.round(captured*modeFactors.adquiridos);
+ const orders=state.mode==='adquiridos'?acquired:captured;
+ const amountTotal=amount(14820.5);
+ const mix=INSIGHT_MIX[state.channel]||INSIGHT_MIX.all;
+ const paymentCounts=insightSplit(orders,mix.payment);
+ const paymentValues=insightSplit(Math.round(amountTotal*100),mix.payment).map(x=>x/100);
+ const deliveryCounts=insightSplit(orders,mix.delivery);
+ const deliveryValues=insightSplit(Math.round(amountTotal*100),mix.delivery).map(x=>x/100);
+ const methodRates=[.89,.98,.76];
+ const attemptedByMethod=insightSplit(captured,mix.payment);
+ const approvedByMethod=attemptedByMethod.map((v,i)=>Math.round(v*methodRates[i]));
+ const approvedTotal=approvedByMethod.reduce((a,b)=>a+b,0);
+ const visits=Math.round(captured*17.4);
+ const carts=Math.round(captured*4.6);
+ const checkout=Math.round(captured*1.85);
+ return {orders,captured,acquired,paymentCounts,paymentValues,deliveryCounts,deliveryValues,attemptedByMethod,approvedByMethod,approvedTotal,visits,carts,checkout};
+}
+function insightPercent(value,total){return total?((value/total)*100).toFixed(1).replace('.',',')+'%':'0,0%'}
+function insightListMarkup(labels,counts,values,colors,metric){
+ const numbers=metric==='orders'?counts:values;
+ const sum=numbers.reduce((a,b)=>a+b,0);
+ return labels.map((name,i)=>'<div class="insight-list-row"><div class="insight-row-heading"><span>'+esc(name)+'</span><strong>'+(metric==='orders'?fmtNum(counts[i])+' pedidos':fmtMoney(values[i]))+'</strong></div>'+
+ '<div class="insight-meter" role="img" aria-label="'+esc(name)+': '+insightPercent(numbers[i],sum)+'"><span style="width:'+((numbers[i]/Math.max(sum,1))*100).toFixed(2)+'%;background:'+colors[i]+'"></span></div>'+
+ '<div class="insight-row-detail">'+insightPercent(numbers[i],sum)+' de participação</div></div>').join('');
+}
+function renderCommerceInsights(){
+ const payment=document.getElementById('paymentRanking');
+ if(!payment)return;
+ const d=insightSnapshot(),paymentLabels=['Cartão de crédito','Pix','Boleto'],deliveryLabels=['Transportadora','Correios','Retirada na loja'];
+ payment.innerHTML=insightListMarkup(paymentLabels,d.paymentCounts,d.paymentValues,insightPaymentColors,insightState.paymentMetric);
+ document.getElementById('deliveryRanking').innerHTML=insightListMarkup(deliveryLabels,d.deliveryCounts,d.deliveryValues,insightDeliveryColors,insightState.deliveryMetric);
+ document.getElementById('funnelPeriod').textContent=names[state.period];
+ const funnel=[['Visitas',d.visits],['Carrinhos iniciados',d.carts],['Checkout iniciado',d.checkout],['Pedidos captados',d.captured],['Pedidos adquiridos',d.acquired]];
+ const funnelColors=['#087b9a','#209abb','#5da8c6','#6f81d7','#27a48b'];
+ document.getElementById('conversionFunnel').innerHTML=funnel.map(([name,value],i)=>'<div class="insight-funnel-row"><div class="insight-row-heading"><span>'+name+'</span><strong>'+fmtNum(value)+'</strong></div><div class="insight-meter" role="img" aria-label="'+name+': '+fmtNum(value)+'"><span style="width:'+(value/Math.max(d.visits,1)*100).toFixed(2)+'%;background:'+funnelColors[i]+';min-width:'+(value>0?'5px':'0')+'"></span></div></div>').join('');
+ document.getElementById('funnelSummary').innerHTML='<div class="insight-summary-tile"><small>Visita → pedido captado</small><strong>'+insightPercent(d.captured,d.visits)+'</strong></div><div class="insight-summary-tile"><small>Pedido captado → adquirido</small><strong>'+insightPercent(d.acquired,d.captured)+'</strong></div>';
+ const allAttempts=d.attemptedByMethod.reduce((a,b)=>a+b,0);
+ document.getElementById('approvalSummary').innerHTML='<strong>'+insightPercent(d.approvedTotal,allAttempts)+'</strong><span>'+fmtNum(d.approvedTotal)+' aprovações em '+fmtNum(allAttempts)+' tentativas ilustrativas</span>';
+ document.getElementById('approvalByMethod').innerHTML=paymentLabels.map((name,i)=>'<div class="insight-list-row"><div class="insight-row-heading"><span>'+esc(name)+'</span><strong>'+insightPercent(d.approvedByMethod[i],d.attemptedByMethod[i])+'</strong></div><div class="insight-meter" role="img" aria-label="Aprovação em '+esc(name)+'"><span style="background:'+insightPaymentColors[i]+';width:'+(100*d.approvedByMethod[i]/Math.max(d.attemptedByMethod[i],1)).toFixed(2)+'%"></span></div><div class="insight-row-detail">'+fmtNum(d.approvedByMethod[i])+' aprovadas / '+fmtNum(d.attemptedByMethod[i])+' tentativas</div></div>').join('');
+ document.querySelectorAll('[data-insight-metric]').forEach(b=>b.classList.toggle('active',b.dataset.insightMetric===insightState.paymentMetric));
+ document.querySelectorAll('[data-insight-delivery-metric]').forEach(b=>b.classList.toggle('active',b.dataset.insightDeliveryMetric===insightState.deliveryMetric));
+}
+
+function sync(){renderKpis();renderChart();renderMap();renderChannels();renderCommerceInsights();document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('active',b.dataset.period===state.period));document.querySelectorAll('[data-geo]').forEach(b=>b.classList.toggle('active',b.dataset.geo===state.geo));document.getElementById('period').value=state.period;document.getElementById('channel').value=state.channel}
 let toastTimer;function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500)}
 function modal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalText').textContent=body;document.getElementById('modalLayer').classList.add('open')}
 function closeModal(){document.getElementById('modalLayer').classList.remove('open')}
+document.querySelectorAll('[data-insight-metric]').forEach(b=>b.addEventListener('click',()=>{insightState.paymentMetric=b.dataset.insightMetric;renderCommerceInsights()}));
+document.querySelectorAll('[data-insight-delivery-metric]').forEach(b=>b.addEventListener('click',()=>{insightState.deliveryMetric=b.dataset.insightDeliveryMetric;renderCommerceInsights()}));
+document.querySelectorAll('[data-insight-route]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.insightRoute)));
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.mode;sync()}));document.querySelectorAll('[data-period]').forEach(b=>b.addEventListener('click',()=>{state.period=b.dataset.period;sync()}));document.querySelectorAll('[data-geo]').forEach(b=>b.addEventListener('click',()=>{state.geo=b.dataset.geo;sync()}));document.querySelectorAll('[data-channelmetric]').forEach(b=>b.addEventListener('click',()=>{state.channelMetric=b.dataset.channelmetric;sync()}));document.getElementById('channel').addEventListener('change',e=>{state.channel=e.target.value;sync()});document.getElementById('period').addEventListener('change',e=>{state.period=e.target.value;sync()});document.getElementById('reset').addEventListener('click',()=>{state.mode='captados';state.period='today';state.channel='all';state.geo='state';state.channelMetric='revenue';state.selectedUF='';sync();toast('Filtros restaurados.')});document.querySelectorAll('[data-banner]').forEach(b=>b.addEventListener('click',()=>b.dataset.banner==='Manu IA'?navigate('Manu IA'):modal(b.dataset.banner,'Conheça as novidades e funcionalidades disponíveis para sua operação.')));
 nav.addEventListener('click',e=>{const b=e.target.closest('[data-page],[data-folder],[data-subfolder]');if(!b||!nav.contains(b))return;if(b.dataset.page){navigate(b.dataset.page);return}if(b.dataset.subfolder){const expanded=b.getAttribute('aria-expanded')==='true';nav.querySelectorAll('[data-subfolder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true});b.setAttribute('aria-expanded',String(!expanded));b.nextElementSibling.hidden=expanded;return}if(b.dataset.folder){if(document.getElementById('appShell').classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);const expanded=b.getAttribute('aria-expanded')==='true';nav.querySelectorAll('[data-folder]').forEach(other=>{other.setAttribute('aria-expanded','false');other.nextElementSibling.hidden=true});b.setAttribute('aria-expanded',String(!expanded));b.nextElementSibling.hidden=expanded}});
 document.querySelectorAll('[data-quick]').forEach(b=>b.addEventListener('click',()=>{const route=b.dataset.quick;if(route==='Pedidos'){orderView='Todos';moduleFilters={query:'',status:b.dataset.quickstatus||'Todos',channel:'Todos'};}navigate(route);if(route==='Pedidos'&&b.dataset.quickstatus){moduleFilters.status=b.dataset.quickstatus;renderActiveModule(route)}}));
