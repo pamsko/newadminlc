@@ -103,6 +103,7 @@ jobs:
                   if(!blocked?.trim())issues.push('Required field validation not triggered at '+width);
                   await page.locator('#register-code').fill('TEST-STEPPER-'+width);
                   await page.locator('#register-name').fill('Teste de cadastro');
+                  await page.locator('#register-status').selectOption({label:'Ativa'});
                   await page.locator('#registerNext').click();
                   const activeStep=await page.locator('.expanded-register-tabs .active').evaluate(el=>el.dataset.editorTab);
                   if(activeStep!=='1')issues.push('Stepper navigation failed at '+width+': '+activeStep);
