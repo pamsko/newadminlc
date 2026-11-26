@@ -1120,6 +1120,20 @@ body.dark-mode #moduleView .pay-card-brand:has(input:checked){background:#164454
 .sidebar-collapsed .sidebar-search-label,.sidebar-collapsed .sidebar-search-box input,.sidebar-collapsed .sidebar-search-box kbd{display:none}
 .sidebar-collapsed .sidebar-search-box{justify-content:center;padding:0;width:38px;margin:auto}
 @media(max-width:820px){.sidebar-search-wrap{padding:4px 0 12px}.sidebar-search-label,.sidebar-search-box input,.sidebar-search-box kbd{display:none}.sidebar-search-box{justify-content:center;padding:0;width:38px;margin:auto}}
+
+/* Busca lateral em resoluções reduzidas: campo expande o menu ao tocar na lupa. */
+@media(max-width:820px){
+ .shell.sidebar-search-open .sidebar{position:fixed!important;left:0;top:0;z-index:110;width:min(310px,90vw)!important;height:100dvh;max-width:none;padding:18px 10px;box-shadow:14px 0 36px #0005}
+ .shell.sidebar-search-open .sidebar-search-wrap{padding:4px 6px 13px}
+ .shell.sidebar-search-open .sidebar-search-label{display:block}
+ .shell.sidebar-search-open .sidebar-search-box{width:100%;padding:0 10px;justify-content:flex-start}
+ .shell.sidebar-search-open .sidebar-search-box input{display:block}
+ .shell.sidebar-search-open .sidebar-search-box kbd{display:block}
+ .shell.sidebar-search-open .sidebar .brand-type,.shell.sidebar-search-open .sidebar .nav-label,.shell.sidebar-search-open .sidebar .nav-item .nav-text{display:block}
+ .shell.sidebar-search-open .sidebar .nav-children:not([hidden]){display:block!important}
+ .shell.sidebar-search-open .sidebar .nav-search-meta{display:grid}
+ .shell.sidebar-search-open .sidebar .nav-child{display:flex}
+}
 </style>
 <!-- Estilos independentes da tela de login: evita regressões dos módulos. -->
 <style id="login-isolated-styles">
@@ -1445,11 +1459,14 @@ function adminSidebarSearchInit(){
  const input=document.getElementById('sidebarMenuSearch');
  if(!input)return;
  input.addEventListener('focus',()=>{
-  if(document.getElementById('appShell').classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);
+  const shell=document.getElementById('appShell');
+  if(shell.classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);
+  if(window.innerWidth<=820)shell.classList.add('sidebar-search-open');
  });
+ input.closest('.sidebar-search-box').addEventListener('click',()=>{const shell=document.getElementById('appShell');if(window.innerWidth<=820)shell.classList.add('sidebar-search-open');input.focus()});
  input.addEventListener('input',()=>{if(!adminSidebarSearchApply())renderAdminNav(vnextPage)});
  input.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){input.value='';renderAdminNav(vnextPage);input.blur();return}
+  if(e.key==='Escape'){input.value='';renderAdminNav(vnextPage);document.getElementById('appShell').classList.remove('sidebar-search-open');input.blur();return}
   if(e.key==='Enter'){const first=nav.querySelector('.nav-search-result');if(first){e.preventDefault();first.click()}}
  });
  document.addEventListener('keydown',e=>{
@@ -4278,7 +4295,7 @@ function routeRestore(){
 }
 window.addEventListener('popstate',routeRestore);
 window.addEventListener('hashchange',routeRestore);
-function navigate(page,options={}){const menuSearch=document.getElementById('sidebarMenuSearch');if(menuSearch)menuSearch.value='';vnextPage=page;selectedOrderId=null;solutionSelected=null;paymentConfigProvider=null;document.getElementById('homeShortcut')?.classList.toggle('active',page==='Área de trabalho');renderAdminNav(page);moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);if(options.history!==false)routeUpdate();window.scrollTo({top:0,behavior:'instant'})}
+function navigate(page,options={}){const menuSearch=document.getElementById('sidebarMenuSearch');if(menuSearch)menuSearch.value='';document.getElementById('appShell').classList.remove('sidebar-search-open');vnextPage=page;selectedOrderId=null;solutionSelected=null;paymentConfigProvider=null;document.getElementById('homeShortcut')?.classList.toggle('active',page==='Área de trabalho');renderAdminNav(page);moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);if(options.history!==false)routeUpdate();window.scrollTo({top:0,behavior:'instant'})}
 
 
 /* Autenticação verificada pelo Cloudflare Worker — nunca por senha no navegador. */
