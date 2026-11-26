@@ -1,12 +1,8 @@
 name: Deploy Cloudflare Worker
 
+# Deploy automático suspenso: publicação manual no painel Cloudflare.
+# Reativar o evento push somente após configurar os secrets GitHub.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'worker/**'
-      - '.github/workflows/deploy-worker.yml'
   workflow_dispatch:
 
 permissions:
