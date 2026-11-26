@@ -153,8 +153,19 @@ jobs:
               const freightReady=await page.locator('#freightCalculate').count();
               if(!freightReady)issues.push('Freight simulator missing '+width);
               else{
+                for(const id of ['originCep','originUf','destinationCep','destinationUf','deliveryId','weight','length','width','height','subtotal']){
+                  if(!await page.locator('#freight-'+id).count())issues.push('Missing freight field '+id+' at '+width);
+                }
+                const choices=await page.locator('#freight-deliveryId option').allTextContents();
+                if(!choices.length)issues.push('Delivery method selection empty at '+width);
+                await page.locator('#freight-originCep').fill('01001-000');
+                await page.locator('#freight-originUf').selectOption('SP');
+                await page.locator('#freight-destinationCep').fill('90010000');
+                await page.locator('#freight-destinationUf').selectOption('RS');
                 await page.locator('#freightCalculate').click();
                 if(!await page.locator('#freightResult .simulation-result').count())issues.push('Freight result missing '+width);
+                const resultText=await page.locator('#freightResult').innerText();
+                if(!resultText.includes('SP → RS')||!resultText.includes('Meio selecionado'))issues.push('Freight route or delivery missing in result '+width);
                 await page.screenshot({path:'ui-captures/freight-'+width+'.png',fullPage:true});
               }
               await page.evaluate(()=>{location.hash='#/simulador-b2b';window.dispatchEvent(new Event('hashchange'))});
