@@ -46,6 +46,14 @@ jobs:
               await page.screenshot({path:'ui-captures/login-'+width+'.png',fullPage:true});
               const login=await page.$eval('#demoLogin',el=>({display:getComputedStyle(el).display,columns:getComputedStyle(el).gridTemplateColumns}));
               console.log('LOGIN',width,JSON.stringify(login));
+              if(width===1440){
+                const cssInfo=await page.evaluate(()=>[...document.styleSheets].map((sheet,i)=>{
+                  let rules=[];try{rules=[...sheet.cssRules]}catch(e){return {i,error:String(e)}}
+                  const text=sheet.ownerNode?.textContent||'';
+                  return {i,ruleCount:rules.length,textLength:text.length,last:rules.slice(-5).map(r=>r.cssText.slice(0,130)),targets:['.pay-config-tabs','.commerce-insights','.visual-funnel'].map(sel=>({sel,matches:rules.filter(r=>r.selectorText?.includes(sel)).length}))}
+                }));
+                console.log('CSSOM',JSON.stringify(cssInfo));
+              }
               if(login.display!=='grid')issues.push('Login not grid at '+width);
               await page.evaluate(()=>{
                 document.body.classList.add('demo-authenticated');
