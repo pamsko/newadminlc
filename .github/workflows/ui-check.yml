@@ -146,6 +146,35 @@ jobs:
                   await page.locator('[data-close-register]').first().click();
                 }else issues.push('Registration stepper missing at '+width);
               }else issues.push('Category registration action missing at '+width);
+              // Menu Simulação and checkout of the freight calculator (no external pricing calls).
+              await page.evaluate(()=>{location.hash='#/simulador-de-frete';window.dispatchEvent(new Event('hashchange'))});
+              await page.waitForTimeout(180);
+              const freightReady=await page.locator('#freightCalculate').count();
+              if(!freightReady)issues.push('Freight simulator missing '+width);
+              else{
+                await page.locator('#freightCalculate').click();
+                if(!await page.locator('#freightResult .simulation-result').count())issues.push('Freight result missing '+width);
+                await page.screenshot({path:'ui-captures/freight-'+width+'.png',fullPage:true});
+              }
+              await page.evaluate(()=>{location.hash='#/simulador-b2b';window.dispatchEvent(new Event('hashchange'))});
+              await page.waitForTimeout(150);
+              if(!await page.locator('#b2bClient').count())issues.push('B2B simulator missing '+width);
+              // Payment actions available in the order payment tab with eligibility.
+              await page.evaluate(()=>{location.hash='#/pedidos/105842/payment';window.dispatchEvent(new Event('hashchange'))});
+              await page.waitForTimeout(180);
+              const refund=page.locator('[data-order-finance-form]');
+              if(!await refund.count())issues.push('Refund action missing '+width);
+              else{
+                if(!await page.locator('[name="amount"]').count())issues.push('Refund amount missing '+width);
+                await page.screenshot({path:'ui-captures/order-payment-'+width+'.png',fullPage:true});
+              }
+              await page.evaluate(()=>{location.hash='#/pedidos/105839/payment';window.dispatchEvent(new Event('hashchange'))});
+              await page.waitForTimeout(160);
+              if(!await page.locator('[data-order-finance-form]').count())issues.push('Pending payment cancellation missing '+width);
+              if(await page.locator('[data-order-finance-form] [name="amount"]').count())issues.push('Unexpected refund amount for pending '+width);
+              await page.evaluate(()=>{location.hash='#/pedidos/105837/payment';window.dispatchEvent(new Event('hashchange'))});
+              await page.waitForTimeout(160);
+              if(await page.locator('[data-order-finance-form]').count())issues.push('Cancelled order payment action should be blocked '+width);
               if(jsErrors.length)issues.push('JS errors '+width+': '+jsErrors.join(' | ').slice(0,500));
               await page.close();
             }
