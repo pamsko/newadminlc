@@ -3359,13 +3359,13 @@ function renderPaymentConfig(){
  (['account','credentials','methods','rules','pix-boleto','risk','split','webhooks','reconciliation'].includes(paymentConfigTab)?'<div class="pay-config-footer"><small>Configurações salvas neste navegador.</small><button class="solution-action" data-pay-save>Salvar configurações</button></div>':'')+
  (paymentConfigTab==='overview'?'<div class="pay-config-footer"><small>A ativação depende de validação da integração com o provedor.</small><button class="solution-action secondary" data-pay-configured>Marcar como '+(configured?'pendente':'concluída')+'</button></div>':'');
 }
-function payConfigureStart(id){paymentConfigProvider=id;paymentConfigTab='overview';solutionSelected=id;renderActiveModule(vnextPage)}
+function payConfigureStart(id){paymentConfigProvider=id;paymentConfigTab='overview';solutionSelected=id;renderActiveModule(vnextPage);routeUpdate()}
 function bindPaymentConfig(target,page){
  if(!['Central de Soluções','Minhas Soluções','Meios de pagamento'].includes(page))return;
  target.querySelectorAll('[data-pay-open]').forEach(b=>b.addEventListener('click',()=>payConfigureStart(b.dataset.payOpen)));
  target.querySelectorAll('[data-solution-nav]').forEach(b=>{if(page==='Meios de pagamento')b.addEventListener('click',()=>navigate(b.dataset.solutionNav))});
- target.querySelector('[data-pay-back]')?.addEventListener('click',()=>{paymentConfigProvider=null;if(page==='Meios de pagamento')solutionSelected=null;renderActiveModule(page)});
- target.querySelectorAll('[data-pay-tab]').forEach(b=>b.addEventListener('click',()=>{paymentConfigTab=b.dataset.payTab;renderActiveModule(page)}));
+ target.querySelector('[data-pay-back]')?.addEventListener('click',()=>{paymentConfigProvider=null;if(page==='Meios de pagamento')solutionSelected=null;renderActiveModule(page);routeUpdate()});
+ target.querySelectorAll('[data-pay-tab]').forEach(b=>b.addEventListener('click',()=>{paymentConfigTab=b.dataset.payTab;renderActiveModule(page);routeUpdate()}));
  target.querySelector('[data-pay-configured]')?.addEventListener('click',()=>{const id=paymentConfigProvider,current=solutionState[id]||{};solutionState[id]={...current,configured:!current.configured};solutionSave();toast('Configuração atualizada.');renderActiveModule(page)});
  target.querySelector('[data-pay-save]')?.addEventListener('click',()=>{
   const id=paymentConfigProvider,c=paymentConfigData(id);
@@ -3461,7 +3461,7 @@ function orderDetailBody(o){
  vnextOrderLinks(o)+'<div class="detail-tabs" role="tablist" aria-label="Seções do pedido">'+orderTabsDetail.map(([key,label])=>'<button role="tab" aria-selected="'+String(selectedOrderTab===key)+'" class="'+(selectedOrderTab===key?'active':'')+'" data-orderdetailtab="'+key+'">'+label+'</button>').join('')+'</div>'+
  '<div class="detail-layout"><div>'+left+'</div><aside class="panel detail-section"><h3>Resumo e ações</h3>'+detailRows([['Pedido','#'+o.id],['Cliente',o.client],['Pagamento',o.payment],['Canal',o.channel]])+'<div class="detail-actions"><button data-detailaction="Atualizar situação">Atualizar situação</button><button data-detailaction="Consultar ERP">Consultar ERP</button><button data-detailaction="Consultar histórico">Consultar histórico</button></div><div class="detail-warning">Ações que exigem integração ou autorização ficam indisponíveis neste ambiente.</div></aside></div>';
 }
-function openOrderDetail(key){selectedOrderId=key;selectedOrderTab='overview';renderActiveModule('Pedidos');window.scrollTo({top:0,behavior:'instant'})}
+function openOrderDetail(key){selectedOrderId=key;selectedOrderTab='overview';renderActiveModule('Pedidos');routeUpdate();window.scrollTo({top:0,behavior:'instant'})}
 
 
 function showDetail(type,key){
@@ -3802,11 +3802,50 @@ target.querySelector('#orderAdvClear')?.addEventListener('click',()=>{
 target.querySelectorAll('[data-orderpreset]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.orderpreset;orderView='Todos';moduleFilters={query:'',status:p==='paid'?'Pago':'Todos',channel:p==='market'?'Mercado Livre':'Todos'};renderActiveModule(page)}));
 target.querySelector('#ordersExport')?.addEventListener('click',()=>{if(!demoGuard('export','exportar pedidos'))return;if(!window.confirm('Exportar somente dados fictícios da visão filtrada?'))return;auditEvent('Exportar CSV','Pedidos','Dados exibidos');const a=filteredOrders();const lines=[['Pedido','Cliente','Canal','Pagamento','Status','Data','Valor'],...a.map(o=>[o.id,o.client,o.channel,o.payment,o.status,o.date,o.total.toFixed(2)])];const csv='\uFEFF'+lines.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\r\n');const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));link.download='pedidos-demo.csv';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)});
 target.querySelector('#moduleQuery')?.addEventListener('input',e=>{moduleFilters.query=e.target.value;const pos=e.target.selectionStart;renderActiveModule(page);const el=document.getElementById('moduleQuery');el.focus();el.setSelectionRange(pos,pos)});target.querySelector('#moduleStatus')?.addEventListener('change',e=>{moduleFilters.status=e.target.value;renderActiveModule(page)});target.querySelector('#moduleChannel')?.addEventListener('change',e=>{moduleFilters.channel=e.target.value;renderActiveModule(page)});target.querySelector('#moduleClear')?.addEventListener('click',()=>{moduleFilters={query:'',status:'Todos',channel:'Todos'};renderActiveModule(page)});target.querySelectorAll('[data-order]').forEach(b=>b.addEventListener('click',()=>openOrderDetail(b.dataset.order)));
-target.querySelector('#ordersBack')?.addEventListener('click',()=>{selectedOrderId=null;renderActiveModule('Pedidos')});
-target.querySelectorAll('[data-orderdetailtab]').forEach(b=>b.addEventListener('click',()=>{selectedOrderTab=b.dataset.orderdetailtab;renderActiveModule('Pedidos')}));
+target.querySelector('#ordersBack')?.addEventListener('click',()=>{selectedOrderId=null;renderActiveModule('Pedidos');routeUpdate()});
+target.querySelectorAll('[data-orderdetailtab]').forEach(b=>b.addEventListener('click',()=>{selectedOrderTab=b.dataset.orderdetailtab;renderActiveModule('Pedidos');routeUpdate()}));
 target.querySelectorAll('[data-detailaction]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.detailaction,'Ação indisponível para a configuração atual.')));
 target.querySelectorAll('[data-product]').forEach(b=>b.addEventListener('click',()=>showDetail('product',b.dataset.product)));target.querySelectorAll('[data-customer]').forEach(b=>b.addEventListener('click',()=>showDetail('customer',b.dataset.customer)));target.querySelectorAll('[data-report]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.report,'A análise detalhada estará disponível após a configuração dos indicadores.')));target.querySelectorAll('[data-feature]').forEach(b=>b.addEventListener('click',()=>modal(b.dataset.feature,'Funcionalidade em exploração UX/UI.')));target.querySelectorAll('[data-smart]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.smart)));bindSmartDemo(target,page);target.querySelector('#moduleNew')?.addEventListener('click',()=>registerModels[page]?openRegister(page,null):modal('Nova ação — '+page,'Cadastro ainda não disponível neste módulo.'));target.querySelector('#moduleExplore')?.addEventListener('click',()=>modal('Explorar '+page,'Próximo passo: definir a jornada e as regras de negócio deste módulo.'))}
-function navigate(page){vnextPage=page;selectedOrderId=null;solutionSelected=null;paymentConfigProvider=null;document.getElementById('homeShortcut')?.classList.toggle('active',page==='Área de trabalho');renderAdminNav(page);moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);window.scrollTo({top:0,behavior:'instant'})}
+/* Rotas estáveis no GitHub Pages: cada tela tem um hash compartilhável. */
+function routeSlug(value){return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+const routeAliases={'home':'Área de trabalho','dashboard':'Área de trabalho'};
+function routePages(){
+ const names=['Área de trabalho','Central de Soluções','Minhas Soluções','Meios de pagamento','Pedidos','Regras B2B','Fluxos (workflows)'];
+ document.querySelectorAll('[data-page]').forEach(el=>names.push(el.dataset.page));
+ Object.keys(moduleMeta).forEach(name=>names.push(name));
+ Object.keys(discoveryScreens).forEach(name=>names.push(name));
+ return [...new Set(names)];
+}
+function routeLink(){
+ const parts=[routeSlug(vnextPage)];
+ if(selectedOrderId&&vnextPage==='Pedidos')parts.push(encodeURIComponent(selectedOrderId),selectedOrderTab);
+ else if(paymentConfigProvider&&['Meios de pagamento','Central de Soluções','Minhas Soluções'].includes(vnextPage))parts.push(routeSlug(paymentConfigProvider),paymentConfigTab);
+ return '#/'+parts.join('/');
+}
+function routeUpdate(replace=false){
+ const next=routeLink();
+ if(location.hash===next)return;
+ try{history[replace?'replaceState':'pushState'](null,'',next)}catch(e){location.hash=next}
+}
+function routeRestore(){
+ const parts=location.hash.replace(/^#\/?/,'').split('/').filter(Boolean);
+ if(!parts.length){navigate('Área de trabalho',{history:false});return}
+ const pages=routePages();
+ const page=pages.find(name=>routeSlug(name)===parts[0])||routeAliases[parts[0]];
+ if(!page){navigate('Área de trabalho',{history:false});return}
+ navigate(page,{history:false});
+ if(page==='Pedidos'&&parts[1]&&fakeOrders.some(o=>String(o.id)===decodeURIComponent(parts[1]))){
+   selectedOrderId=decodeURIComponent(parts[1]);
+   selectedOrderTab=orderTabsDetail.some(x=>x[0]===parts[2])?parts[2]:'overview';
+   renderActiveModule(page);
+ }else if(['Meios de pagamento','Central de Soluções','Minhas Soluções'].includes(page)&&parts[1]){
+   const provider=paymentConfigProviders.find(id=>routeSlug(id)===parts[1]);
+   if(provider){paymentConfigProvider=provider;solutionSelected=provider;paymentConfigTab=['overview','account','credentials','methods','rules','pix-boleto','risk','split','webhooks','reconciliation','tests'].includes(parts[2])?parts[2]:'overview';renderActiveModule(page)}
+ }
+}
+window.addEventListener('popstate',routeRestore);
+window.addEventListener('hashchange',routeRestore);
+function navigate(page,options={}){vnextPage=page;selectedOrderId=null;solutionSelected=null;paymentConfigProvider=null;document.getElementById('homeShortcut')?.classList.toggle('active',page==='Área de trabalho');renderAdminNav(page);moduleFilters={query:'',status:'Todos',channel:'Todos'};if(page==='Área de trabalho'){document.getElementById('pageTitle').textContent='Área de trabalho';document.getElementById('pageSub').textContent='Acompanhe os resultados e identifique onde seu e-commerce mais vende.';document.getElementById('crumb').textContent=page}renderActiveModule(page);if(options.history!==false)routeUpdate();window.scrollTo({top:0,behavior:'instant'})}
 
 
 /* Autenticação verificada pelo Cloudflare Worker — nunca por senha no navegador. */
@@ -3871,6 +3910,7 @@ document.getElementById('demoLoginForm').addEventListener('submit',async e=>{
   if(!result.token||!result.username)throw new Error('INVALID_RESPONSE');
   setStoredSession(result.token);
   showAdmin(result.username,result.token);
+  routeRestore();
  }catch(err){
   setStoredSession('');document.getElementById('demoPass').value='';
   setLoginStatus(err.status===401?'Usuário ou senha incorretos.':err.status===503?'Login não configurado no servidor. Contate o administrador.':'Não foi possível autenticar. Verifique a conexão e a configuração do servidor.');
@@ -3897,6 +3937,7 @@ async function verifyAdminSession(){
   const result=await authFetch('/auth/session',{headers:{Authorization:'Bearer '+token}});
   if(!result.authenticated||!result.username)throw new Error('INVALID_SESSION');
   showAdmin(result.username,token);
+  routeRestore();
  }catch(err){
   signOutDemo();
   setLoginStatus('Sua sessão expirou ou não pôde ser validada. Entre novamente.');
@@ -3916,6 +3957,7 @@ document.getElementById('manuTopTrigger').addEventListener('click',()=>navigate(
 document.getElementById('workQueue').addEventListener('click',()=>navigate('Tarefas e notificações'));
 vnextTasksUpdate();
 sync();
+routeRestore();
 })();
 </script>
 </body></html>
