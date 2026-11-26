@@ -149,14 +149,14 @@ jobs:
               }else issues.push('Category registration action missing at '+width);
               // Global search finds navigation routes, not only products and orders.
               const globalSearch=page.locator('#globalSearch');
-              await globalSearch.fill('frete');
+              await globalSearch.evaluate(el=>{el.value='frete';el.dispatchEvent(new Event('input',{bubbles:true}))});
               await page.waitForTimeout(120);
               const globalMenus=await page.locator('#vnextSearchResults [data-vnext-result]').allTextContents();
               if(!globalMenus.some(x=>x.toLowerCase().includes('simulador de frete')))issues.push('Global menu search missing freight '+width);
-              await globalSearch.fill('categoria');
+              await globalSearch.evaluate(el=>{el.value='categoria';el.dispatchEvent(new Event('input',{bubbles:true}))});
               await page.waitForTimeout(120);
               if(!await page.locator('#vnextSearchResults [data-vnext-result]').count())issues.push('Global accent-insensitive menu search missing '+width);
-              await globalSearch.fill('');
+              await globalSearch.evaluate(el=>{el.value='';el.dispatchEvent(new Event('input',{bubbles:true}))});
               // Sidebar navigation search filters and opens the corresponding module.
               const sideSearch=page.locator('#sidebarMenuSearch');
               if(width<=820)await page.locator('.sidebar-search-box').click();
