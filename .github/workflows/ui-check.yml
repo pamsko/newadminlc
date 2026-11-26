@@ -75,6 +75,28 @@ jobs:
                   return {sel,display:st.display,columns:st.gridTemplateColumns,gap:st.gap,background:st.backgroundColor,border:st.borderTopStyle};
                 }),selectors);
                 console.log('LAYOUT',width,route,JSON.stringify(styles));
+                if(label==='totvs-pay'){
+                  const config=await page.evaluate(()=>({
+                    steps:[...document.querySelectorAll('#moduleView .pay-config-tabs [data-pay-tab]')].map(x=>x.textContent.trim()),
+                    hasAccount:document.querySelector('#moduleView .payment-general')!==null,
+                    accountFields:[...document.querySelectorAll('#moduleView [data-pay-setting]')].map(e=>e.dataset.paySetting)
+                  }));
+                  console.log('PAYMENT_STEPS',width,JSON.stringify(config));
+                  if(config.steps.length!==5||config.steps.some(v=>/Homologa|Logs/.test(v)))issues.push('Payment steps incorrect at '+width);
+                  if(!config.hasAccount||!config.accountFields.includes('restrictionMode'))issues.push('Payment general information missing at '+width);
+                  await page.evaluate(()=>{location.hash='#/minhas-solucoes/totvs-pay/methods';window.dispatchEvent(new Event('hashchange'))});
+                  await page.waitForTimeout(200);
+                  const methods=await page.evaluate(()=>({
+                    sections:[...document.querySelectorAll('#moduleView .solution-detail h3')].map(e=>e.textContent.trim()),
+                    inputs:[...document.querySelectorAll('#moduleView [data-pay-setting],#moduleView [data-pay-flag]')].map(e=>e.dataset.paySetting||e.dataset.payFlag),
+                    steps:document.querySelectorAll('#moduleView .pay-config-tabs [data-pay-tab]').length
+                  }));
+                  console.log('PAYMENT_METHODS',width,JSON.stringify(methods));
+                  if(!['credit','pix','boleto','apple','google','paypal','installments','pixExpiry','boletoDueDays'].every(k=>methods.inputs.includes(k)))issues.push('Missing unified methods '+width);
+                  await page.screenshot({path:'ui-captures/payment-methods-'+width+'.png',fullPage:true});
+                  await page.evaluate(()=>{location.hash='#/minhas-solucoes/totvs-pay/overview';window.dispatchEvent(new Event('hashchange'))});
+                  await page.waitForTimeout(150);
+                }
                 for(const item of styles){
                   if(item.missing){issues.push('Missing '+item.sel+' at '+route);continue}
                   if(item.sel.includes('tabs')&&item.display!=='flex')issues.push('Unstyled payment tabs at '+width);
