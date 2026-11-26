@@ -63,7 +63,7 @@ jobs:
               });
               const specs=[
                 ['area-de-trabalho','dashboard',['#dashboardView .commerce-insights-grid','#dashboardView .insight-list','#dashboardView .visual-funnel','#dashboardView .visual-funnel-step']],
-                ['minhas-solucoes/totvs-pay/overview','totvs-pay',['#moduleView .pay-config-tabs','#moduleView .pay-config-summary','#moduleView .pay-config-steps']]
+                ['minhas-solucoes/totvs-pay/overview','totvs-pay',['#moduleView .pay-config-tabs','#moduleView .payment-general-rows','#moduleView .pay-config-fields']]
               ];
               for(const [route,label,selectors] of specs){
                 await page.evaluate(route=>{location.hash='#/'+route;window.dispatchEvent(new Event('hashchange'))},route);
