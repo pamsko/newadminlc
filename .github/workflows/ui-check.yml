@@ -99,8 +99,13 @@ jobs:
                   if(layout.display!=='flex'||layout.direction!=='row'||layout.steps<2)issues.push('Registration stepper not horizontal at '+width);
                   await page.screenshot({path:'ui-captures/register-'+width+'.png',fullPage:true});
                   await page.locator('#registerNext').click();
-                  const current=await page.locator('.expanded-register-tabs .active').count();
-                  if(current!==1)issues.push('Stepper navigation failed at '+width);
+                  const blocked=await page.locator('#demoRegisterError').textContent();
+                  if(!blocked?.trim())issues.push('Required field validation not triggered at '+width);
+                  await page.locator('#register-code').fill('TEST-STEPPER-'+width);
+                  await page.locator('#register-name').fill('Teste de cadastro');
+                  await page.locator('#registerNext').click();
+                  const activeStep=await page.locator('.expanded-register-tabs .active').evaluate(el=>el.dataset.editorTab);
+                  if(activeStep!=='1')issues.push('Stepper navigation failed at '+width+': '+activeStep);
                   await page.locator('[data-close-register]').first().click();
                 }else issues.push('Registration stepper missing at '+width);
               }else issues.push('Category registration action missing at '+width);
