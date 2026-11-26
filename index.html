@@ -829,6 +829,40 @@ body.dark-mode #moduleView .pay-config-notice,body.dark-mode #moduleView .pay-se
  #moduleView .pay-config-summary{grid-template-columns:minmax(0,1fr)}
  #moduleView .pay-config-tabs button{flex-basis:100%}
 }
+
+/* Correções estruturais de sobreposição e visibilidade — 26/11/2026 */
+/* O atributo hidden deve prevalecer inclusive sobre seletores por ID e display:grid/flex. */
+[hidden],#passwordDialog[hidden],#profileMenu[hidden],.nav-children[hidden],.nav-subchildren[hidden]{display:none!important}
+/* Não recortar menus, popovers e diálogos que ultrapassam a largura do conteúdo. */
+.workspace{overflow:visible;min-width:0}
+#moduleView{min-width:0}
+#moduleView .module-table-wrap,#moduleView .catalog-table-scroll,#moduleView .domain-table-wrap{overflow-x:auto;overflow-y:visible}
+#moduleView .catalog-products-table{width:max-content;min-width:100%;table-layout:auto}
+#moduleView .catalog-products-table th,#moduleView .catalog-products-table td{vertical-align:middle}
+#moduleView .catalog-table-actions{display:flex;align-items:center;flex-wrap:wrap;gap:5px;min-width:0}
+#moduleView .catalog-table-actions button{white-space:nowrap}
+#moduleView .pay-config-field>span,#moduleView .catalog-edit-field{overflow-wrap:anywhere}
+#passwordDialog:not([hidden]){display:grid}
+#passwordDialog .password-card{max-width:100%;max-height:calc(100dvh - 32px);overflow-y:auto}
+@media(max-width:820px){
+ .shell:not(.sidebar-collapsed) .sidebar{width:66px}
+ .shell:not(.sidebar-collapsed){grid-template-columns:66px minmax(0,1fr)}
+ .topbar{height:auto;min-height:62px;flex-wrap:wrap;padding-block:8px}
+ .top-search-group{min-width:0;flex:1 1 150px}
+ .top-search-group .top-search{min-width:0}
+ .top-right{min-width:0;flex:0 1 auto}
+ .profile-name,.version{display:none}
+}
+@media(max-width:600px){
+ .topbar{gap:8px}
+ .top-search{display:none}
+ .top-search-group{flex:0 0 auto}
+ .top-left{min-width:0}
+ .manu-top-trigger{max-width:90px;overflow:hidden}
+ #moduleView .catalog-products-table{min-width:900px}
+ #moduleView .pay-config-fields{grid-template-columns:minmax(0,1fr)}
+ .demo-register-dialog{max-height:calc(100dvh - 24px);width:100%}
+}
 </style>
 </head>
 <body>
