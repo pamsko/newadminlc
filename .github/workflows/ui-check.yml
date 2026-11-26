@@ -93,6 +93,20 @@ jobs:
                   }));
                   console.log('PAYMENT_METHODS',width,JSON.stringify(methods));
                   if(!['credit','pix','boleto','apple','google','paypal','installments','pixExpiry','boletoDueDays'].every(k=>methods.inputs.includes(k)))issues.push('Missing unified methods '+width);
+                  const brands=await page.evaluate(()=>({
+                    keys:[...document.querySelectorAll('#moduleView [data-pay-brand]')].map(el=>el.dataset.payBrand),
+                    disabled:document.querySelector('#moduleView [data-pay-card-brands]')?.disabled
+                  }));
+                  console.log('PAYMENT_BRANDS',width,JSON.stringify(brands));
+                  if(!['visa','mastercard','elo','amex','hipercard','diners','discover','jcb'].every(k=>brands.keys.includes(k)))issues.push('Missing credit brands at '+width);
+                  await page.locator('[data-pay-brand="visa"]').check();
+                  await page.locator('[data-pay-brand="elo"]').check();
+                  await page.locator('[data-pay-save]').click();
+                  if(!await page.locator('[data-pay-brand="visa"]').isChecked()||!await page.locator('[data-pay-brand="elo"]').isChecked())issues.push('Brands did not persist after save at '+width);
+                  await page.locator('[data-pay-next]').click();
+                  await page.locator('[data-pay-previous]').click();
+                  if(!await page.locator('[data-pay-brand="visa"]').isChecked())issues.push('Brands lost between steps at '+width);
+
                   await page.screenshot({path:'ui-captures/payment-methods-'+width+'.png',fullPage:true});
                   await page.evaluate(()=>{location.hash='#/minhas-solucoes/totvs-pay/overview';window.dispatchEvent(new Event('hashchange'))});
                   await page.waitForTimeout(150);
