@@ -85,6 +85,25 @@ jobs:
                 }
                 await page.screenshot({path:'ui-captures/'+label+'-'+width+'.png',fullPage:true});
               }
+              // Shared registration component must use the same horizontal stepper.
+              await page.evaluate(()=>{location.hash='#/categorias';window.dispatchEvent(new Event('hashchange'))});
+              await page.waitForTimeout(250);
+              const createButton=page.locator('[data-register-create="Categorias"]').first();
+              if(await createButton.count()){
+                await createButton.click();
+                await page.waitForTimeout(150);
+                const stepper=page.locator('.expanded-register-tabs.admin-stepper');
+                if(await stepper.count()){
+                  const layout=await stepper.evaluate(el=>({direction:getComputedStyle(el).flexDirection,display:getComputedStyle(el).display,steps:el.querySelectorAll('[data-editor-tab]').length}));
+                  console.log('REGISTER_STEPPER',width,JSON.stringify(layout));
+                  if(layout.display!=='flex'||layout.direction!=='row'||layout.steps<2)issues.push('Registration stepper not horizontal at '+width);
+                  await page.screenshot({path:'ui-captures/register-'+width+'.png',fullPage:true});
+                  await page.locator('#registerNext').click();
+                  const current=await page.locator('.expanded-register-tabs .active').count();
+                  if(current!==1)issues.push('Stepper navigation failed at '+width);
+                  await page.locator('[data-close-register]').first().click();
+                }else issues.push('Registration stepper missing at '+width);
+              }else issues.push('Category registration action missing at '+width);
               if(jsErrors.length)issues.push('JS errors '+width+': '+jsErrors.join(' | ').slice(0,500));
               await page.close();
             }
