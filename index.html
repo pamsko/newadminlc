@@ -1093,6 +1093,14 @@ body.dark-mode #moduleView .pay-card-brand:has(input:checked){background:#164454
 #moduleView .order-financial-record span,#moduleView .order-financial-record small{font-size:11px;color:var(--muted)}
 @media(max-width:950px){#moduleView .simulation-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#moduleView .simulation-result{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:550px){#moduleView .simulation-grid,#moduleView .simulation-result,#moduleView .order-financial-fields{grid-template-columns:1fr}}
+
+/* Simulador de frete: origem, destino, meio cadastrado e embalagem */
+#moduleView .simulation-section-heading{margin:20px 0 12px;padding-top:14px;border-top:1px solid var(--line)}
+#moduleView .simulation-section-heading h3{font-size:14px;margin:0;color:var(--text)}
+#moduleView .sim-field-wide{grid-column:span 2}
+#moduleView .simulation-result{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
+#moduleView .simulation-actions button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:650px){#moduleView .sim-field-wide{grid-column:1/-1}}
 </style>
 <!-- Estilos independentes da tela de login: evita regressões dos módulos. -->
 <style id="login-isolated-styles">
@@ -3888,36 +3896,62 @@ function renderVnextB2B(page='Regras B2B'){
  '<div class="vnext-help">Consulte os vínculos do comprador e as regras contratuais.</div><div class="vnext-toolbar"><button data-vnext-route="Grupos econômicos">Gerenciar grupos</button><button data-vnext-route="Contratos">Gerenciar contratos</button><button data-vnext-route="Clientes">Consultar clientes</button></div></section>';
 }
 /* Ferramenta de planejamento: resultados locais sem consulta a transportadoras ou tabelas reais. */
-const freightDraft={region:'Sudeste',service:'standard',weight:1,length:30,width:20,height:15,subtotal:200};
+const FREIGHT_UFS=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+const FREIGHT_REGIONS={AC:'Norte',AL:'Nordeste',AP:'Norte',AM:'Norte',BA:'Nordeste',CE:'Nordeste',DF:'Centro-Oeste',ES:'Sudeste',GO:'Centro-Oeste',MA:'Nordeste',MT:'Centro-Oeste',MS:'Centro-Oeste',MG:'Sudeste',PA:'Norte',PB:'Nordeste',PR:'Sul',PE:'Nordeste',PI:'Nordeste',RJ:'Sudeste',RN:'Nordeste',RS:'Sul',RO:'Norte',RR:'Norte',SC:'Sul',SP:'Sudeste',SE:'Nordeste',TO:'Norte'};
+const FREIGHT_DEFAULTS={originCep:'01001000',originUf:'SP',destinationCep:'90010000',destinationUf:'RS',deliveryId:'',weight:1,length:30,width:20,height:15,subtotal:200};
+const freightDraft={...FREIGHT_DEFAULTS};
+function freightDeliveryOptions(){
+ const configured=registerRows('Meios de entrega').filter(item=>item.status==='Ativo'&&item.name);
+ if(configured.length)return configured.map(item=>({id:String(item.internalId||item.code||item.name),name:item.name,type:item.type||'Transportadora',source:'cadastro'}));
+ // Meios já apresentados no detalhamento de pedidos: referência quando nenhum meio ativo foi cadastrado.
+ return [...new Set(Object.values(mockShipping).map(item=>item.method).filter(Boolean))].map(name=>({id:'example:'+name,name,type:'Entrega',source:'referência'}));
+}
 function renderFreightSimulator(){
  const d=freightDraft;
- const field=(name,label,type,value,options='')=>'<label class="sim-field"><span>'+label+'</span>'+(options?'<select id="freight-'+name+'">'+options+'</select>':'<input id="freight-'+name+'" type="number" min="0.01" max="100000" step="0.01" value="'+esc(value)+'" '+(name==='weight'?'required':'')+'>')+'</label>';
- return '<section class="simulation-heading"><h2>Simulador de frete</h2><p>Compare cenários de peso, cubagem, destino e modalidade de entrega.</p></section>'+
- '<section class="panel simulation-card"><h3>Dados para cálculo</h3><div class="simulation-grid">'+
- field('region','Região de destino','select',d.region,['Sudeste','Sul','Centro-Oeste','Nordeste','Norte'].map(v=>'<option '+(d.region===v?'selected':'')+'>'+v+'</option>').join(''))+
- field('service','Modalidade','select',d.service,[['standard','Econômica'],['express','Expressa']].map(([k,v])=>'<option value="'+k+'" '+(d.service===k?'selected':'')+'>'+v+'</option>').join(''))+
- field('weight','Peso real (kg)','number',d.weight)+field('length','Comprimento (cm)','number',d.length)+field('width','Largura (cm)','number',d.width)+field('height','Altura (cm)','number',d.height)+field('subtotal','Valor dos produtos (R$)','number',d.subtotal)+
- '</div><div class="simulation-actions"><button class="primary" type="button" id="freightCalculate">Calcular frete</button><button type="button" id="freightReset">Limpar</button></div><div id="freightResult" aria-live="polite"></div></section>';
+ const ufOptions=value=>FREIGHT_UFS.map(uf=>'<option value="'+uf+'" '+(value===uf?'selected':'')+'>'+uf+'</option>').join('');
+ const numberField=(name,label,value)=>'<label class="sim-field"><span>'+label+'</span><input id="freight-'+name+'" type="number" min="0.01" max="100000" step="0.01" value="'+esc(value)+'"></label>';
+ const options=freightDeliveryOptions();
+ if(!options.some(item=>item.id===d.deliveryId))d.deliveryId=options[0]?.id||'';
+ const deliverySelect=options.length?'<select id="freight-deliveryId" required>'+options.map(item=>'<option value="'+esc(item.id)+'" '+(item.id===d.deliveryId?'selected':'')+'>'+esc(item.name)+' · '+esc(item.type)+'</option>').join('')+'</select>':'<select id="freight-deliveryId" disabled><option>Nenhum meio de entrega disponível</option></select>';
+ const cepField=(name,label,value)=>'<label class="sim-field"><span>'+label+'</span><input id="freight-'+name+'" type="text" inputmode="numeric" maxlength="9" value="'+esc(value)+'" placeholder="00000-000" autocomplete="postal-code"></label>';
+ return '<section class="simulation-heading"><h2>Simulador de frete</h2><p>Informe origem, destino e selecione o meio de entrega para testar um cenário.</p></section>'+
+ '<section class="panel simulation-card"><div class="simulation-section-heading"><h3>Origem e destino</h3></div><div class="simulation-grid">'+
+ cepField('originCep','CEP de origem',d.originCep)+
+ '<label class="sim-field"><span>UF de origem</span><select id="freight-originUf">'+ufOptions(d.originUf)+'</select></label>'+
+ cepField('destinationCep','CEP de destino',d.destinationCep)+
+ '<label class="sim-field"><span>UF de destino</span><select id="freight-destinationUf">'+ufOptions(d.destinationUf)+'</select></label>'+
+ '</div><div class="simulation-section-heading"><h3>Meio de entrega</h3></div><div class="simulation-grid"><label class="sim-field sim-field-wide"><span>Meio de entrega a testar</span>'+deliverySelect+'</label></div>'+
+ '<div class="simulation-section-heading"><h3>Produto e embalagem</h3></div><div class="simulation-grid">'+
+ numberField('weight','Peso real (kg)',d.weight)+numberField('length','Comprimento (cm)',d.length)+
+ numberField('width','Largura (cm)',d.width)+numberField('height','Altura (cm)',d.height)+
+ numberField('subtotal','Valor dos produtos (R$)',d.subtotal)+
+ '</div><div class="simulation-actions"><button class="primary" type="button" id="freightCalculate" '+(options.length?'':'disabled')+'>Calcular frete</button><button type="button" id="freightReset">Limpar</button></div><div id="freightResult" aria-live="polite"></div></section>';
 }
 function bindFreightSimulator(target,page){
  if(page!=='Simulador de frete')return;
- const ids=['region','service','weight','length','width','height','subtotal'];
- const read=()=>{for(const key of ids){const el=target.querySelector('#freight-'+key);freightDraft[key]=['region','service'].includes(key)?el.value:Number(el.value)}};
+ const ids=['originCep','originUf','destinationCep','destinationUf','deliveryId','weight','length','width','height','subtotal'];
+ const read=()=>{ids.forEach(key=>{const el=target.querySelector('#freight-'+key);if(!el||el.disabled)return;freightDraft[key]=['weight','length','width','height','subtotal'].includes(key)?Number(el.value):el.value.trim()})};
+ const cepValid=cep=>/^\d{5}-?\d{3}$/.test(cep);
  target.querySelector('#freightCalculate')?.addEventListener('click',()=>{
   read();
   const d=freightDraft;
-  if(![d.weight,d.length,d.width,d.height].every(x=>Number.isFinite(x)&&x>0)||!Number.isFinite(d.subtotal)||d.subtotal<0){
-   target.querySelector('#freightResult').innerHTML='<p class="sim-error" role="alert">Informe peso, dimensões e valor válidos.</p>';return;
-  }
+  const result=target.querySelector('#freightResult');
+  const delivery=freightDeliveryOptions().find(item=>item.id===d.deliveryId);
+  if(!cepValid(d.originCep)||!cepValid(d.destinationCep)){result.innerHTML='<p class="sim-error" role="alert">Informe CEPs válidos de origem e destino, com 8 dígitos.</p>';return}
+  if(!FREIGHT_UFS.includes(d.originUf)||!FREIGHT_UFS.includes(d.destinationUf)||!delivery){result.innerHTML='<p class="sim-error" role="alert">Selecione as UFs e um meio de entrega válido.</p>';return}
+  if(![d.weight,d.length,d.width,d.height].every(x=>Number.isFinite(x)&&x>0)||!Number.isFinite(d.subtotal)||d.subtotal<0){result.innerHTML='<p class="sim-error" role="alert">Informe peso, dimensões e valor válidos.</p>';return}
   const volumetric=d.length*d.width*d.height/6000;
   const charged=Math.max(d.weight,volumetric);
-  const factor={Sudeste:1,Sul:1.15,'Centro-Oeste':1.3,Nordeste:1.55,Norte:1.8}[d.region];
-  const base=(14+charged*4.8)*factor*(d.service==='express'?1.65:1);
+  const sameUf=d.originUf===d.destinationUf;
+  const sameRegion=FREIGHT_REGIONS[d.originUf]===FREIGHT_REGIONS[d.destinationUf];
+  const factor=sameUf?1:sameRegion?1.25:1.6;
+  // Estimativa didática independente de tabela, faixa de CEP, transportadora ou API de cotação.
+  const base=(14+charged*4.8)*factor;
   const total=base+d.subtotal*0.005;
-  const days=Math.ceil((d.service==='express'?2:4)*factor);
-  target.querySelector('#freightResult').innerHTML='<div class="simulation-result"><div><small>Peso cubado</small><strong>'+volumetric.toFixed(2).replace('.',',')+' kg</strong></div><div><small>Peso considerado</small><strong>'+charged.toFixed(2).replace('.',',')+' kg</strong></div><div><small>Frete estimado</small><strong>'+fmtMoney(total)+'</strong></div><div><small>Prazo de referência</small><strong>'+days+' dias úteis</strong></div></div><p class="hint">Estimativa para planejamento, calculada por parâmetros genéricos. Não é cotação de transportadora, preço contratual ou prazo garantido.</p>';
+  const days=Math.ceil((sameUf?3:sameRegion?5:8));
+  result.innerHTML='<div class="simulation-result"><div><small>Meio selecionado</small><strong>'+esc(delivery.name)+'</strong></div><div><small>Rota</small><strong>'+esc(d.originUf)+' → '+esc(d.destinationUf)+'</strong></div><div><small>Peso considerado</small><strong>'+charged.toFixed(2).replace('.',',')+' kg</strong></div><div><small>Valor de referência</small><strong>'+fmtMoney(total)+'</strong></div><div><small>Prazo de referência</small><strong>'+days+' dias úteis</strong></div></div><p class="hint">Estimativa genérica baseada nas UFs e no peso. Os CEPs identificam o cenário, mas não são consultados em serviços externos. O meio selecionado não altera o cálculo: preços e prazos reais dependem da tabela ou API desse meio.</p>';
  });
- target.querySelector('#freightReset')?.addEventListener('click',()=>{Object.assign(freightDraft,{region:'Sudeste',service:'standard',weight:1,length:30,width:20,height:15,subtotal:200});renderActiveModule(page)});
+ target.querySelector('#freightReset')?.addEventListener('click',()=>{Object.assign(freightDraft,FREIGHT_DEFAULTS);renderActiveModule(page)});
 }
 function renderVnextHelp(page){return '';}
 
