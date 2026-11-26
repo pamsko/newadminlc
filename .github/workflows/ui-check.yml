@@ -147,6 +147,29 @@ jobs:
                   await page.locator('[data-close-register]').first().click();
                 }else issues.push('Registration stepper missing at '+width);
               }else issues.push('Category registration action missing at '+width);
+              // Global search finds navigation routes, not only products and orders.
+              const globalSearch=page.locator('#globalSearch');
+              await globalSearch.fill('frete');
+              await page.waitForTimeout(120);
+              const globalMenus=await page.locator('#vnextSearchResults [data-vnext-result]').allTextContents();
+              if(!globalMenus.some(x=>x.toLowerCase().includes('simulador de frete')))issues.push('Global menu search missing freight '+width);
+              await globalSearch.fill('categoria');
+              await page.waitForTimeout(120);
+              if(!await page.locator('#vnextSearchResults [data-vnext-result]').count())issues.push('Global accent-insensitive menu search missing '+width);
+              await globalSearch.fill('');
+              // Sidebar navigation search filters and opens the corresponding module.
+              const sideSearch=page.locator('#sidebarMenuSearch');
+              if(width<=820)await page.locator('.sidebar-search-box').click();
+              await sideSearch.fill('simulador de frete');
+              await page.waitForTimeout(100);
+              const sideResults=await page.locator('#nav .nav-search-result').allTextContents();
+              if(!sideResults.some(x=>x.includes('Simulador de frete')))issues.push('Sidebar search missing simulator '+width);
+              const visible=await sideSearch.isVisible();
+              if(!visible)issues.push('Sidebar search not visible '+width);
+              await page.locator('#nav [data-page="Simulador de frete"]').click();
+              await page.waitForTimeout(120);
+              if(!await page.locator('#freightCalculate').count())issues.push('Sidebar result did not navigate '+width);
+              if(await sideSearch.inputValue())issues.push('Sidebar query not cleared after navigation '+width);
               // Menu Simulação and checkout of the freight calculator (no external pricing calls).
               await page.evaluate(()=>{location.hash='#/simulador-de-frete';window.dispatchEvent(new Event('hashchange'))});
               await page.waitForTimeout(180);
