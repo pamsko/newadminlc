@@ -731,6 +731,49 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 
 .catalog-products-table th:nth-child(10){cursor:help}
 .catalog-products-table th:nth-child(11){cursor:help}
+/* Normalizacao transversal: evita vazamentos de largura e layouts quebrados. */
+html,body{width:100%;min-width:0;max-width:100%;overflow-x:hidden}
+#appShell,#adminLayout,.workspace,.content,#moduleView,.module-panel,.module-toolbar,.panel,.solution-detail,.solution-card,.detail-section{min-width:0;max-width:100%}
+#appShell{width:100%}
+.workspace{overflow-x:clip}
+.content{box-sizing:border-box}
+#moduleView img,#moduleView svg:not(.lc-svg-icon){max-width:100%}
+#moduleView h1,#moduleView h2,#moduleView h3,#moduleView p,#moduleView small{overflow-wrap:break-word}
+.module-table-wrap,.catalog-table-scroll,.domain-table{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.module-table,.catalog-products-table{max-width:none}
+.solution-card-head,.solution-management,.solution-detail-actions,.pay-config-footer{min-width:0}
+.solution-card h3,.solution-management b{overflow-wrap:anywhere}
+.solution-toolbar input,.solution-toolbar select,.pay-config-field input,.pay-config-field select{min-width:0;max-width:100%}
+.topbar{min-width:0}
+.top-search-group,.top-left,.top-right{min-width:0}
+.top-search input{min-width:0}
+#moduleView button,#moduleView input,#moduleView select,#moduleView textarea{max-width:100%}
+#moduleView .solution-action{white-space:normal;text-align:center;line-height:1.35}
+#moduleView .detail-tabs,#moduleView .pay-config-tabs{max-width:100%;scrollbar-width:thin}
+#moduleView .pay-config-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+#moduleView .pay-config-steps{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}
+#moduleView .pay-config-summary{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+#moduleView .solution-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,265px),1fr))}
+#moduleView .solution-hero{min-width:0}
+body.dark-mode #moduleView .solution-hero{color:#fff}
+body.dark-mode #moduleView .solution-hero h2,body.dark-mode #moduleView .solution-hero p{color:#fff}
+body.dark-mode #moduleView .solution-card,
+body.dark-mode #moduleView .solution-detail,
+body.dark-mode #moduleView .solution-management,
+body.dark-mode #moduleView .pay-setting-summary,
+body.dark-mode #moduleView .pay-config-check,
+body.dark-mode #moduleView .pay-test-list label{background:var(--card);border-color:var(--line);color:var(--text)}
+body.dark-mode #moduleView .pay-config-field input,
+body.dark-mode #moduleView .pay-config-field select,
+body.dark-mode #moduleView .solution-toolbar input,
+body.dark-mode #moduleView .solution-toolbar select{background:var(--card);color:var(--text);border-color:var(--line)}
+body.dark-mode #moduleView .solution-tag,
+body.dark-mode #moduleView .pay-config-notice{background:var(--bg);color:var(--muted);border-color:var(--line)}
+body.dark-mode #moduleView .solution-hero button{color:#005267;background:#fff}
+@media(max-width:1100px){.detail-layout{grid-template-columns:minmax(0,1fr)}.domain-grid,.domain-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}}
+@media(max-width:900px){.topbar{padding-inline:12px;gap:8px}.content{padding:18px}.top-search-group{flex:1;justify-content:flex-end}.top-search{width:min(100%,260px)}.top-right{gap:8px}.solution-hero{padding:20px}}
+@media(max-width:650px){.content{padding:12px}#moduleView .pay-config-fields{grid-template-columns:minmax(0,1fr)}#moduleView .solution-grid{grid-template-columns:minmax(0,1fr)}#moduleView .pay-config-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.key-values,.catalog-search-row,.catalog-filter-row{grid-template-columns:minmax(0,1fr)}.solution-hero h2{font-size:22px}.solution-toolbar{align-items:stretch}.solution-toolbar input,.solution-toolbar select{flex:1 1 100%}.pay-config-tabs button,.detail-tabs button{padding:10px 12px}.pay-config-footer{align-items:stretch}.pay-config-footer .solution-action{width:100%}}
+@media(max-width:420px){#moduleView .pay-config-summary{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
