@@ -952,6 +952,83 @@ body.dark-mode #dashboardView .insight-meter{background:#284454}
  #dashboardView .insight-link{white-space:normal}
 }
 </style>
+<!-- Estilos independentes da tela de login: evita regressões dos módulos. -->
+<style id="login-isolated-styles">
+#demoLogin,#demoLogin *{box-sizing:border-box}
+body:not(.demo-authenticated) #demoLogin{
+ display:grid!important;
+ grid-template-columns:minmax(0,1.1fr) minmax(360px,.9fr);
+ width:100%;min-height:100vh;min-height:100dvh;
+ background:#f2f8fa;color:#123041;
+ font:14px/1.5 Inter,"Segoe UI",Arial,sans-serif;
+}
+body.demo-authenticated #demoLogin{display:none!important}
+body:not(.demo-authenticated) #appShell{display:none!important}
+#demoLogin .login-brand-side{
+ min-width:0;min-height:100%;padding:clamp(32px,6vw,90px);
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:24px;
+ background:linear-gradient(145deg,#002233 0%,#064862 100%);color:#fff;
+}
+#demoLogin .login-brand-side h1{
+ max-width:680px;margin:0;font-size:clamp(30px,3.6vw,52px);
+ line-height:1.1;letter-spacing:-.04em;font-weight:750;color:#fff;
+}
+#demoLogin .login-brand-side p{
+ max-width:470px;margin:0;color:#c7e8f1;font-size:15px;line-height:1.65;
+}
+#demoLogin .login-form-wrap{
+ display:grid;place-items:center;min-width:0;min-height:100%;
+ padding:clamp(20px,4vw,56px);background:#f2f8fa;
+}
+#demoLogin .login-card{
+ width:min(440px,100%);min-width:0;margin:0;
+ padding:clamp(24px,3vw,42px);
+ border:1px solid #dceaf0;border-radius:18px;
+ background:#fff;color:#123041;
+ box-shadow:0 15px 60px rgba(0,34,51,.09);
+}
+#demoLogin .login-card h2{font-size:26px;line-height:1.2;font-weight:750;margin:0 0 7px;color:#002233}
+#demoLogin .login-card p{font-size:13px;line-height:1.5;color:#627b89;margin:0 0 20px}
+#demoLogin .login-card form{display:grid;gap:14px;margin:0}
+#demoLogin .login-card label{
+ display:grid;gap:7px;margin:0;color:#244759;
+ font-size:12px;line-height:1.4;font-weight:700;
+}
+#demoLogin .login-card input{
+ display:block;width:100%;min-width:0;min-height:44px;
+ padding:11px 12px;border:1px solid #cadae2;border-radius:9px;
+ background:#fff;color:#123041;font:inherit;font-size:14px;opacity:1;
+}
+#demoLogin .login-card input:focus-visible{
+ outline:2px solid #00a8cc;outline-offset:1px;border-color:#008fa9;
+}
+#demoLogin .login-card button[type="submit"]{
+ appearance:none;display:block;width:100%;min-height:45px;margin:6px 0 0;
+ padding:12px 15px;border:0;border-radius:9px;
+ background:#002233;color:#fff;font:inherit;font-size:14px;font-weight:750;
+ cursor:pointer;
+}
+#demoLogin .login-card button[type="submit"]:hover{background:#064155}
+#demoLogin .login-card button[type="submit"]:disabled{opacity:.6;cursor:wait}
+#demoLogin .login-tip{
+ margin-top:17px;padding:12px 13px;border:1px solid #cbe9f1;border-radius:9px;
+ background:#ebfaff;color:#315567;font-size:11px;line-height:1.5;
+}
+#demoLogin #loginStatus{margin-top:10px;color:#b33c48;font-size:12px}
+@media(max-width:820px){
+ body:not(.demo-authenticated) #demoLogin{grid-template-columns:minmax(0,1fr)}
+ #demoLogin .login-brand-side{min-height:220px;padding:28px 24px;gap:12px}
+ #demoLogin .login-brand-side h1{font-size:clamp(25px,6vw,36px)}
+ #demoLogin .login-brand-side p{font-size:13px}
+ #demoLogin .login-form-wrap{min-height:0;padding:24px 16px 36px}
+ #demoLogin .login-card{width:min(460px,100%)}
+}
+@media(max-width:480px){
+ #demoLogin .login-brand-side{min-height:180px;padding:24px 20px}
+ #demoLogin .login-brand-side h1{font-size:27px}
+ #demoLogin .login-card{padding:22px 18px;border-radius:14px}
+}
+</style>
 </head>
 <body>
 <div id="demoLogin">
