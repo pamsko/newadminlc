@@ -3419,11 +3419,13 @@ function paymentConfigCheck(key,label,checked,description){
 }
 function renderPaymentConfig(){
  const id=paymentConfigProvider,x=solutionCatalog.find(s=>s.id===id),c=paymentConfigData(id),state=solutionStatus(id),configured=!!solutionState[id]?.configured;
- const tabs=[['overview','Dados gerais'],['restrictions','Restrições'],['account','Credenciamento'],['credentials','Integração'],['methods','Meios de pagamento'],['rules','Cartões e parcelamento'],['pix-boleto','Pix e boleto'],['wallets','Carteiras'],['contingency','Contingência'],['promotions','Promoções'],['risk','Antifraude e 3DS'],['split','Split'],['webhooks','Notificações'],['reconciliation','Conciliação'],['tests','Homologação'],['logs','Logs']];
+ const tabs=[['overview','Dados gerais'],['credentials','Integração'],['methods','Formas de pagamento'],['risk','Regras e segurança'],['reconciliation','Conciliação']];
  const linkTab=k=>{const i=tabs.findIndex(t=>t[0]===k),current=tabs.findIndex(t=>t[0]===paymentConfigTab);return '<button type="button" class="'+(paymentConfigTab===k?'active':'')+' '+(i<current?'visited':'')+'" data-pay-tab="'+k+'" aria-current="'+(paymentConfigTab===k?'step':'false')+'"><span class="admin-step-number">'+(i+1)+'</span><span class="admin-step-title">'+esc(tabs[i][1])+'</span></button>'};
  const notice='<div class="pay-config-notice">As credenciais são gerenciadas em ambiente seguro. Para ativação, conclua as etapas de credenciamento e configuração.</div>';
- let content='';
- if(paymentConfigTab==='overview'){
+ const renderSection=(sectionKey)=>{
+  const paymentConfigTab=sectionKey;
+  let content='';
+  if(paymentConfigTab==='overview'){
   const baseLabel=esc(x.name);
   content='<section class="solution-detail payment-general"><h3>Fornecedor do serviço</h3><div class="payment-general-rows">'+
     '<div class="payment-general-row"><span>Identificador</span><strong>'+esc(id.toUpperCase())+'</strong></div>'+
@@ -3433,21 +3435,6 @@ function renderPaymentConfig(){
     '<div class="payment-general-row"><span>Status</span>'+paymentConfigField('providerStatus','Situação do cadastro','select',c.providerStatus,[['inactive','Inativo'],['active','Ativo']],'')+'</div>'+
     '</div></section>';
 
-  /* Visão resumida preservada para consulta, sem substituir os dados gerais. */
-  content+='<div class="pay-config-summary">'+
-   paymentConfigRow('Situação da solução',solutionStatusLabel(state),'Estado da configuração')+
-   paymentConfigRow('Configuração',configured?'Marcada como configurada':'Pendente','Aguardando validação')+
-   paymentConfigRow('Ambiente',c.environment==='sandbox'?'Homologação':'Produção','Seleção local')+
-   paymentConfigRow('Conta comercial',c.accountStatus==='approved'?'Aprovada':c.accountStatus==='review'?'Em análise':'Pendente','Sujeito à sincronização com a TOTVS Pay')+'</div>'+
-   '<div class="solution-detail"><h3>Etapas de implantação</h3><div class="pay-config-steps">'+[
-   ['1','Credenciamento','Aprovação de conta e dados comerciais'],
-   ['2','Credenciais','Gestão segura por ambiente e permissões'],
-   ['3','Meios e regras','Cartão, Pix, boleto, captura e parcelamento'],
-   ['4','Notificações','Eventos e rastreabilidade de transações'],
-   ['5','Segurança, split e conciliação','Regras de risco e reconciliação por operação'],
-   ['6','Homologação','Validação antes da liberação em produção']
-   ].map(z=>'<div><strong>'+z[0]+'</strong><span><b>'+z[1]+'</b><small>'+z[2]+'</small></span></div>').join('')+'</div></div>'+ 
-   '<section class="solution-detail"><h3>Acessar todas as configurações</h3><p class="hint">Cada etapa está disponível para visualização, independentemente do status comercial ou do credenciamento.</p><div class="pay-config-navigation">'+tabs.filter(t=>t[0]!=='overview').map(t=>'<button type="button" data-pay-tab="'+t[0]+'">'+esc(t[1])+' →</button>').join('')+'</div></section>';
  }else if(paymentConfigTab==='restrictions'){
   content='<section class="solution-detail"><h3>Restrições</h3><div class="pay-config-fields">'+
   paymentConfigField('restrictionMode','Aplicação de restrições','select',c.restrictionMode,[['none','Sem restrições adicionais'],['configured','Com regras específicas']],'')+
@@ -3561,9 +3548,14 @@ function renderPaymentConfig(){
   ].map(v=>'<label><input type="checkbox" data-pay-test><span>'+esc(v)+'</span></label>').join('')+
   '</div><div class="pay-config-notice">A homologação exige validação técnica e comercial antes do go-live.</div></section>';
  }
+  return content;
+ };
+ const sections={"overview":["overview","account","restrictions"],"credentials":["credentials","webhooks"],"methods":["methods","rules","pix-boleto","wallets"],"risk":["risk","split","contingency","promotions"],"reconciliation":["reconciliation"]};
+ let content=sections[paymentConfigTab].map(key=>renderSection(key)).join('');
+
  return '<button class="detail-back" data-pay-back>← Voltar à solução</button><div class="solution-hero"><div><div class="solution-hero-tag">Central de Soluções / Pagamentos</div><h2>Configurar '+esc(x.name)+'</h2><p>Credenciamento, integração, habilitação e acompanhamento em uma única jornada.</p></div><span class="solution-tag">Configuração da solução</span></div>'+
  '<div class="pay-config-tabs admin-stepper" role="navigation" aria-label="Etapas de configuração">'+tabs.map(t=>linkTab(t[0])).join('')+'</div>'+content+
- (['overview','restrictions','account','credentials','methods','rules','pix-boleto','wallets','contingency','promotions','risk','split','webhooks','reconciliation'].includes(paymentConfigTab)?'<div class="pay-config-footer"><small>Configurações salvas neste navegador.</small><button class="solution-action" data-pay-save>Salvar configurações</button></div>':'')+
+ (true?'<div class="pay-config-footer"><small>Configurações salvas neste navegador.</small><button class="solution-action" data-pay-save>Salvar configurações</button></div>':'')+
  '<div class="pay-config-footer admin-step-actions"><button class="solution-action secondary" data-pay-previous '+(paymentConfigTab===tabs[0][0]?'disabled':'')+'>Voltar</button><span class="admin-step-position">Etapa '+(tabs.findIndex(t=>t[0]===paymentConfigTab)+1)+' de '+tabs.length+'</span><button class="solution-action" data-pay-next '+(paymentConfigTab===tabs[tabs.length-1][0]?'hidden':'')+'>Continuar</button></div>';
 }
 function payConfigureStart(id){paymentConfigProvider=id;paymentConfigTab='overview';solutionSelected=id;renderActiveModule(vnextPage);routeUpdate()}
@@ -3572,7 +3564,7 @@ function bindPaymentConfig(target,page){
  target.querySelectorAll('[data-pay-open]').forEach(b=>b.addEventListener('click',()=>payConfigureStart(b.dataset.payOpen)));
  target.querySelectorAll('[data-solution-nav]').forEach(b=>{if(page==='Meios de pagamento')b.addEventListener('click',()=>navigate(b.dataset.solutionNav))});
  target.querySelector('[data-pay-back]')?.addEventListener('click',()=>{paymentConfigProvider=null;if(page==='Meios de pagamento')solutionSelected=null;renderActiveModule(page);routeUpdate()});
- const paymentTabs=['overview','restrictions','account','credentials','methods','rules','pix-boleto','wallets','contingency','promotions','risk','split','webhooks','reconciliation','tests','logs'];
+ const paymentTabs=['overview','credentials','methods','risk','reconciliation'];
  const movePayment=(direction)=>{const index=paymentTabs.indexOf(paymentConfigTab),next=paymentTabs[index+direction];if(!next)return;persistPaymentSettings(true);paymentConfigTab=next;renderActiveModule(page);routeUpdate()};
  target.querySelectorAll('[data-pay-tab]').forEach(b=>b.addEventListener('click',()=>{persistPaymentSettings(true);paymentConfigTab=b.dataset.payTab;renderActiveModule(page);routeUpdate()}));
  target.querySelector('[data-pay-previous]')?.addEventListener('click',()=>movePayment(-1));
@@ -4055,7 +4047,7 @@ function routeRestore(){
    renderActiveModule(page);
  }else if(['Meios de pagamento','Central de Soluções','Minhas Soluções'].includes(page)&&parts[1]){
    const provider=paymentConfigProviders.find(id=>routeSlug(id)===parts[1]);
-   if(provider){paymentConfigProvider=provider;solutionSelected=provider;paymentConfigTab=['overview','restrictions','account','credentials','methods','rules','pix-boleto','wallets','contingency','promotions','risk','split','webhooks','reconciliation','tests','logs'].includes(parts[2])?parts[2]:'overview';renderActiveModule(page)}
+   if(provider){paymentConfigProvider=provider;solutionSelected=provider;paymentConfigTab=({'restrictions':'overview','account':'overview','rules':'methods','pix-boleto':'methods','wallets':'methods','contingency':'risk','promotions':'risk','split':'risk','webhooks':'credentials','tests':'overview','logs':'overview'}[parts[2]]||(['overview','credentials','methods','risk','reconciliation'].includes(parts[2])?parts[2]:'overview'));renderActiveModule(page)}
  }
 }
 window.addEventListener('popstate',routeRestore);
