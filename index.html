@@ -734,7 +734,7 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 /* Normalizacao transversal: evita vazamentos de largura e layouts quebrados. */
 .pay-config-navigation{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:9px;margin-top:15px}.pay-config-navigation button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:12px;text-align:left;font-size:12px;font-weight:750;cursor:pointer}.pay-config-navigation button:hover{border-color:#34b9cf;background:var(--bg)}
 
-html,body{width:100%;min-width:0;max-width:100%;overflow-x:hidden}
+html,body{width:100%;min-width:0;max-width:100%}
 #appShell,#adminLayout,.workspace,.content,#moduleView,.module-panel,.module-toolbar,.panel,.solution-detail,.solution-card,.detail-section{min-width:0;max-width:100%}
 #appShell{width:100%}
 .workspace{overflow-x:clip}
@@ -783,7 +783,7 @@ body.dark-mode #moduleView .solution-hero button{color:#005267;background:#fff}
 #moduleView,#dashboardView{width:100%}
 #moduleView .panel,#moduleView .solution-detail,#moduleView .solution-card,
 #moduleView .domain-card,#moduleView .module-panel{box-sizing:border-box;min-width:0}
-#moduleView .panel *,#moduleView .solution-detail *,#moduleView .module-panel *{min-width:0}
+#moduleView .panel,#moduleView .solution-detail,#moduleView .module-panel{min-width:0}
 #moduleView table{border-collapse:collapse}
 #moduleView .module-table-wrap,#moduleView .catalog-table-scroll,
 #moduleView .domain-table-wrap,#moduleView .demo-register-table-wrap{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
@@ -836,7 +836,7 @@ body.dark-mode #moduleView .pay-config-notice,body.dark-mode #moduleView .pay-se
 /* Não recortar menus, popovers e diálogos que ultrapassam a largura do conteúdo. */
 .workspace{overflow:visible;min-width:0}
 #moduleView{min-width:0}
-#moduleView .module-table-wrap,#moduleView .catalog-table-scroll,#moduleView .domain-table-wrap{overflow-x:auto;overflow-y:visible}
+#moduleView .module-table-wrap,#moduleView .catalog-table-scroll,#moduleView .domain-table-wrap{overflow-x:auto}
 #moduleView .catalog-products-table{width:max-content;min-width:100%;table-layout:auto}
 #moduleView .catalog-products-table th,#moduleView .catalog-products-table td{vertical-align:middle}
 #moduleView .catalog-table-actions{display:flex;align-items:center;flex-wrap:wrap;gap:5px;min-width:0}
@@ -912,6 +912,44 @@ body.dark-mode #moduleView .solution-hero button{color:var(--text);border-color:
  #moduleView .solution-detail{padding:13px}
  #moduleView .pay-config-tabs button{flex:1 1 calc(50% - 5px)}
  .top-search{display:none}
+}
+
+/* Reparação dos indicadores da Área de Trabalho — 26/11/2026 */
+#dashboardView .commerce-insights{display:grid;gap:16px;margin:16px 0;min-width:0}
+#dashboardView .commerce-insights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;min-width:0}
+#dashboardView .insight-panel{display:block;padding:20px;min-width:0;overflow:hidden}
+#dashboardView .insight-panel .panel-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+#dashboardView .insight-panel .panel-title>div{min-width:0;flex:1}
+#dashboardView .insight-panel .panel-title h2{font-size:16px;font-weight:750;line-height:1.35;margin:0 0 4px;color:var(--text)}
+#dashboardView .insight-panel .panel-title p{font-size:12px;line-height:1.4;margin:0;color:var(--muted)}
+#dashboardView .insight-link{appearance:none;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-height:34px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font-size:12px;font-weight:650;padding:7px 11px;white-space:nowrap}
+#dashboardView .insight-toggle{display:inline-flex;align-items:center;gap:3px;max-width:100%;border:1px solid var(--line);border-radius:9px;background:var(--bg);padding:4px;margin:0 0 16px}
+#dashboardView .insight-toggle button{appearance:none;min-height:32px;border:0;border-radius:6px;background:transparent;color:var(--muted);padding:7px 13px;font-size:12px;line-height:1.3;font-weight:600}
+#dashboardView .insight-toggle button.active{background:var(--card);color:var(--text);box-shadow:0 1px 5px #00223318}
+#dashboardView .insight-list,#dashboardView .insight-funnel{display:grid;gap:14px;min-width:0}
+#dashboardView .insight-row-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-width:0;margin-bottom:6px;font-size:12px;line-height:1.4}
+#dashboardView .insight-row-heading strong{font-size:12px;font-weight:750;white-space:nowrap}
+#dashboardView .insight-row-detail{color:var(--muted);font-size:11px;line-height:1.4;margin-top:5px}
+#dashboardView .insight-meter{display:block;width:100%;height:8px;border-radius:999px;background:#e6eef2;border:0;overflow:hidden}
+#dashboardView .insight-meter>span{display:block;height:100%;min-height:100%;border-radius:inherit}
+#dashboardView .insight-funnel .insight-meter{height:10px}
+#dashboardView .insight-funnel-row{min-width:0}
+#dashboardView .insight-subtitle{display:inline-block;color:var(--muted);font-size:12px;white-space:nowrap}
+#dashboardView .insight-conversion-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+#dashboardView .insight-summary-tile{padding:12px;background:var(--bg);border-radius:10px;min-width:0}
+#dashboardView .insight-summary-tile small{display:block;color:var(--muted);font-size:11px}
+#dashboardView .insight-summary-tile strong{display:block;color:var(--text);font-size:19px;font-weight:750;margin-top:4px}
+#dashboardView .insight-approval-summary{display:block;background:var(--bg);border-radius:10px;padding:14px;margin-bottom:16px}
+#dashboardView .insight-approval-summary strong{display:block;font-size:25px;line-height:1.2;color:var(--text);margin-bottom:4px}
+#dashboardView .insight-approval-summary span{display:block;font-size:12px;color:var(--muted)}
+#dashboardView .insight-disclaimer{display:none}
+body.dark-mode #dashboardView .insight-meter{background:#284454}
+@media(max-width:1200px){#dashboardView .commerce-insights-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:620px){
+ #dashboardView .insight-panel{padding:14px}
+ #dashboardView .insight-panel .panel-title{align-items:flex-start}
+ #dashboardView .insight-conversion-summary{grid-template-columns:minmax(0,1fr)}
+ #dashboardView .insight-link{white-space:normal}
 }
 </style>
 </head>
