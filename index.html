@@ -132,6 +132,7 @@
 .detail-actions button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:1100px){.detail-info{grid-template-columns:repeat(2,1fr)}.detail-layout{grid-template-columns:1fr}}@media(max-width:600px){.detail-info{grid-template-columns:1fr}.key-values{grid-template-columns:1fr}}
 
+.order-log-list{display:grid;gap:10px;margin:12px 0}.order-log-event{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px}.order-log-event header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.order-log-event small{color:var(--muted);display:block;margin-top:6px}.order-log-event details{margin-top:10px}.order-log-event summary{cursor:pointer;color:#007e99;font-size:12px;font-weight:750}.order-log-event pre{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:12px;font-size:11px}.order-log-label{color:#006f86;background:#e4f8fb;border-radius:14px;padding:3px 8px;font-size:11px}
 /* Cadastros demonstrativos locais */
 .demo-register-note{font-size:12px;color:#496d7b;background:#effafd;border:1px solid #c6eaf1;padding:11px 14px;border-radius:10px;margin:12px 0}
 .demo-register-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:12px 0}
@@ -2937,7 +2938,7 @@ function renderLanding(page){
 }
 
 let selectedOrderId=null,selectedOrderTab='overview';
-const orderTabsDetail=[['overview','Visão geral'],['items','Itens'],['payment','Pagamento'],['shipping','Entrega'],['history','Histórico'],['integrations','Integrações']];
+const orderTabsDetail=[['overview','Visão geral'],['items','Itens'],['payment','Pagamento'],['shipping','Entrega'],['quote-logs','Logs de cotação'],['payment-logs','Logs de pagamento'],['history','Histórico'],['integrations','Integrações']];
 const mockShipping={
 '105842':{status:'Aguardando expedição',method:'Entrega padrão',tracking:'Não informado'},
 '105841':{status:'Em separação',method:'Entrega expressa',tracking:'Não informado'},
@@ -2949,6 +2950,19 @@ const mockShipping={
 '105835':{status:'Enviado',method:'Entrega padrão',tracking:'BR987654321XX (fictício)'}};
 function detailRows(rows){return '<div class="key-values">'+rows.map(([k,v])=>'<div><small>'+esc(k)+'</small><b>'+esc(String(v))+'</b></div>').join('')+'</div>'}
 function detailTable(head,rows){return '<div class="module-table-wrap"><table class="module-table"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(String(x))+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}
+function renderOrderLogs(o,kind){
+ const quote=kind==='quote',base=o.date,events=quote?[
+ {name:'Solicitação de cotação',state:'Simulado',source:'Checkout → Motor de frete',payload:{evento:'shipping.quote.request',pedido:o.id,canal:o.channel,itens:o.items,cep:'Mascarado',correlationId:'Não disponível'}},
+ {name:'Retorno da cotação',state:'Simulado',source:'Motor de frete → Checkout',payload:{evento:'shipping.quote.response',pedido:o.id,modalidade:mockShipping[o.id].method,transportadora:'Não informada',preco:'Não informado',prazo:'Não informado',latencia:'Não monitorada'}}
+ ]:[
+ {name:'Criação de tentativa de pagamento',state:'Simulado',source:'Checkout → Gateway',payload:{evento:'payment.create',pedido:o.id,meio:o.payment,valor:o.total,idTransacao:'Não integrado',idempotencyKey:'Não disponível'}},
+ {name:'Resultado do processamento',state:'Simulado',source:'Gateway → Plataforma',payload:{evento:'payment.status',pedido:o.id,situacao:o.status==='Aguardando pagamento'?'Pendente':o.status==='Cancelado'?'Cancelado':'Aprovado (exemplo)',autorizacao:'Não integrada',captura:'Não integrada',webhook:'Não recebido',correlationId:'Não disponível'}}
+ ];
+ const title=quote?'Logs de cotação de frete':'Logs de pagamento';
+ return '<section class="panel detail-section"><h3>'+title+' <span class="demo-chip">Demonstração</span></h3><p class="hint">Eventos ilustrativos. Não representam chamadas ou logs reais do pedido.</p><div class="order-log-list">'+
+ events.map((ev,i)=>'<article class="order-log-event"><header><b>'+(i+1)+'. '+esc(ev.name)+'</b><span class="order-log-label">'+esc(ev.state)+'</span></header><small>Data/hora: '+esc(base)+' · Tentativa: 1 · Origem: '+esc(ev.source)+'</small><details><summary>Ver dados técnicos do evento</summary><pre>'+esc(JSON.stringify(ev.payload,null,2))+'</pre></details></article>').join('')+
+ '</div><p class="hint">Na integração real: ID de correlação, provedor, requisição/resposta mascaradas, status, tempo de resposta, tentativas, erros e timestamps. Acesso sujeito a permissões.</p></section>';
+}
 function orderDetailBody(o){
  const ship=mockShipping[o.id];
  const paymentState=o.status==='Aguardando pagamento'?'Pendente':o.status==='Cancelado'?'Cancelado':'Aprovado (exemplo)';
@@ -2957,6 +2971,8 @@ function orderDetailBody(o){
  :selectedOrderTab==='items'?'<section class="panel detail-section"><h3>Itens do pedido</h3>'+detailTable(['SKU','Descrição','Qtd.','Valor'],[['SKU-EXEMPLO','Produto associado',o.items,fmtMoney(o.total)]])+'<p class="hint">Itens e valores sintéticos, sem detalhamento fiscal.</p></section>'
  :selectedOrderTab==='payment'?'<section class="panel detail-section"><h3>Pagamento</h3>'+detailRows([['Meio de pagamento',o.payment],['Situação',paymentState],['Valor',fmtMoney(o.total)],['Transação','Não disponível no protótipo'],['Autorização / captura','Não integrado'],['Estorno / cancelamento','Não integrado']])+'<div class="detail-warning">As etapas de autorização, captura, cancelamento e estorno dependem das regras do gateway, permissões e contratos de API reais.</div></section>'
  :selectedOrderTab==='shipping'?'<section class="panel detail-section"><h3>Expedição e entrega</h3>'+detailRows([['Situação',ship.status],['Modalidade',ship.method],['Rastreamento',ship.tracking],['Endereço','Ocultado — não usar dados pessoais reais'],['Nota fiscal','Não integrado'],['Transportadora','Não informada']])+'</section>'
+ :selectedOrderTab==='quote-logs'?renderOrderLogs(o,'quote')
+ :selectedOrderTab==='payment-logs'?renderOrderLogs(o,'payment')
  :selectedOrderTab==='history'?'<section class="panel detail-section"><h3>Histórico e auditoria</h3><ol class="detail-timeline">'+timeline.map(([name,date,desc])=>'<li><b>'+esc(name)+'</b><small>'+esc(date)+' · '+esc(desc)+'</small></li>').join('')+'</ol></section>'
  :'<section class="panel detail-section"><h3>Integrações e rastreabilidade</h3>'+detailRows([['ERP','Integração não conectada'],['Webhook','Nenhum evento real recebido'],['Correlação / trace ID','Indisponível'],['Tentativas e erros','Não monitorados'],['Último sincronismo','Não disponível'],['Situação de integração','Sem conexão real — não inferir sincronização']])+'<div class="detail-warning">Em produção, registrar correlation ID, estados de integração, timestamps, tentativas e erros com dados protegidos.</div></section>';
  return '<button class="detail-back" id="ordersBack">← Voltar à lista de pedidos</button>'+
