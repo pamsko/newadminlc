@@ -1048,6 +1048,18 @@ body.dark-mode .admin-stepper button.active,body.dark-mode #moduleView .pay-conf
 #moduleView .pay-config-tabs.admin-stepper{scroll-snap-type:x proximity}
 #moduleView .pay-config-tabs.admin-stepper>button{scroll-snap-align:start}
 @media(max-width:650px){#moduleView .payment-general-row{grid-template-columns:minmax(0,1fr);gap:5px}}
+
+/* Meios de pagamento — bandeiras disponíveis para seleção múltipla */
+#moduleView .pay-card-brands{min-width:0;margin:12px 0 20px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+#moduleView .pay-card-brands legend{padding:0 6px;font-size:13px;font-weight:750;color:var(--text)}
+#moduleView .pay-card-brands-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px 14px;margin:8px 0 12px}
+#moduleView .pay-card-brand{display:flex;gap:9px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer}
+#moduleView .pay-card-brand:has(input:checked){border-color:#0083b8;background:var(--cyan-soft);color:#00516d}
+#moduleView .pay-card-brand input{height:17px;width:17px;accent-color:#0066b3;margin:0;flex-shrink:0}
+#moduleView .pay-card-brands>small{color:var(--muted);font-size:11px}
+#moduleView .pay-card-brands:disabled{opacity:.6}
+body.dark-mode #moduleView .pay-card-brand:has(input:checked){background:#164454;color:#a2e9f8;border-color:#268fb0}
+@media(max-width:560px){#moduleView .pay-card-brands-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 <!-- Estilos independentes da tela de login: evita regressões dos módulos. -->
 <style id="login-isolated-styles">
@@ -3404,9 +3416,9 @@ function renderMySolutions(){
 }
 /* Experiência de configuração de pagamentos, exclusivamente visual. Nenhuma chave é persistida. */
 const paymentConfigProviders=['totvs-pay','pagarme','pagbank'];
-const defaultPaymentSettings=()=>({displayName:'',providerStatus:'inactive',restrictionMode:'none',allowedChannels:'all',wallets:{apple:false,google:false,paypal:false},contingencyMode:'disabled',promotionsEnabled:false,environment:'sandbox',accountStatus:'pending',accountAlias:'',methods:{credit:true,pix:false,boleto:false,debit:false},pixExpiry:'30',pixInstructions:'',boletoDueDays:'3',boletoInstructions:'',refundMode:'manual',installments:6,minInstallment:'20',capture:'automatic',descriptor:'',statement:'',webhookEnabled:false,webhookEvents:{authorized:true,captured:true,refunded:true,failed:true},retryMode:'controlled',timeout:'30',orderPrefix:'LC',antiFraudMode:'not-configured',threeDSMode:'not-configured',splitMode:'disabled',settlementMode:'provider',reconcileFrequency:'daily',notifyEmail:'',updatedAt:null});
+const defaultPaymentSettings=()=>({displayName:'',providerStatus:'inactive',restrictionMode:'none',allowedChannels:'all',wallets:{apple:false,google:false,paypal:false},cardBrands:{visa:false,mastercard:false,elo:false,amex:false,hipercard:false,diners:false,discover:false,jcb:false},contingencyMode:'disabled',promotionsEnabled:false,environment:'sandbox',accountStatus:'pending',accountAlias:'',methods:{credit:true,pix:false,boleto:false,debit:false},pixExpiry:'30',pixInstructions:'',boletoDueDays:'3',boletoInstructions:'',refundMode:'manual',installments:6,minInstallment:'20',capture:'automatic',descriptor:'',statement:'',webhookEnabled:false,webhookEvents:{authorized:true,captured:true,refunded:true,failed:true},retryMode:'controlled',timeout:'30',orderPrefix:'LC',antiFraudMode:'not-configured',threeDSMode:'not-configured',splitMode:'disabled',settlementMode:'provider',reconcileFrequency:'daily',notifyEmail:'',updatedAt:null});
 let paymentConfigStore=(()=>{try{const raw=JSON.parse(localStorage.getItem(PAYMENT_CONFIG_KEY));return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}}catch(e){return {}}})();
-function paymentConfigData(id){return {...defaultPaymentSettings(),...(paymentConfigStore[id]||{}),methods:{...defaultPaymentSettings().methods,...(paymentConfigStore[id]?.methods||{})},wallets:{...defaultPaymentSettings().wallets,...(paymentConfigStore[id]?.wallets||{})},webhookEvents:{...defaultPaymentSettings().webhookEvents,...(paymentConfigStore[id]?.webhookEvents||{})}}}
+function paymentConfigData(id){return {...defaultPaymentSettings(),...(paymentConfigStore[id]||{}),methods:{...defaultPaymentSettings().methods,...(paymentConfigStore[id]?.methods||{})},wallets:{...defaultPaymentSettings().wallets,...(paymentConfigStore[id]?.wallets||{})},cardBrands:{...defaultPaymentSettings().cardBrands,...(paymentConfigStore[id]?.cardBrands||{})},webhookEvents:{...defaultPaymentSettings().webhookEvents,...(paymentConfigStore[id]?.webhookEvents||{})}}}
 function paymentConfigSave(id,data){paymentConfigStore[id]=data;try{localStorage.setItem(PAYMENT_CONFIG_KEY,JSON.stringify(paymentConfigStore))}catch(e){}}
 function paymentConfigRow(label,value,detail){return '<div class="pay-setting-summary"><small>'+esc(label)+'</small><b>'+esc(String(value))+'</b>'+(detail?'<span>'+esc(detail)+'</span>':'')+'</div>'}
 function paymentConfigField(key,label,type,value,options,description){
@@ -3479,6 +3491,10 @@ function renderPaymentConfig(){
  }else if(paymentConfigTab==='methods'){
   content='<section class="solution-detail"><h3>Meios habilitados</h3><p class="hint">Disponibilidade de cada meio sujeita a escopo, credenciamento e homologação. Estes controles não habilitam transações reais.</p>'+
   paymentConfigCheck('credit','Cartão de crédito',c.methods.credit,'Autorização, captura e cancelamento conforme integração')+
+  '<fieldset class="pay-card-brands" data-pay-card-brands '+(!c.methods.credit?'disabled':'')+'><legend>Bandeiras aceitas</legend><div class="pay-card-brands-grid">'+
+  [['visa','Visa'],['mastercard','Mastercard'],['elo','Elo'],['amex','American Express'],['hipercard','Hipercard'],['diners','Diners Club'],['discover','Discover'],['jcb','JCB']].map(([key,label])=>
+    '<label class="pay-card-brand"><input type="checkbox" data-pay-brand="'+key+'" '+(c.cardBrands[key]?'checked':'')+'><span>'+label+'</span></label>').join('')+
+  '</div><small>Selecione as bandeiras contratadas e suportadas pelo provedor.</small></fieldset>'+
   paymentConfigCheck('pix','Pix',c.methods.pix,'Confirmação assíncrona, expiração e conciliação conforme disponibilidade')+
   paymentConfigCheck('boleto','Boleto',c.methods.boleto,'Emissão, vencimento e confirmação de pagamento conforme disponibilidade')+
   paymentConfigCheck('debit','Cartão de débito (condicional)',c.methods.debit,'Somente quando contratado, suportado e homologado')+
@@ -3578,9 +3594,11 @@ function bindPaymentConfig(target,page){
   const id=paymentConfigProvider,c=paymentConfigData(id);
   target.querySelectorAll('[data-pay-setting]').forEach(el=>{const key=el.dataset.paySetting;if(['displayName','accountAlias','descriptor','orderPrefix','pixInstructions','boletoInstructions','notifyEmail'].includes(key))c[key]=el.value.slice(0,80);else if(['installments','minInstallment','timeout','pixExpiry','boletoDueDays'].includes(key))c[key]=String(Math.max(1,Math.min(999,Number(el.value)||1)));else c[key]=el.value});
   target.querySelectorAll('[data-pay-flag]').forEach(el=>{const key=el.dataset.payFlag;if(['credit','pix','boleto','debit'].includes(key))c.methods[key]=el.checked;else if(['apple','google','paypal'].includes(key))c.wallets[key]=el.checked;else if(['authorized','captured','refunded','failed'].includes(key))c.webhookEvents[key]=el.checked;else if(['webhookEnabled','promotionsEnabled'].includes(key))c[key]=el.checked});
+  target.querySelectorAll('[data-pay-brand]').forEach(el=>{if(Object.prototype.hasOwnProperty.call(c.cardBrands,el.dataset.payBrand))c.cardBrands[el.dataset.payBrand]=el.checked});
   c.updatedAt=new Date().toISOString();paymentConfigSave(id,c);
   if(!silent){toast('Configurações salvas localmente.');renderActiveModule(page)}
  }
+ target.querySelector('[data-pay-flag="credit"]')?.addEventListener('change',e=>{const group=target.querySelector('[data-pay-card-brands]');if(group)group.disabled=!e.target.checked});
  target.querySelector('[data-pay-save]')?.addEventListener('click',()=>persistPaymentSettings(false));
 }
 function renderPaymentProviderList(){return '<div class="solution-hero"><div><div class="solution-hero-tag">Configurações / Financeiro</div><h2>Meios de pagamento</h2><p>Gerencie provedores, consulte credenciamento e explore as configurações de cada integração.</p></div><button data-solution-nav="Central de Soluções">Explorar soluções</button></div><div class="solution-grid">'+paymentConfigProviders.map(id=>{const x=solutionCatalog.find(x=>x.id===id),c=paymentConfigData(id);return '<article class="solution-card"><div class="solution-card-head"><div class="solution-icon">'+lcIcon("card")+'</div><div><h3>'+esc(x.name)+'</h3><small>'+esc(x.provider)+'</small></div></div><div class="solution-badges"><span class="solution-tag">'+esc(solutionStatusLabel(solutionStatus(id)))+'</span><span class="solution-tag">'+(c.environment==='sandbox'?'Homologação':'Produção (visualização)')+'</span></div><p>'+esc(x.summary)+'</p><div class="solution-card-foot"><small>Configuração</small><button class="solution-action" data-pay-open="'+esc(id)+'">Configurar</button></div></article>'}).join('')+'</div><p class="solution-demo-warning">A ativação depende de contrato, credenciamento e homologação.</p>'}
