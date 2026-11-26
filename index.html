@@ -953,6 +953,8 @@ body.dark-mode #dashboardView .insight-meter{background:#284454}
 }
 
 /* Design System NewAdminLC | Cadastro em etapas (padrão compartilhado) */
+#demoRegisterForm{flex:1;min-height:0;overflow:hidden}
+
 .expanded-register-dialog{width:min(1320px,calc(100vw - 32px));height:min(900px,calc(100dvh - 32px));background:var(--card);color:var(--text)}
 .expanded-register-layout{display:flex;flex-direction:column;min-height:0;flex:1}
 .expanded-register-header{padding:20px 26px 14px;gap:16px}
@@ -3524,19 +3526,23 @@ function bindPaymentConfig(target,page){
  target.querySelectorAll('[data-solution-nav]').forEach(b=>{if(page==='Meios de pagamento')b.addEventListener('click',()=>navigate(b.dataset.solutionNav))});
  target.querySelector('[data-pay-back]')?.addEventListener('click',()=>{paymentConfigProvider=null;if(page==='Meios de pagamento')solutionSelected=null;renderActiveModule(page);routeUpdate()});
  const paymentTabs=['overview','account','credentials','methods','rules','pix-boleto','risk','split','webhooks','reconciliation','tests'];
- const movePayment=(direction)=>{const index=paymentTabs.indexOf(paymentConfigTab),next=paymentTabs[index+direction];if(!next)return;paymentConfigTab=next;renderActiveModule(page);routeUpdate()};
- target.querySelectorAll('[data-pay-tab]').forEach(b=>b.addEventListener('click',()=>{paymentConfigTab=b.dataset.payTab;renderActiveModule(page);routeUpdate()}));
+ const movePayment=(direction)=>{const index=paymentTabs.indexOf(paymentConfigTab),next=paymentTabs[index+direction];if(!next)return;persistPaymentSettings(true);paymentConfigTab=next;renderActiveModule(page);routeUpdate()};
+ target.querySelectorAll('[data-pay-tab]').forEach(b=>b.addEventListener('click',()=>{persistPaymentSettings(true);paymentConfigTab=b.dataset.payTab;renderActiveModule(page);routeUpdate()}));
  target.querySelector('[data-pay-previous]')?.addEventListener('click',()=>movePayment(-1));
  target.querySelector('[data-pay-next]')?.addEventListener('click',()=>movePayment(1));
  target.querySelector('[data-pay-configured]')?.addEventListener('click',()=>{const id=paymentConfigProvider,current=solutionState[id]||{};solutionState[id]={...current,configured:!current.configured};solutionSave();toast('Configuração atualizada.');renderActiveModule(page)});
- target.querySelector('[data-pay-save]')?.addEventListener('click',()=>{
+ function persistPaymentSettings(silent=false){
+  const fields=target.querySelectorAll('[data-pay-setting],[data-pay-flag]');
+  // Segredos nunca são lidos ou salvos pelo navegador.
+  target.querySelectorAll('[data-pay-secret]').forEach(el=>{el.value=''});
+  if(!fields.length)return;
   const id=paymentConfigProvider,c=paymentConfigData(id);
   target.querySelectorAll('[data-pay-setting]').forEach(el=>{const key=el.dataset.paySetting;if(['accountAlias','descriptor','orderPrefix','pixInstructions','boletoInstructions','notifyEmail'].includes(key))c[key]=el.value.slice(0,80);else if(['installments','minInstallment','timeout','pixExpiry','boletoDueDays'].includes(key))c[key]=String(Math.max(1,Math.min(999,Number(el.value)||1)));else c[key]=el.value});
   target.querySelectorAll('[data-pay-flag]').forEach(el=>{const key=el.dataset.payFlag;if(['credit','pix','boleto','debit'].includes(key))c.methods[key]=el.checked;else if(['authorized','captured','refunded','failed'].includes(key))c.webhookEvents[key]=el.checked;else if(key==='webhookEnabled')c.webhookEnabled=el.checked});
-  // Qualquer dado digitado em campos sensíveis é descartado sem leitura ou persistência.
-  target.querySelectorAll('[data-pay-secret]').forEach(el=>{el.value=''});
-  c.updatedAt=new Date().toISOString();paymentConfigSave(id,c);toast('Configurações salvas localmente.');renderActiveModule(page);
- });
+  c.updatedAt=new Date().toISOString();paymentConfigSave(id,c);
+  if(!silent){toast('Configurações salvas localmente.');renderActiveModule(page)}
+ }
+ target.querySelector('[data-pay-save]')?.addEventListener('click',()=>persistPaymentSettings(false));
 }
 function renderPaymentProviderList(){return '<div class="solution-hero"><div><div class="solution-hero-tag">Configurações / Financeiro</div><h2>Meios de pagamento</h2><p>Gerencie provedores, consulte credenciamento e explore as configurações de cada integração.</p></div><button data-solution-nav="Central de Soluções">Explorar soluções</button></div><div class="solution-grid">'+paymentConfigProviders.map(id=>{const x=solutionCatalog.find(x=>x.id===id),c=paymentConfigData(id);return '<article class="solution-card"><div class="solution-card-head"><div class="solution-icon">'+lcIcon("card")+'</div><div><h3>'+esc(x.name)+'</h3><small>'+esc(x.provider)+'</small></div></div><div class="solution-badges"><span class="solution-tag">'+esc(solutionStatusLabel(solutionStatus(id)))+'</span><span class="solution-tag">'+(c.environment==='sandbox'?'Homologação':'Produção (visualização)')+'</span></div><p>'+esc(x.summary)+'</p><div class="solution-card-foot"><small>Configuração</small><button class="solution-action" data-pay-open="'+esc(id)+'">Configurar</button></div></article>'}).join('')+'</div><p class="solution-demo-warning">A ativação depende de contrato, credenciamento e homologação.</p>'}
 function renderSolutionDetail(){
