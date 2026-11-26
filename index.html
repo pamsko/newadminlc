@@ -1060,6 +1060,39 @@ body.dark-mode .admin-stepper button.active,body.dark-mode #moduleView .pay-conf
 #moduleView .pay-card-brands:disabled{opacity:.6}
 body.dark-mode #moduleView .pay-card-brand:has(input:checked){background:#164454;color:#a2e9f8;border-color:#268fb0}
 @media(max-width:560px){#moduleView .pay-card-brands-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Simulação: formulários clean e resultado agrupado */
+#moduleView .simulation-heading{margin:8px 0 18px}
+#moduleView .simulation-heading h2{margin:0 0 5px;font-size:21px}
+#moduleView .simulation-heading p{margin:0;color:var(--muted);font-size:12px}
+#moduleView .simulation-card{padding:22px}
+#moduleView .simulation-card h3{margin:0 0 18px;font-size:16px}
+#moduleView .simulation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+#moduleView .sim-field{display:grid;gap:7px;min-width:0;color:var(--text);font-size:12px;font-weight:650}
+#moduleView .sim-field input,#moduleView .sim-field select{min-width:0;width:100%;height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit}
+#moduleView .simulation-actions{display:flex;gap:9px;margin-top:20px;flex-wrap:wrap}
+#moduleView .simulation-actions button{min-height:38px;padding:9px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font-weight:700;cursor:pointer}
+#moduleView .simulation-actions button.primary{background:#0066b3;border-color:#0066b3;color:white}
+#moduleView .simulation-result{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}
+#moduleView .simulation-result>div{padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:0}
+#moduleView .simulation-result small{display:block;color:var(--muted);font-size:11px}
+#moduleView .simulation-result strong{display:block;margin-top:6px;font-size:18px;color:var(--text)}
+#moduleView .sim-error{color:#ba343e;font-weight:700}
+/* Pedido > Pagamento: solicitação visível sem alteração fictícia de transação */
+#moduleView .order-financial-action{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+#moduleView .order-financial-action h4{font-size:15px;margin:0 0 8px}
+#moduleView .order-financial-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+#moduleView .order-financial-fields label{display:grid;gap:6px;min-width:0;font-size:12px;font-weight:650}
+#moduleView .order-financial-fields input,#moduleView .order-financial-fields select,#moduleView .order-financial-fields textarea{width:100%;min-width:0;min-height:39px;padding:8px 10px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;font:inherit}
+#moduleView .order-financial-fields .order-financial-reason{grid-column:1/-1}
+#moduleView .order-financial-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+#moduleView .order-financial-foot small{max-width:470px;color:var(--muted);font-size:11px}
+#moduleView .order-financial-foot button{border:1px solid #bd4b42;border-radius:8px;color:#9a332c;background:transparent;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer}
+#moduleView .order-financial-record{padding:12px 14px;border:1px solid var(--line);border-radius:9px;margin:13px 0;display:grid;gap:5px;background:var(--bg)}
+#moduleView .order-financial-record strong{font-size:12px}
+#moduleView .order-financial-record span,#moduleView .order-financial-record small{font-size:11px;color:var(--muted)}
+@media(max-width:950px){#moduleView .simulation-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#moduleView .simulation-result{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){#moduleView .simulation-grid,#moduleView .simulation-result,#moduleView .order-financial-fields{grid-template-columns:1fr}}
 </style>
 <!-- Estilos independentes da tela de login: evita regressões dos módulos. -->
 <style id="login-isolated-styles">
@@ -3670,13 +3703,52 @@ function renderOrderLogs(o,kind){
  events.map((ev,i)=>'<article class="order-log-event"><header><b>'+(i+1)+'. '+esc(ev.name)+'</b><span class="order-log-label">'+esc(ev.state)+'</span></header><small>Data/hora: '+esc(base)+' · Tentativa: 1 · Origem: '+esc(ev.source)+'</small><details><summary>Ver dados técnicos do evento</summary><pre>'+esc(JSON.stringify(ev.payload,null,2))+'</pre></details></article>').join('')+
  '</div><p class="hint">Na integração real: ID de correlação, provedor, requisição/resposta mascaradas, status, tempo de resposta, tentativas, erros e timestamps. Acesso sujeito a permissões.</p></section>';
 }
+/* Solicitações locais para demonstrar o fluxo sem chamar gateway. */
+const ORDER_FINANCIAL_REQUESTS_KEY='newadminlc-order-financial-requests-v1';
+let orderFinancialRequests=(()=>{try{const data=JSON.parse(localStorage.getItem(ORDER_FINANCIAL_REQUESTS_KEY)||'{}');return data&&typeof data==='object'&&!Array.isArray(data)?data:{}}catch(e){return {}}})();
+function orderPaymentEligibility(o){
+ const prior=orderFinancialRequests[o.id];
+ if(prior)return {action:null,description:'Há uma solicitação pendente de integração para este pedido.'};
+ if(o.status==='Cancelado')return {action:null,description:'Pedido cancelado: confira a situação financeira no provedor antes de solicitar nova operação.'};
+ if(o.status==='Aguardando pagamento')return {action:'cancel',description:'Cancelar uma tentativa ainda não confirmada depende do gateway.'};
+ return {action:'refund',description:'Solicitar estorno integral ou parcial exige captura confirmada e suporte do provedor.'};
+}
+function renderOrderFinancialAction(o){
+ const eligibility=orderPaymentEligibility(o),record=orderFinancialRequests[o.id];
+ return '<section class="order-financial-action"><h4>Cancelamento e estorno</h4>'+
+ (record?'<div class="order-financial-record"><strong>Solicitação registrada para integração</strong><span>'+esc(record.action==='cancel'?'Cancelar pagamento':'Estornar pagamento')+' · '+fmtMoney(record.amount)+' · '+esc(record.createdAt)+'</span><small>O pedido e a transação não foram alterados no gateway.</small></div>':'')+
+ '<p class="hint">'+esc(eligibility.description)+'</p>'+
+ (eligibility.action?'<form data-order-finance-form><div class="order-financial-fields"><label>Operação<select name="operation" aria-label="Operação financeira" disabled><option>'+esc(eligibility.action==='cancel'?'Cancelar pagamento':'Estornar pagamento')+'</option></select></label>'+
+ (eligibility.action==='refund'?'<label>Valor do estorno (R$)<input type="number" name="amount" min="0.01" max="'+Number(o.total).toFixed(2)+'" step="0.01" value="'+Number(o.total).toFixed(2)+'" required></label>':'')+
+ '<label class="order-financial-reason">Motivo<textarea name="reason" maxlength="250" rows="2" required placeholder="Informe o motivo da solicitação"></textarea></label></div>'+
+ '<div class="order-financial-foot"><small>Registro local para avaliação do fluxo. Não executa cancelamento ou estorno financeiro.</small><button type="submit">'+(eligibility.action==='cancel'?'Solicitar cancelamento':'Solicitar estorno')+'</button></div></form>':'')+
+ '</section>';
+}
+function bindOrderFinancialActions(target,page){
+ if(page!=='Pedidos'||!selectedOrderId)return;
+ target.querySelector('[data-order-finance-form]')?.addEventListener('submit',e=>{
+  e.preventDefault();
+  const o=fakeOrders.find(x=>x.id===selectedOrderId);if(!o)return;
+  const el=e.currentTarget,eligible=orderPaymentEligibility(o);
+  if(!eligible.action)return;
+  const amount=eligible.action==='cancel'?Number(o.total):Number(el.elements.amount.value);
+  const reason=String(el.elements.reason.value||'').trim();
+  if(!reason){toast('Informe o motivo da solicitação.');el.elements.reason.focus();return}
+  if(!Number.isFinite(amount)||amount<=0||amount>o.total){toast('Informe um valor válido, limitado ao total do pedido.');return}
+  if(!window.confirm('Registrar a solicitação de '+(eligible.action==='cancel'?'cancelamento':'estorno')+' para o pedido #'+o.id+'? Nenhuma operação será enviada ao provedor.'))return;
+  orderFinancialRequests[o.id]={action:eligible.action,amount,reason,createdAt:new Date().toLocaleString('pt-BR')};
+  try{localStorage.setItem(ORDER_FINANCIAL_REQUESTS_KEY,JSON.stringify(orderFinancialRequests))}catch(e){}
+  auditEvent('Solicitação de '+(eligible.action==='cancel'?'cancelamento':'estorno'),'Pedido #'+o.id,fmtMoney(amount));
+  toast('Solicitação registrada localmente.');renderActiveModule(page);
+ });
+}
 function orderDetailBody(o){
  const ship=mockShipping[o.id];
  const paymentState=o.status==='Aguardando pagamento'?'Pendente':o.status==='Cancelado'?'Cancelado':'Aprovado (exemplo)';
  const timeline=[['Pedido captado',o.date,'Pedido registrado'],['Pagamento',o.status==='Aguardando pagamento'?'Aguardando retorno':'03/11/2026 14:40','Evento financeiro'],['Operação',ship.status,'Situação logística']];
  const left=selectedOrderTab==='overview'?'<section class="panel detail-section"><h3>Informações do pedido</h3>'+detailRows([['Número','#'+o.id],['Cliente',o.client],['Canal',o.channel],['Data de criação',o.date],['Itens',o.items],['Valor total',fmtMoney(o.total)],['ID externo',orderMetadata[o.id]?.[0]||'Não informado'],['SKU relacionado',orderMetadata[o.id]?.[1]||'Não informado']])+'</section>'
  :selectedOrderTab==='items'?'<section class="panel detail-section"><h3>Itens do pedido</h3>'+detailTable(['SKU','Descrição','Qtd.','Valor'],[['SKU-EXEMPLO','Produto associado',o.items,fmtMoney(o.total)]])+'<p class="hint">Itens e valores sintéticos, sem detalhamento fiscal.</p></section>'
- :selectedOrderTab==='payment'?'<section class="panel detail-section"><h3>Pagamento</h3>'+detailRows([['Meio de pagamento',o.payment],['Situação',paymentState],['Valor',fmtMoney(o.total)],['Transação','Não disponível no painel'],['Autorização / captura','Não integrado'],['Estorno / cancelamento','Não integrado']])+'<div class="detail-warning">As etapas de autorização, captura, cancelamento e estorno dependem das regras do gateway, permissões e contratos de API reais.</div></section>'
+ :selectedOrderTab==='payment'?'<section class="panel detail-section"><h3>Pagamento</h3>'+detailRows([['Meio de pagamento',o.payment],['Situação',paymentState],['Valor',fmtMoney(o.total)],['Transação','Não disponível no painel'],['Autorização / captura','Não integrado']])+renderOrderFinancialAction(o)+'</section>'
  :selectedOrderTab==='shipping'?'<section class="panel detail-section"><h3>Expedição e entrega</h3>'+detailRows([['Situação',ship.status],['Modalidade',ship.method],['Rastreamento',ship.tracking],['Endereço','Ocultado — não usar dados pessoais reais'],['Nota fiscal','Não integrado'],['Transportadora','Não informada']])+'</section>'
  :selectedOrderTab==='quote-logs'?renderOrderLogs(o,'quote')
  :selectedOrderTab==='payment-logs'?renderOrderLogs(o,'payment')
@@ -4042,7 +4114,7 @@ function bindManuIA(target){
  });
 }
 
-function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent='';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=page==='Meios de pagamento'?(paymentConfigProvider?renderPaymentConfig():renderPaymentProviderList()):['Central de Soluções','Minhas Soluções'].includes(page)?renderSolutionsPage(page):page==='Manu IA'?renderManuIA():page==='Tarefas e notificações'?renderVnextTasks():page==='Saúde operacional'?renderVnextHealth():page==='Auditoria demonstrativa'?renderVnextAudit():page==='Regras B2B'||page==='Simulador B2B'?renderVnextB2B(page):page==='Simulador de frete'?renderFreightSimulator():selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():page==='Moderação de clientes'?renderCustomerModeration():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():page==='Commerce Studio'?renderStudio():discoveryScreens[page]?renderDiscoveryScreen(page):['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):page==='Webhooks'?renderWebhooks():registerModels[page]?renderRegisterList(page):['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.insertAdjacentHTML('afterbegin',renderVnextHelp(page));bindVnextDomain(target,page);bindFreightSimulator(target,page);bindSolutions(target,page);bindPaymentConfig(target,page);bindLayerCatalog(target,page);vnextBindList(target,page);vnextColumnPanel(target,page);vnextLinkBind(target);vnextTasksUpdate();bindWorkflow(target);bindManuIA(target);bindStudio(target);bindModeration(target);target.querySelectorAll('[data-register-create]').forEach(b=>{if(!demoCan('write')){b.title='Ação indisponível para perfil '+vnextRole;b.setAttribute('aria-disabled','true')}b.addEventListener('click',()=>openRegister(b.dataset.registerCreate))});
+function renderActiveModule(page){document.getElementById('adminLayout').classList.toggle('operational',page!=='Área de trabalho');const target=document.getElementById('moduleView');document.getElementById('dashboardView').classList.toggle('is-hidden',page!=='Área de trabalho');target.classList.toggle('active',page!=='Área de trabalho');if(page==='Área de trabalho'){target.innerHTML='';return}let titles=moduleMeta[page];document.getElementById('pageTitle').textContent=page==='Pedidos'?'Gestão de Pedidos':page==='Produtos e SKUs'?'Gestão de Produtos':page==='Relatórios de vendas'?'Relatórios de Vendas':titles?titles[0]:page;document.getElementById('pageSub').textContent='';document.getElementById('crumb').textContent=page;const selectedModule=({'Pedidos':'Backoffice','Produtos e SKUs':'Catálogo','Relatórios de vendas':'Relatórios','Pagamentos':'Financeiro','Visão de canais':'Canais'}[page]||page);target.innerHTML=page==='Meios de pagamento'?(paymentConfigProvider?renderPaymentConfig():renderPaymentProviderList()):['Central de Soluções','Minhas Soluções'].includes(page)?renderSolutionsPage(page):page==='Manu IA'?renderManuIA():page==='Tarefas e notificações'?renderVnextTasks():page==='Saúde operacional'?renderVnextHealth():page==='Auditoria demonstrativa'?renderVnextAudit():page==='Regras B2B'||page==='Simulador B2B'?renderVnextB2B(page):page==='Simulador de frete'?renderFreightSimulator():selectedModule==='Backoffice'&&selectedOrderId?orderDetailBody(fakeOrders.find(o=>o.id===selectedOrderId)):selectedModule==='Backoffice'?renderOrders():selectedModule==='Catálogo'&&page!=='Produtos e SKUs'?renderProducts():selectedModule==='Clientes'?renderCustomers():page==='Moderação de clientes'?renderCustomerModeration():selectedModule==='Relatórios'?renderReports():selectedModule==='Financeiro'?renderFinance():selectedModule==='Canais'?renderChannelsPage():page.startsWith('Smart Finder')?renderSmartFinder(page):page==='Indexação de produtos'?renderIndexation():page==='Fluxos (workflows)'?renderWorkflows():page==='Contratos'?renderContracts():page==='Produtos e SKUs'?renderCatalogDetails():page==='Commerce Studio'?renderStudio():discoveryScreens[page]?renderDiscoveryScreen(page):['Categorias','Grupos econômicos'].includes(page)?renderRegisterList(page):page==='Promoções'||page==='Cotações e compras'?renderRegisterList(page):page==='Webhooks'?renderWebhooks():registerModels[page]?renderRegisterList(page):['Integrações','APIs e webhooks'].includes(page)?renderIntegrations(page):['Checkout','Promoções','Cotações e compras','Usuários e permissões'].includes(page)?renderExperienceModule(page):renderLanding(page);target.insertAdjacentHTML('afterbegin',renderVnextHelp(page));bindVnextDomain(target,page);bindFreightSimulator(target,page);bindOrderFinancialActions(target,page);bindSolutions(target,page);bindPaymentConfig(target,page);bindLayerCatalog(target,page);vnextBindList(target,page);vnextColumnPanel(target,page);vnextLinkBind(target);vnextTasksUpdate();bindWorkflow(target);bindManuIA(target);bindStudio(target);bindModeration(target);target.querySelectorAll('[data-register-create]').forEach(b=>{if(!demoCan('write')){b.title='Ação indisponível para perfil '+vnextRole;b.setAttribute('aria-disabled','true')}b.addEventListener('click',()=>openRegister(b.dataset.registerCreate))});
 target.querySelectorAll('[data-register-edit]').forEach(b=>b.addEventListener('click',()=>openRegister(page,b.dataset.registerEdit)));
 target.querySelectorAll('[data-register-delete]').forEach(b=>b.addEventListener('click',()=>confirmRegisterDelete(page,b.dataset.registerDelete)));
 target.querySelectorAll('[data-register-reset]').forEach(b=>b.addEventListener('click',()=>resetRegister(b.dataset.registerReset)));
