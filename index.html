@@ -732,6 +732,8 @@ body.admin-new-old .nav-subchildren .nav-child.active{border-left:2px solid #65c
 .catalog-products-table th:nth-child(10){cursor:help}
 .catalog-products-table th:nth-child(11){cursor:help}
 /* Normalizacao transversal: evita vazamentos de largura e layouts quebrados. */
+.pay-config-navigation{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:9px;margin-top:15px}.pay-config-navigation button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:12px;text-align:left;font-size:12px;font-weight:750;cursor:pointer}.pay-config-navigation button:hover{border-color:#34b9cf;background:var(--bg)}
+
 html,body{width:100%;min-width:0;max-width:100%;overflow-x:hidden}
 #appShell,#adminLayout,.workspace,.content,#moduleView,.module-panel,.module-toolbar,.panel,.solution-detail,.solution-card,.detail-section{min-width:0;max-width:100%}
 #appShell{width:100%}
@@ -3081,12 +3083,20 @@ function renderPaymentConfig(){
    ['2','Credenciais','Gestão segura por ambiente e permissões'],
    ['3','Meios e regras','Cartão, Pix, boleto, captura e parcelamento'],
    ['4','Notificações','Eventos e rastreabilidade de transações'],
-   ['5','Homologação','Validação antes da liberação em produção']
-   ].map(z=>'<div><strong>'+z[0]+'</strong><span><b>'+z[1]+'</b><small>'+z[2]+'</small></span></div>').join('')+'</div></div>';
+   ['5','Segurança, split e conciliação','Regras de risco e reconciliação por operação'],
+   ['6','Homologação','Validação antes da liberação em produção']
+   ].map(z=>'<div><strong>'+z[0]+'</strong><span><b>'+z[1]+'</b><small>'+z[2]+'</small></span></div>').join('')+'</div></div>'+ 
+   '<section class="solution-detail"><h3>Acessar todas as configurações</h3><p class="hint">Cada etapa está disponível para visualização, independentemente do status comercial ou do credenciamento demonstrativo.</p><div class="pay-config-navigation">'+tabs.filter(t=>t[0]!=='overview').map(t=>'<button type="button" data-pay-tab="'+t[0]+'">'+esc(t[1])+' →</button>').join('')+'</div></section>';
  }else if(paymentConfigTab==='account'){
   content='<section class="solution-detail"><h3>Credenciamento e aprovação da conta</h3><p class="hint">O cadastro, a análise de documentos, o KYC e a aprovação dependem do processo e do contrato do provedor.</p><div class="pay-config-fields">'+
   paymentConfigField('accountAlias','Identificação interna da conta','text',c.accountAlias,[],'Nome de referência da conta; não informe dados pessoais')+
   paymentConfigField('accountStatus','Status da conta (simulação)','select',c.accountStatus,[['pending','Cadastro pendente'],['review','Em análise'],['approved','Aprovada']],'O status não é sincronizado com o provedor')+
+  '<label class="pay-config-field"><span>Razão social</span><input type="text" value="" data-pay-secret autocomplete="off" placeholder="Não preenchido"><small>Cadastro do estabelecimento; campo sem dados reais</small></label>'+
+  '<label class="pay-config-field"><span>CNPJ do estabelecimento</span><input type="text" value="" data-pay-secret inputmode="numeric" autocomplete="off" placeholder="Não preenchido"><small>Dados cadastrais não são persistidos no protótipo</small></label>'+
+  '<label class="pay-config-field"><span>Responsável pelo credenciamento</span><input type="text" value="" data-pay-secret autocomplete="off" placeholder="Não preenchido"><small>Informação pessoal não preenchida</small></label>'+
+  '<label class="pay-config-field"><span>E-mail de contato</span><input type="email" value="" data-pay-secret autocomplete="off" placeholder="Não preenchido"><small>Não é utilizado para notificações ou contratação</small></label>'+
+  '<label class="pay-config-field"><span>ID da subconta / recebedor</span><input type="text" value="" data-pay-secret autocomplete="off" placeholder="Não preenchido"><small>Identificador disponibilizado apenas após aprovação, quando aplicável</small></label>'+
+  '<label class="pay-config-field"><span>Documentação e KYC</span><input type="text" value="" readonly placeholder="Etapa externa / não integrada"><small>Envio e análise de documentos não ocorrem nesta interface</small></label>'+
   '</div><div class="pay-config-notice">Aprovação real de conta e vínculo de recebedor não são realizados pelo protótipo.</div></section>';
  }else if(paymentConfigTab==='credentials'){
   content='<section class="solution-detail"><h3>Ambiente e credenciais de integração</h3><div class="pay-config-fields">'+
