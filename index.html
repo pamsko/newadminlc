@@ -776,6 +776,59 @@ body.dark-mode #moduleView .solution-hero button{color:#005267;background:#fff}
 @media(max-width:900px){.topbar{padding-inline:12px;gap:8px}.content{padding:18px}.top-search-group{flex:1;justify-content:flex-end}.top-search{width:min(100%,260px)}.top-right{gap:8px}.solution-hero{padding:20px}}
 @media(max-width:650px){.content{padding:12px}#moduleView .pay-config-fields{grid-template-columns:minmax(0,1fr)}#moduleView .solution-grid{grid-template-columns:minmax(0,1fr)}#moduleView .pay-config-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.key-values,.catalog-search-row,.catalog-filter-row{grid-template-columns:minmax(0,1fr)}.solution-hero h2{font-size:22px}.solution-toolbar{align-items:stretch}.solution-toolbar input,.solution-toolbar select{flex:1 1 100%}.pay-config-tabs button,.detail-tabs button{padding:10px 12px}.pay-config-footer{align-items:stretch}.pay-config-footer .solution-action{width:100%}}
 @media(max-width:420px){#moduleView .pay-config-summary{grid-template-columns:minmax(0,1fr)}}
+
+/* Revisão transversal de responsividade e consistência visual (26/11/2026).
+   Restringir overflow a tabelas; nunca cortar menus, modais e formulários. */
+#adminLayout,.workspace,.content,#moduleView,#dashboardView,.main,.module-panel,.solution-detail{min-width:0}
+#moduleView,#dashboardView{width:100%}
+#moduleView .panel,#moduleView .solution-detail,#moduleView .solution-card,
+#moduleView .domain-card,#moduleView .module-panel{box-sizing:border-box;min-width:0}
+#moduleView .panel *,#moduleView .solution-detail *,#moduleView .module-panel *{min-width:0}
+#moduleView table{border-collapse:collapse}
+#moduleView .module-table-wrap,#moduleView .catalog-table-scroll,
+#moduleView .domain-table-wrap,#moduleView .demo-register-table-wrap{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+#moduleView .module-table-wrap table,#moduleView .catalog-table-scroll table{max-width:none}
+#moduleView input:not([type="checkbox"]):not([type="radio"]),
+#moduleView select,#moduleView textarea{box-sizing:border-box;max-width:100%;color:var(--text)}
+#moduleView textarea{min-height:88px;resize:vertical}
+#moduleView .pay-config-field,#moduleView .catalog-edit-field{min-width:0}
+#moduleView .pay-config-field input,#moduleView .pay-config-field select{width:100%}
+#moduleView .solution-hero,#moduleView .solution-detail-actions,#moduleView .solution-card-head,
+#moduleView .catalog-toolbar,#moduleView .module-toolbar{min-width:0;flex-wrap:wrap}
+#moduleView .pay-config-tabs{display:flex;flex-wrap:wrap;gap:5px;overflow:visible;border-bottom:1px solid var(--line);padding-bottom:8px}
+#moduleView .pay-config-tabs button{white-space:normal;flex:0 1 auto;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:var(--card);color:var(--text);line-height:1.25}
+#moduleView .pay-config-tabs button.active{border-color:#008fa8;background:var(--bg);color:var(--text);box-shadow:inset 0 -2px 0 #00b9d7}
+#moduleView .pay-config-navigation button{overflow-wrap:anywhere}
+#moduleView .pay-config-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+#moduleView .pay-config-summary,#moduleView .pay-config-steps{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
+#moduleView .pay-test-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+#moduleView .pay-config-footer{align-items:center}
+#moduleView .pay-config-notice,#moduleView .pay-setting-summary{overflow-wrap:anywhere}
+#moduleView [data-pay-secret]{background:var(--card);color:var(--text)}
+body.dark-mode #moduleView :is(input,select,textarea):not([type="checkbox"]):not([type="radio"]){background:var(--card);color:var(--text);border-color:var(--line);color-scheme:dark}
+body.dark-mode #moduleView :is(input,textarea)::placeholder{color:var(--muted);opacity:1}
+body.dark-mode #moduleView .pay-config-tabs button{background:var(--card);color:var(--text);border-color:var(--line)}
+body.dark-mode #moduleView .pay-config-tabs button.active{background:var(--bg);border-color:#00b9d7}
+body.dark-mode #moduleView .pay-config-notice,body.dark-mode #moduleView .pay-setting-summary{border-color:var(--line);color:var(--text)}
+@media(max-width:900px){
+ .topbar{min-width:0}
+ .top-left,.top-right{flex-shrink:1}
+ #moduleView .pay-config-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #moduleView .solution-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+}
+@media(max-width:650px){
+ #moduleView .pay-config-fields,#moduleView .catalog-edit-grid,#moduleView .catalog-media-options{grid-template-columns:minmax(0,1fr)}
+ #moduleView .pay-config-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #moduleView .pay-config-tabs button{flex:1 1 calc(50% - 5px);text-align:center}
+ #moduleView .pay-config-footer{flex-direction:column;align-items:stretch}
+ #moduleView .pay-config-footer button{width:100%}
+ #moduleView .solution-detail{padding:14px}
+ .topbar{gap:6px}
+}
+@media(max-width:420px){
+ #moduleView .pay-config-summary{grid-template-columns:minmax(0,1fr)}
+ #moduleView .pay-config-tabs button{flex-basis:100%}
+}
 </style>
 </head>
 <body>
