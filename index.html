@@ -3051,7 +3051,7 @@ function renderMySolutions(){
 }
 /* Experiência de configuração de pagamentos, exclusivamente visual. Nenhuma chave é persistida. */
 const paymentConfigProviders=['totvs-pay','pagarme','pagbank'];
-const defaultPaymentSettings=()=>({environment:'sandbox',accountStatus:'pending',accountAlias:'',methods:{credit:true,pix:false,boleto:false},installments:6,minInstallment:'20',capture:'automatic',descriptor:'',statement:'',webhookEnabled:false,webhookEvents:{authorized:true,captured:true,refunded:true,failed:true},retryMode:'controlled',timeout:'30',orderPrefix:'LC',updatedAt:null});
+const defaultPaymentSettings=()=>({environment:'sandbox',accountStatus:'pending',accountAlias:'',methods:{credit:true,pix:false,boleto:false,debit:false},pixExpiry:'30',pixInstructions:'',boletoDueDays:'3',boletoInstructions:'',refundMode:'manual',installments:6,minInstallment:'20',capture:'automatic',descriptor:'',statement:'',webhookEnabled:false,webhookEvents:{authorized:true,captured:true,refunded:true,failed:true},retryMode:'controlled',timeout:'30',orderPrefix:'LC',antiFraudMode:'not-configured',threeDSMode:'not-configured',splitMode:'disabled',settlementMode:'provider',reconcileFrequency:'daily',notifyEmail:'',updatedAt:null});
 let paymentConfigStore=(()=>{try{const raw=JSON.parse(localStorage.getItem(PAYMENT_CONFIG_KEY));return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}}catch(e){return {}}})();
 function paymentConfigData(id){return {...defaultPaymentSettings(),...(paymentConfigStore[id]||{}),methods:{...defaultPaymentSettings().methods,...(paymentConfigStore[id]?.methods||{})},webhookEvents:{...defaultPaymentSettings().webhookEvents,...(paymentConfigStore[id]?.webhookEvents||{})}}}
 function paymentConfigSave(id,data){paymentConfigStore[id]=data;try{localStorage.setItem(PAYMENT_CONFIG_KEY,JSON.stringify(paymentConfigStore))}catch(e){}}
@@ -3066,7 +3066,7 @@ function paymentConfigCheck(key,label,checked,description){
 }
 function renderPaymentConfig(){
  const id=paymentConfigProvider,x=solutionCatalog.find(s=>s.id===id),c=paymentConfigData(id),state=solutionStatus(id),configured=!!solutionState[id]?.configured;
- const tabs=[['overview','Visão geral'],['account','Credenciamento'],['credentials','Credenciais'],['methods','Meios de pagamento'],['rules','Regras e parcelamento'],['webhooks','Notificações'],['tests','Homologação']];
+ const tabs=[['overview','Visão geral'],['account','Credenciamento'],['credentials','Credenciais'],['methods','Meios de pagamento'],['rules','Regras e parcelamento'],['pix-boleto','Pix e boleto'],['risk','Antifraude e 3DS'],['split','Split'],['webhooks','Notificações'],['reconciliation','Conciliação'],['tests','Homologação']];
  const linkTab=k=>'<button type="button" class="'+(paymentConfigTab===k?'active':'')+'" data-pay-tab="'+k+'">'+tabs.find(t=>t[0]===k)[1]+'</button>';
  const notice='<div class="pay-config-notice">Ambiente demonstrativo: nenhuma alteração é enviada ao provedor ou à loja. Não informe senhas, API keys, tokens nem dados financeiros reais.</div>';
  let content='';
@@ -3091,14 +3091,18 @@ function renderPaymentConfig(){
  }else if(paymentConfigTab==='credentials'){
   content='<section class="solution-detail"><h3>Ambiente e credenciais de integração</h3><div class="pay-config-fields">'+
   paymentConfigField('environment','Ambiente','select',c.environment,[['sandbox','Homologação / Sandbox'],['production','Produção']],'Cada ambiente deve ter credenciais e permissões próprias')+
-  '<label class="pay-config-field"><span>Identificador de conta (exemplo)</span><input type="text" value="••••••••••" readonly aria-label="Identificador de conta indisponível"><small>Não conectado ao provedor; não representa uma conta real</small></label>'+
-  '<label class="pay-config-field"><span>Chave de API / token</span><input type="password" value="" disabled placeholder="Configurada somente em canal seguro"><small>Segredos não são solicitados, exibidos ou armazenados neste protótipo</small></label>'+
+  '<label class="pay-config-field"><span>Identificador de conta (Merchant ID)</span><input type="text" value="" autocomplete="off" data-pay-secret placeholder="Sem credenciais preenchidas"><small>Campo visível para desenho da integração; não informe identificadores reais neste protótipo</small></label>'+
+  '<label class="pay-config-field"><span>Client ID / usuário da API</span><input type="text" value="" autocomplete="off" data-pay-secret placeholder="Não preenchido"><small>Campo demonstrativo, nunca persistido</small></label>'+
+  '<label class="pay-config-field"><span>Client Secret / chave privada</span><input type="password" value="" autocomplete="new-password" data-pay-secret placeholder="Não preenchido"><small>Sem dados reais; não é salvo ou enviado</small></label>'+
+  '<label class="pay-config-field"><span>Chave de API / token</span><input type="password" value="" autocomplete="new-password" data-pay-secret placeholder="Não preenchido"><small>Não inserimos, salvamos ou transmitimos segredos</small></label>'+
+  '<label class="pay-config-field"><span>Secret de assinatura de webhook</span><input type="password" value="" autocomplete="new-password" data-pay-secret placeholder="Não preenchido"><small>Reservado para implementação segura no backend</small></label>'+
   '</div><div class="pay-config-notice">Em produção, use um backend seguro com cofre de secrets, segregação por tenant, mascaramento, rotação e auditoria. Nunca guarde credenciais em localStorage ou no frontend.</div></section>';
  }else if(paymentConfigTab==='methods'){
   content='<section class="solution-detail"><h3>Meios habilitados</h3><p class="hint">Disponibilidade de cada meio sujeita a escopo, credenciamento e homologação. Estes controles não habilitam transações reais.</p>'+
   paymentConfigCheck('credit','Cartão de crédito',c.methods.credit,'Autorização, captura e cancelamento conforme integração')+
   paymentConfigCheck('pix','Pix',c.methods.pix,'Confirmação assíncrona, expiração e conciliação conforme disponibilidade')+
   paymentConfigCheck('boleto','Boleto',c.methods.boleto,'Emissão, vencimento e confirmação de pagamento conforme disponibilidade')+
+  paymentConfigCheck('debit','Cartão de débito (condicional)',c.methods.debit,'Somente quando contratado, suportado e homologado')+
   '</section>';
  }else if(paymentConfigTab==='rules'){
   content='<section class="solution-detail"><h3>Parcelamento e processamento</h3><div class="pay-config-fields">'+
@@ -3107,7 +3111,39 @@ function renderPaymentConfig(){
   paymentConfigField('capture','Captura do cartão','select',c.capture,[['automatic','Automática'],['manual','Manual / pré-captura']],'Captura manual exige suporte do provedor e fluxo operacional')+
   paymentConfigField('descriptor','Descrição na fatura (exemplo)','text',c.descriptor,[],'Sujeita às regras e limites do adquirente')+
   paymentConfigField('orderPrefix','Prefixo de referência do pedido','text',c.orderPrefix,[],'Evite duplicidade de referências entre ambientes')+
+  paymentConfigField('refundMode','Fluxo de estorno','select',c.refundMode,[['manual','Solicitação operacional'],['automatic','Automático (quando suportado)']],'Não realiza estornos reais')+
   '</div><div class="pay-config-notice">Taxas de juros, split, antifraude e 3DS exigem regras e elegibilidade específicas; não são habilitados nesta demonstração.</div></section>';
+ }else if(paymentConfigTab==='pix-boleto'){
+  content='<section class="solution-detail"><h3>Pix</h3><p class="hint">Configurações demonstrativas condicionadas à contratação, implementação e homologação do Pix na TOTVS Pay.</p>'+
+  '<div class="pay-config-fields">'+
+  paymentConfigField('pixExpiry','Validade do QR Code (minutos)','number',c.pixExpiry,[],'Controla a expiração desejada; não gera Pix reais')+
+  paymentConfigField('pixInstructions','Mensagem ao comprador (Pix)','text',c.pixInstructions,[],'Texto opcional exibido no checkout')+
+  '</div><h3>Boleto</h3><div class="pay-config-fields">'+
+  paymentConfigField('boletoDueDays','Prazo de vencimento (dias)','number',c.boletoDueDays,[],'Depende das regras do emissor')+
+  paymentConfigField('boletoInstructions','Instruções do boleto','text',c.boletoInstructions,[],'Texto opcional e não sensível')+
+  '</div><div class="pay-config-notice">Campos disponíveis para exploração UX. Não garantem suporte comercial ou técnico destes meios.</div></section>';
+ }else if(paymentConfigTab==='risk'){
+  content='<section class="solution-detail"><h3>Segurança e autenticação</h3><p class="hint">A apresentação destas opções não significa suporte nativo ou contratação dos serviços.</p><div class="pay-config-fields">'+
+  paymentConfigField('antiFraudMode','Antifraude','select',c.antiFraudMode,[['not-configured','Não configurado'],['external','Provedor antifraude externo'],['integrated','Integração com antifraude (sujeita à validação)']],'Análise, aprovação e contingência dependem do contrato')+
+  paymentConfigField('threeDSMode','3DS','select',c.threeDSMode,[['not-configured','Não configurado'],['optional','Habilitar onde houver suporte'],['required','Exigir autenticação quando suportada']],'Fluxo depende do adquirente, emissor e integrações')+
+  '</div><div class="pay-config-notice">Não execute autenticação, antifraude ou análise de risco por esta tela demonstrativa.</div></section>';
+ }else if(paymentConfigTab==='split'){
+  content='<section class="solution-detail"><h3>Split de pagamento</h3><p class="hint">Proposta de configuração para operações com múltiplos recebedores. Exige elegibilidade, contas recebedoras e contrato.</p><div class="pay-config-fields">'+
+  paymentConfigField('splitMode','Modelo de distribuição','select',c.splitMode,[['disabled','Desabilitado'],['fixed','Distribuição por valor fixo'],['percentage','Distribuição percentual']],'Não movimenta dinheiro ou cria recebedores')+
+  '</div><div class="pay-config-fields">'+
+  '<label class="pay-config-field"><span>ID do recebedor principal</span><input type="text" value="" data-pay-secret autocomplete="off" placeholder="Não preenchido"><small>Identificador de conta não fornecido neste ambiente</small></label>'+
+  '<label class="pay-config-field"><span>Credenciais do recebedor</span><input type="password" value="" data-pay-secret autocomplete="new-password" placeholder="Não preenchido"><small>Sem armazenamento de dados sensíveis</small></label>'+
+  '</div><div class="pay-config-notice">Regras de repasse, arredondamento, estornos parciais, chargebacks e conciliação por recebedor precisam de especificação própria.</div></section>';
+ }else if(paymentConfigTab==='reconciliation'){
+  content='<section class="solution-detail"><h3>Conciliação e acompanhamento financeiro</h3><div class="pay-config-fields">'+
+  paymentConfigField('settlementMode','Origem dos registros','select',c.settlementMode,[['provider','Extratos do provedor'],['erp','Conciliação pelo ERP'],['combined','Provedor + ERP']],'Fonte demonstrativa, sem sincronização')+
+  paymentConfigField('reconcileFrequency','Frequência desejada','select',c.reconcileFrequency,[['daily','Diária'],['hourly','Por hora'],['manual','Manual']],'Frequência não aplicada automaticamente')+
+  paymentConfigField('notifyEmail','E-mail para alertas (exemplo)','text',c.notifyEmail,[],'Não envia e-mails e não valida destinatários')+
+  '</div><h4>Indicadores e rastreabilidade</h4><div class="pay-config-summary">'+
+  paymentConfigRow('Transações processadas','—','Sem conexão com o provedor')+
+  paymentConfigRow('Divergências','—','Sem dados de conciliação')+
+  paymentConfigRow('Último sincronismo','—','Não executado')+
+  '</div><div class="pay-config-notice">Em produção: identificadores de pedido e transação, conciliação de captura, cancelamento, estorno, split, tarifas e liquidação.</div></section>';
  }else if(paymentConfigTab==='webhooks'){
   content='<section class="solution-detail"><h3>Notificações, resiliência e rastreabilidade</h3>'+
   paymentConfigCheck('webhookEnabled','Receber notificações',c.webhookEnabled,'Eventos ilustrativos; não são enviados webhooks')+
@@ -3135,7 +3171,7 @@ function renderPaymentConfig(){
  }
  return '<button class="detail-back" data-pay-back>← Voltar à solução</button><div class="solution-hero"><div><div class="solution-hero-tag">Central de Soluções / Pagamentos</div><h2>Configurar '+esc(x.name)+'</h2><p>Credenciamento, integração, habilitação e acompanhamento em uma única jornada.</p></div><span class="solution-tag">Protótipo · sem integração real</span></div>'+
  '<div class="pay-config-tabs" role="tablist" aria-label="Configurações do provedor">'+tabs.map(t=>linkTab(t[0])).join('')+'</div>'+notice+content+
- (['account','credentials','methods','rules','webhooks'].includes(paymentConfigTab)?'<div class="pay-config-footer"><small>Os campos não sensíveis são salvos apenas neste navegador.</small><button class="solution-action" data-pay-save>Salvar simulação</button></div>':'')+
+ (['account','credentials','methods','rules','pix-boleto','risk','split','webhooks','reconciliation'].includes(paymentConfigTab)?'<div class="pay-config-footer"><small>Os campos não sensíveis são salvos apenas neste navegador.</small><button class="solution-action" data-pay-save>Salvar simulação</button></div>':'')+
  (paymentConfigTab==='overview'?'<div class="pay-config-footer"><small>O estado de configuração não valida integração real.</small><button class="solution-action secondary" data-pay-configured>Marcar configuração como '+(configured?'pendente':'concluída')+' (simulação)</button></div>':'');
 }
 function payConfigureStart(id){paymentConfigProvider=id;paymentConfigTab='overview';solutionSelected=id;renderActiveModule(vnextPage)}
@@ -3148,8 +3184,10 @@ function bindPaymentConfig(target,page){
  target.querySelector('[data-pay-configured]')?.addEventListener('click',()=>{const id=paymentConfigProvider,current=solutionState[id]||{};solutionState[id]={...current,configured:!current.configured};solutionSave();toast('Marcação demonstrativa atualizada.');renderActiveModule(page)});
  target.querySelector('[data-pay-save]')?.addEventListener('click',()=>{
   const id=paymentConfigProvider,c=paymentConfigData(id);
-  target.querySelectorAll('[data-pay-setting]').forEach(el=>{const key=el.dataset.paySetting;if(['accountAlias','descriptor','orderPrefix'].includes(key))c[key]=el.value.slice(0,80);else if(['installments','minInstallment','timeout'].includes(key))c[key]=String(Math.max(1,Math.min(999,Number(el.value)||1)));else c[key]=el.value});
-  target.querySelectorAll('[data-pay-flag]').forEach(el=>{const key=el.dataset.payFlag;if(['credit','pix','boleto'].includes(key))c.methods[key]=el.checked;else if(['authorized','captured','refunded','failed'].includes(key))c.webhookEvents[key]=el.checked;else if(key==='webhookEnabled')c.webhookEnabled=el.checked});
+  target.querySelectorAll('[data-pay-setting]').forEach(el=>{const key=el.dataset.paySetting;if(['accountAlias','descriptor','orderPrefix','pixInstructions','boletoInstructions','notifyEmail'].includes(key))c[key]=el.value.slice(0,80);else if(['installments','minInstallment','timeout','pixExpiry','boletoDueDays'].includes(key))c[key]=String(Math.max(1,Math.min(999,Number(el.value)||1)));else c[key]=el.value});
+  target.querySelectorAll('[data-pay-flag]').forEach(el=>{const key=el.dataset.payFlag;if(['credit','pix','boleto','debit'].includes(key))c.methods[key]=el.checked;else if(['authorized','captured','refunded','failed'].includes(key))c.webhookEvents[key]=el.checked;else if(key==='webhookEnabled')c.webhookEnabled=el.checked});
+  // Qualquer dado digitado em campos sensíveis é descartado sem leitura ou persistência.
+  target.querySelectorAll('[data-pay-secret]').forEach(el=>{el.value=''});
   c.updatedAt=new Date().toISOString();paymentConfigSave(id,c);toast('Configurações demonstrativas salvas somente neste navegador.');renderActiveModule(page);
  });
 }
